@@ -301,14 +301,34 @@ F_0 = F_1 = 1,\quad F_n = F_{n-1} + F_{n-2}\ (n \geq 2)
 \end{itemize}
 \end{notebox}
 
+\textbf{迭代次数 $n$ 的确定}：
+
+Fibonacci法进行 $n$ 次试探后，最终区间长度为 $\dfrac{b-a}{F_n}$。
+若要求最终区间长度不超过容许误差 $\varepsilon$，即
+\[
+\frac{b-a}{F_n} \leq \varepsilon
+\]
+则需
+\[
+F_n \geq \frac{b-a}{\varepsilon}
+\]
+因此，$n$ 是满足 $F_n \geq \dfrac{b-a}{\varepsilon}$ 的最小正整数。实际计算时可依次生成Fibonacci数，直到满足上述不等式为止。
+
+\begin{notebox}[Fibonacci法的特点]
+与黄金分割法不同，Fibonacci法需要根据精度要求预先确定试探次数 $n$（或由 $F_n \geq \frac{b-a}{\varepsilon}$ 计算得到），而不能像黄金分割法那样迭代到满足精度自动停止。
+\end{notebox}
+
 \begin{example}[Fibonacci法——迭代两次]\label{ex:fibonacci}
-\textbf{问题}：用Fibonacci法（$n=5$，共5次试探）求解
+\textbf{问题}：用Fibonacci法求解
 \[
 \min\ \phi(\alpha) = (\alpha - 2)^2,\quad \alpha \in [0, 5]
 \]
-执行两轮迭代。
+取容许误差 $\varepsilon = 1$，执行两轮迭代。
 
-\textbf{解}：$F_1=F_2=1, F_3=2, F_4=3, F_5=5, F_6=8$
+\textbf{解}：区间长度 $b-a = 5$，要求 $\dfrac{5}{F_n} \leq 1$，即 $F_n \geq 5$。
+查Fibonacci数列：$F_4=3 < 5,\ F_5=5 \geq 5$，故取 $n = 5$（共5次试探）。
+
+$F_1=F_2=1, F_3=2, F_4=3, F_5=5, F_6=8$
 
 \textbf{第0轮}：$[a_0, b_0] = [0, 5]$，$k=0$，$F_{5}=5, F_{6}=8$
 \begin{align*}
@@ -386,12 +406,27 @@ def golden_section_search(phi, a, b, eps=1e-6, max_iter=100):
     return alpha_opt, phi(alpha_opt), k+1, history
 
 
-def fibonacci_search(phi, a, b, n, max_iter=100):
-    """Fibonacci法, n为试探次数"""
+def fibonacci_search(phi, a, b, eps=None, n=None, max_iter=100):
+    """Fibonacci法
+    参数:
+        phi: 目标函数
+        a, b: 初始区间
+        eps: 容许误差（与n二选一，优先使用n）
+        n: 试探次数
+    """
+    assert eps is not None or n is not None, "必须提供eps或n之一"
+    
     # 生成Fibonacci数列
     F = [1, 1]
-    for i in range(2, n + 2):
-        F.append(F[-1] + F[-2])
+    if n is None:
+        # 根据eps计算n
+        ratio = (b - a) / eps
+        while F[-1] < ratio:
+            F.append(F[-1] + F[-2])
+        n = len(F) - 1
+    else:
+        for i in range(2, n + 2):
+            F.append(F[-1] + F[-2])
     
     lam = a + F[n-1]/F[n+1] * (b - a)
     mu = a + F[n]/F[n+1] * (b - a)
@@ -402,7 +437,9 @@ def fibonacci_search(phi, a, b, n, max_iter=100):
     
     for k in range(1, n):
         if k == n - 1:  # 最后一步特殊处理
-            mu = lam + 0.5 * eps
+            # 当eps未提供时，使用固定的小偏移量
+            delta = eps * 0.5 if eps is not None else 1e-6
+            mu = lam + delta
         
         if phi_lam <= phi_mu:
             b = mu
@@ -440,6 +477,24 @@ for i, (a, b, lam, mu, pl, pm) in enumerate(hist[:3]):
     print(f"  第{i}轮: [{a:.4f}, {b:.4f}], "
           f"lam={lam:.4f}(phi={pl:.4f}), "
           f"mu={mu:.4f}(phi={pm:.4f})")
+
+print("=" * 50)
+print("Fibonacci法（指定n=5）")
+print("=" * 50)
+alpha_opt, phi_opt, n, hist = fibonacci_search(
+    phi_test, 0, 5, n=5)
+print(f"试探次数: n = {n}")
+print(f"最优解: alpha* = {alpha_opt:.6f}")
+print(f"最优值: phi* = {phi_opt:.10f}")
+
+print("=" * 50)
+print("Fibonacci法（根据eps自动确定n）")
+print("=" * 50)
+alpha_opt, phi_opt, n, hist = fibonacci_search(
+    phi_test, 0, 5, eps=1.0)
+print(f"自动确定试探次数: n = {n}")
+print(f"最优解: alpha* = {alpha_opt:.6f}")
+print(f"最优值: phi* = {phi_opt:.10f}")
 \end{lstlisting}
 
 \section{中点法（二分法）}\label{sec:ch4-bisection}
