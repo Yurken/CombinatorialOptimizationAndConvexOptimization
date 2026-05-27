@@ -1148,29 +1148,39 @@ print(f"\\n精确解对比: alpha* = {res.x:.6f}, phi* = {res.fun:.6f}")
     % 坐标轴
     \draw[->,thick] (-0.2,0) -- (5.5,0) node[right] {$\lambda$};
     \draw[->,thick] (0,-0.3) -- (0,4.2) node[above] {$\varphi(\lambda)$};
-    % 线性近似线 l1 和 l2
-    \draw[blue,thick,dashed] (0,3.5) -- (5,0.5) node[right,scale=0.75] {$\ell_1$};
-    \draw[red,thick,dashed] (0,3.5) -- (5,2.8) node[right,scale=0.75] {$\ell_2$};
+    % 参考直线（注意：l1较缓在上方，l2较陡在下方）
+    % l1: 充分下降线，斜率 c1*phi'(0)（较缓）
+    \draw[red,thick,dashed] (0,3.5) -- (5,2.8)
+        node[right,scale=0.7,align=left]
+        {$\ell_1(\lambda)=\phi(0)+c_1\lambda\phi'(0)$\\[-2pt]{\scriptsize 充分下降线}};
+    % l2: 防止步长过小线，斜率 (1-c1)*phi'(0)（较陡）
+    \draw[blue,thick,dashed] (0,3.5) -- (5,0.5)
+        node[right,scale=0.7,align=left]
+        {$\ell_2(\lambda)=\phi(0)+(1-c_1)\lambda\phi'(0)$\\[-2pt]{\scriptsize 防止步长过小}};
     % 实际函数曲线
     \draw[very thick,black]
         (0,3.5) .. controls (1,2) and (2.5,0.8) .. (4,0.5) .. controls (4.5,0.6) .. (5,1.2);
     \node[scale=0.75] at (4.8,1.5) {$\varphi(\lambda)$};
     % 起点
     \fill (0,3.5) circle (2.5pt) node[left,scale=0.75] {$\phi(0)$};
-    % 可接受区间
-    \fill[yellow!30,opacity=0.6] (0.8,0) rectangle (2.8,0.08);
-    \draw[<->,thick] (0.8,-0.2) -- (2.8,-0.2) node[midway,below,scale=0.75] {可接受区间};
-    % 标注区间边界
-    \draw[blue,dotted] (0.8,0) -- (0.8,2.5);
-    \draw[red,dotted] (2.8,0) -- (2.8,2);
+    % 可接受步长区间（横轴上的投影）
+    \draw[very thick,green!50!black] (0.8,0) -- (2.8,0);
+    \fill[green!20,opacity=0.5] (0.8,0) rectangle (2.8,0.1);
+    \draw[<->,thick,green!50!black] (0.8,-0.35) -- (2.8,-0.35)
+        node[midway,below,scale=0.7] {可接受步长区间};
+    \draw[green!50!black,dashed] (0.8,0) -- (0.8,-0.35);
+    \draw[green!50!black,dashed] (2.8,0) -- (2.8,-0.35);
+    % 投影示意虚线
+    \draw[gray,dotted] (0.8,0) -- (0.8,3.02);
+    \draw[gray,dotted] (2.8,0) -- (2.8,1.82);
     % 选中的步长
     \fill[green!50!black] (1.8,{3.5-1.8*1.5}) circle (2.5pt);
-    \node[green!50!black,scale=0.75,above right] at (1.8,{3.5-1.8*1.5}) {$\lambda^*$};
-    % x轴标记
-    \node[below,scale=0.7,blue] at (0.8,0) {\small 下界};
-    \node[below,scale=0.7,red] at (2.8,0) {\small 上界};
+    \node[green!50!black,scale=0.75,right] at (1.9,{3.5-1.8*1.5+0.1}) {$\lambda^*$};
+    % 条件约束说明
+    \node[scale=0.65,align=center] at (1.5,2.5)
+        {$\ell_2(\lambda)\!\le\!\varphi(\lambda)\!\le\!\ell_1(\lambda)$};
 \end{tikzpicture}
-\caption{Goldstein条件的几何解释：可接受步长位于两条直线之间的区域}
+\caption{Goldstein条件的几何解释：满足 $\ell_2(\lambda)\le\phi(\lambda)\le\ell_1(\lambda)$ 的 $\lambda$ 在横轴上的投影构成可接受步长区间}
 \label{fig:goldstein}
 \end{figure}
 
@@ -1180,7 +1190,7 @@ print(f"\\n精确解对比: alpha* = {res.x:.6f}, phi* = {res.fun:.6f}")
     \item 条件\eqref{eq:goldstein-lower}要求函数值在过 $(0, \phi(0))$ 斜率为 $(1-c_1)\phi'(0)$ 的直线 $\ell_2$ 上方（避免步长过小）
 \end{itemize}
 
-Goldstein条件将可接受步长限制在两直线之间的黄色区域。
+Goldstein条件要求函数值 $\phi(\lambda)$ 位于两条参考直线 $\ell_2(\lambda)$ 与 $\ell_1(\lambda)$ 之间，即满足 $\ell_2(\lambda)\le\phi(\lambda)\le\ell_1(\lambda)$。满足该不等式的 $\lambda$ 在横轴上的投影构成可接受步长区间（图中绿色区间）。
 
 \subsection{Armijo条件（回溯线搜索）}
 
