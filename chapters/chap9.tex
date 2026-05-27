@@ -1,0 +1,336 @@
+\chapter{课程总结与展望}\label{chap:summary}
+
+本章对组合优化与凸优化课程的八章核心知识进行系统梳理，建立完整的知识框架，提供方法选择的实用指南，并展望优化领域的前沿研究方向。
+
+\begin{notebox}[章节内容速查]
+本教材共计八章，其逻辑关系如下：第~\ref{chap:intro}~章（绪论）奠定数学基础（凸集、凸函数、仿射函数）；第~\ref{chap:lp}~章（线性规划）介绍经典的单纯形法与对偶理论；第~\ref{chap:convex-analysis}~章（凸分析）深化凸性理论与最优性条件；第~\ref{chap:linesearch}~章（一维搜索）提供多维优化中不可或缺的步长子程序；第~\ref{chap:unconstrained}~章（无约束优化）涵盖从梯度法到次梯度法的完整方法体系；第~\ref{chap:constrained-theory}~章（约束优化理论）建立KKT条件与对偶理论的系统框架；第~\ref{chap:constrained-methods}~章（约束优化方法）介绍罚函数法、内点法等实用算法；第~\ref{chap:advanced}~章（进阶专题）探讨智能优化算法与深度学习中的优化。
+\end{notebox}
+
+\section{优化问题的统一框架}
+
+\begin{conceptbox}[最优化问题的一般形式]
+\[
+\begin{aligned}
+\min_{x \in \mathbb{R}^n} \quad & f(x) \\
+\text{s.t.} \quad & g_i(x) \leq 0, \quad i = 1, \ldots, m \\
+& h_j(x) = 0, \quad j = 1, \ldots, l
+\end{aligned}
+\]
+\textbf{分类维度}：
+\begin{itemize}
+    \item 目标函数：线性 / 非线性 / 凸 / 非凸 / 光滑 / 非光滑
+    \item 约束：无约束 / 等式约束 / 不等式约束 / 线性约束 / 非线性约束
+    \item 变量：连续 / 离散 / 混合整数
+\end{itemize}
+\end{conceptbox}
+
+\section{核心知识体系}
+
+\subsection{一维搜索与线搜索方法}
+
+\begin{table}[H]
+\centering
+\small
+\caption{一维搜索与线搜索方法核心要点（详见第~\ref{chap:linesearch}~章）}
+\label{tab:ch4-summary}
+\begin{tabular}{@{}c>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{5.5cm}@{}}
+\toprule
+\textbf{信息} & \textbf{方法} & \textbf{收敛速度} & \textbf{核心特征与选择依据} \\
+\midrule
+\multirow{3}{*}{零阶} & Dichotomous搜索 & 线性($\approx 0.5$) & 对称取点，区间减半 \\
+ & 黄金分割法 & 线性($\tau=0.618$) & 每步只需一个新函数值 \\
+ & Fibonacci法 & 线性（最优） & 固定次数下最少试验点 \\
+\midrule
+\multirow{3}{*}{导数} & 二分法（导数） & 线性($0.5$) & 每次一个导数计算 \\
+ & Newton法 & 二次 & 需二阶导，初始点要接近极小点 \\
+ & 插值法 & 超线性 & 不需二阶导，实用性强 \\
+\midrule
+\multirow{3}{*}{非精确} & Armijo回溯 & 保证下降 & 最常用，仅需充分下降条件 \\
+ & Wolfe条件 & 保证下降 & 充分下降$+$曲率控制 \\
+ & Goldstein条件 & 保证下降 & 双边控制，防止步长过小 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{核心原则}：多维优化算法中的步长搜索首选\textbf{非精确线搜索}（Armijo或Wolfe），计算效率远高于精确线搜索。
+
+\subsection{凸性：优化的基石}
+
+\begin{kktbox}[凸集与凸函数]
+\textbf{凸集}：$\forall x, y \in \mathcal{X}, \theta \in [0,1]$，有 $\theta x + (1-\theta)y \in \mathcal{X}$
+
+\textbf{凸函数}：$f(\theta x + (1-\theta)y) \leq \theta f(x) + (1-\theta)f(y)$
+
+\textbf{核心结论}：凸优化问题的局部极小 = 全局极小
+\end{kktbox}
+
+判断凸性的常用工具：
+\begin{itemize}
+    \item 一阶条件：$f(y) \geq f(x) + \nabla f(x)^T(y-x)$
+    \item 二阶条件：$\nabla^2 f(x) \succcurlyeq 0$（半正定）
+    \item 保凸运算：非负加权和、仿射变换、逐点最大值、复合函数
+\end{itemize}
+
+\subsection{最优性条件体系}
+
+\begin{table}[H]
+\centering
+\small
+\caption{最优性条件对照表（详见第~\ref{chap:constrained-theory}~章第~\ref{sec:ch6-kkt}~节和第~\ref{sec:second-order}~节）}\label{tab:optimality}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2cm}>{\raggedright\arraybackslash}p{3.5cm}>{\raggedright\arraybackslash}p{3.5cm}>{\raggedright\arraybackslash}p{3.5cm}@{}}
+\toprule
+\textbf{问题类型} & \textbf{一阶条件} & \textbf{二阶必要条件} & \textbf{二阶充分条件} \\
+\midrule
+无约束 & $\nabla f(x^*) = 0$ & $\nabla^2 f(x^*) \succcurlyeq 0$ & $\nabla^2 f(x^*) \succ 0$ \\
+等式约束 & $\nabla f + \lambda^T \nabla h = 0$ & $d^T \nabla^2_{xx} L \, d \geq 0$ & $d^T \nabla^2_{xx} L \, d > 0$ \\
+一般约束 & KKT条件 & 临界锥上$\nabla^2 L \succcurlyeq 0$ & 临界锥上$\nabla^2 L \succ 0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{kktbox}[KKT条件——约束优化的核心]
+对于一般约束优化问题，KKT条件包含：
+\begin{enumerate}
+    \item \textbf{平稳性}：$\nabla f + \sum \mu_i \nabla g_i + \sum \lambda_j \nabla h_j = 0$
+    \item \textbf{原始可行性}：$g_i(x) \leq 0$，$h_j(x) = 0$
+    \item \textbf{对偶可行性}：$\mu_i \geq 0$
+    \item \textbf{互补松弛}：$\mu_i g_i(x) = 0$
+\end{enumerate}
+\textbf{充分性}：在凸问题 + Slater条件下，KKT $\Leftrightarrow$ 全局最优。
+\end{kktbox}
+
+\subsection{线性规划：经典与对偶}
+
+\begin{table}[H]
+\centering
+\caption{线性规划核心方法（详见第~\ref{chap:lp}~章）}\label{tab:lp}
+\begin{tabular}{lp{8cm}}
+\toprule
+\textbf{方法} & \textbf{要点} \\
+\midrule
+单纯形法 & 在极点(BFS)之间迭代；入基选最负检验数，出基用最小比值 \\
+大M法 & 人工变量系数$-M$，M足够大；适用于没有明显初始可行基 \\
+两阶段法 & 第一阶段最小化人工变量和，第二阶段求解原问题 \\
+对偶单纯形法 & 保持对偶可行性，恢复原始可行性；适用于灵敏度分析 \\
+内点法 & 多项式时间复杂度；原始-对偶路径跟踪 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{对偶理论核心}：
+\begin{itemize}
+    \item 弱对偶：$c^T x \leq b^T y$（任意可行对）
+    \item 强对偶：最优值相等（凸 + Slater条件）
+    \item 互补松弛：$y_i^*(b_i - a_i^T x^*) = 0$
+    \item 影子价格：对偶变量表示约束右端项变化对目标的影响
+\end{itemize}
+
+\subsection{无约束优化方法}
+
+\begin{table}[H]
+\centering
+\small
+\caption{无约束优化方法对比（详见第~\ref{chap:unconstrained}~章）}\label{tab:unconstrained}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2cm}>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{1.5cm}>{\raggedright\arraybackslash}p{4cm}@{}}
+\toprule
+\textbf{方法} & \textbf{信息需求} & \textbf{收敛速度} & \textbf{存储} & \textbf{适用场景} \\
+\midrule
+最速下降 & 梯度 & Q-线性 & $O(n)$ & 教学演示，条件数小 \\
+牛顿法 & 梯度$+$Hessian & Q-二次 & $O(n^2)$ & 小规模，Hessian易求 \\
+共轭梯度 & 梯度 & $n$步终止(二次) & $O(n)$ & 大规模稀疏问题 \\
+BFGS & 梯度 & Q-超线性 & $O(n^2)$ & 中大规模光滑问题 \\
+SGD & 随机梯度 & $O(1/\sqrt{k})$ & $O(n)$ & 机器学习大规模数据 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{关键公式}：
+\begin{itemize}
+    \item 牛顿步：$x_{k+1} = x_k - [\nabla^2 f(x_k)]^{-1} \nabla f(x_k)$
+    \item CG方向：$d_{k+1} = -g_{k+1} + \beta_k d_k$，其中 $\beta_k^{FR} = \frac{\|g_{k+1}\|^2}{\|g_k\|^2}$
+    \item BFGS更新：$B_{k+1} = B_k - \frac{B_k s_k s_k^T B_k}{s_k^T B_k s_k} + \frac{y_k y_k^T}{y_k^T s_k}$
+\end{itemize}
+
+\subsection{约束优化方法}
+
+\begin{table}[H]
+\centering
+\small
+\caption{约束优化方法对比（详见第~\ref{chap:constrained-methods}~章）}\label{tab:constrained}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{7cm}@{}}
+\toprule
+\textbf{方法} & \textbf{关键参数} & \textbf{核心特征与适用场景} \\
+\midrule
+外点罚函数 & $\sigma \to \infty$ & 不要求初始可行，但数值不稳定 \\
+内点法 & $\mu \to 0$ & 多项式复杂度，要求严格内点 \\
+增广Lagrange & 有限$\sigma$ & 乘子更新$\lambda_{k+1} = \lambda_k + \sigma h(x_{k+1})$ \\
+可行方向法 & 无 & 每次迭代求解LP，保证可行性 \\
+ADMM & $\rho > 0$ & 分解为子问题交替求解，适合分布式 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{非光滑与复合优化}
+
+\begin{conceptbox}[近端梯度法]
+对于 $\min f(x) + g(x)$（$f$光滑，$g$非光滑）：
+\[
+x^+ = \text{prox}_{\alpha g}(x - \alpha \nabla f(x))
+\]
+其中近端算子：$\text{prox}_f(x) = \arg\min_y \{f(y) + \frac{1}{2}\|y-x\|^2\}$
+
+\textbf{ISTA}：收敛 $O(1/k)$ \quad \textbf{FISTA}：收敛 $O(1/k^2)$
+\end{conceptbox}
+
+\subsection{智能优化算法}
+
+\begin{table}[H]
+\centering
+\caption{智能优化算法概要（详见第~\ref{chap:advanced}~章第~\ref{sec:heuristic-overview}~节至第~\ref{sec:pso-de}~节）}\label{tab:metaheuristic}
+\begin{tabular}{llp{6cm}}
+\toprule
+\textbf{算法} & \textbf{核心机制} & \textbf{特点} \\
+\midrule
+模拟退火(SA) & Metropolis准则 & 概率接受劣解，逃离局部最优 \\
+遗传算法(GA) & 选择+交叉+变异 & 群体进化，全局搜索能力强 \\
+粒子群(PSO) & 个体最优+全局最优引导 & 参数少，收敛快，易早熟 \\
+差分进化(DE) & 差分变异+贪心选择 & 连续优化高效，参数鲁棒 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{收敛性与复杂度}
+
+\begin{table}[H]
+\centering
+\small
+\caption{典型收敛率}\label{tab:convergence}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.5cm}>{\raggedright\arraybackslash}p{3cm}>{\raggedright\arraybackslash}p{4.5cm}@{}}
+\toprule
+\textbf{问题类别} & \textbf{方法} & \textbf{收敛率} \\
+\midrule
+凸$+$L-光滑 & 梯度下降 & $O(1/k)$ \\
+凸$+$L-光滑 & Nesterov加速 & $O(1/k^2)$（最优下界） \\
+强凸$+$L-光滑 & 梯度下降 & $O((1-\mu/L)^k)$（线性） \\
+强凸$+$L-光滑 & Nesterov加速 & $O((1-1/\sqrt{\kappa})^k)$ \\
+一般凸 & 次梯度法 & $O(1/\sqrt{k})$ \\
+复合凸（光滑$+$非光滑） & 近端梯度 & $O(1/k)$ \\
+复合凸 & FISTA & $O(1/k^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{收敛速度定义}：
+\begin{itemize}
+    \item Q-线性：$\|e_{k+1}\| \leq c \|e_k\|$，$c \in (0,1)$
+    \item Q-超线性：$\|e_{k+1}\|/\|e_k\| \to 0$
+    \item Q-二次：$\|e_{k+1}\| \leq c \|e_k\|^2$
+\end{itemize}
+
+\section{方法选择决策树}
+
+\begin{algobox}[方法选择指南]
+\textbf{Step 1}：判断问题类型
+\begin{itemize}
+    \item 目标函数和约束均为线性 $\rightarrow$ \textbf{线性规划}（单纯形法 / 内点法）
+    \item 目标或约束含非线性 $\rightarrow$ 进入Step 2
+\end{itemize}
+
+\textbf{Step 2}：判断凸性
+\begin{itemize}
+    \item 凸问题 $\rightarrow$ KKT条件充分，可用高效算法
+    \item 非凸问题 $\rightarrow$ 可能多局部极小，考虑全局/启发式方法
+\end{itemize}
+
+\textbf{Step 3}：判断约束与光滑性
+\begin{itemize}
+    \item 无约束 + 光滑 + 小规模 $\rightarrow$ \textbf{牛顿法}（二次收敛）
+    \item 无约束 + 光滑 + 大规模 $\rightarrow$ \textbf{共轭梯度}或\textbf{BFGS}
+    \item 无约束 + 非光滑 $\rightarrow$ \textbf{近端梯度法} / \textbf{次梯度法}
+    \item 约束 + 需保证可行性 $\rightarrow$ \textbf{可行方向法} / \textbf{内点法}
+    \item 约束 + 不要求初始可行 $\rightarrow$ \textbf{罚函数法} / \textbf{增广拉格朗日}
+    \item 大规模机器学习 $\rightarrow$ \textbf{SGD} / \textbf{Adam}
+    \item 离散/组合/NP-hard $\rightarrow$ \textbf{启发式算法}（SA, GA, PSO, DE）
+\end{itemize}
+\end{algobox}
+
+\section{课程核心公式速查}
+
+\begin{table}[H]
+\centering
+\small
+\caption{核心公式速查表}\label{tab:cheatsheet}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3cm}>{\raggedright\arraybackslash}p{9.5cm}@{}}
+\toprule
+\textbf{名称} & \textbf{公式} \\
+\midrule
+Taylor展开 & $f(x+d) = f(x) + \nabla f(x)^T d + \frac{1}{2} d^T \nabla^2 f(x) d + o(\|d\|^2)$ \\
+Armijo条件 & $f(x_k + \alpha d_k) \leq f(x_k) + c_1 \alpha \nabla f_k^T d_k$ \\
+Wolfe条件 & $f(x_k + \alpha d_k) \leq f(x_k) + c_1 \alpha \nabla f_k^T d_k$ 且 $\phi'(\alpha) \geq c_2 \phi'(0)$ \\
+强凸性 & $f(y) \geq f(x) + \nabla f(x)^T(y-x) + \frac{\mu}{2}\|y-x\|^2$ \\
+L-光滑 & $\|\nabla f(x) - \nabla f(y)\| \leq L \|x-y\|$ \\
+弱对偶 & $p^* - d^* \geq 0$（原问题最优$-$对偶问题最优） \\
+强对偶 & $p^* = d^*$（凸问题$+$Slater条件） \\
+KKT条件 & $\nabla f + \sum \mu_i \nabla g_i + \sum \lambda_j \nabla h_j = 0$，$g_i(x) \leq 0$，$h_j(x)=0$，$\mu_i \geq 0$，$\mu_i g_i(x) = 0$ \\
+近端算子 & $\text{prox}_f(x) = \arg\min_y \{f(y) + \frac{1}{2}\|y-x\|^2\}$ \\
+ADMM & $x^+ = \arg\min_x L_\rho(x,z,y)$；$z^+ = \arg\min_z L_\rho(x^+,z,y)$；$y^+ = y + \rho(Ax^+ + Bz^+ - c)$ \\
+黄金分割 & 收缩比 $\tau = (\sqrt{5}-1)/2 \approx 0.618$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{本章小结}\label{sec:ch9-summary}
+
+\subsection{核心知识框架}
+
+本课程共八章，形成完整的优化理论与方法体系：
+
+\begin{table}[H]
+\centering
+\small
+\caption{课程知识体系概览}
+\begin{tabular}{@{}cl>{\raggedright\arraybackslash}p{6cm}@{}}
+\toprule
+\textbf{章} & \textbf{主题} & \textbf{核心内容} \\
+\midrule
+\ref{chap:intro} & 绪论 & 运筹学概述，凸集/凸函数/仿射函数 \\
+\ref{chap:lp} & 线性规划 & 单纯形法，对偶理论，灵敏度分析 \\
+\ref{chap:convex-analysis} & 凸分析 & Taylor展开，最优性条件，凸规划 \\
+\ref{chap:linesearch} & 一维搜索 & 精确/非精确线搜索，步长选择准则 \\
+\ref{chap:unconstrained} & 无约束优化 & 梯度法，Newton法，CG，BFGS，次梯度 \\
+\ref{chap:constrained-theory} & 约束优化理论 & KKT条件，对偶理论，Farkas引理 \\
+\ref{chap:constrained-methods} & 约束优化方法 & 罚函数法，内点法，增广Lagrange法 \\
+\ref{chap:advanced} & 进阶专题 & SA，GA，PSO，DE，深度学习优化 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{方法选择总诀}
+
+面对实际优化问题的选择流程：\textbf{先判断问题类型}（线性/非线性$\rightarrow$凸/非凸$\rightarrow$光滑/非光滑$\rightarrow$有无约束）$\rightarrow$\textbf{再匹配信息能力}（能算几阶导数）$\rightarrow$\textbf{最后根据规模选算法}（小/中/大规模）。
+
+\section{研究前沿与展望}
+
+优化领域正在多个方向快速发展，以下列出与本课程内容密切相关的几个前沿方向：
+
+\begin{conceptbox}[前沿研究方向]
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \textbf{大规模分布式优化}：随着数据量和模型规模的爆发式增长，ADMM、联邦优化（Federated Optimization）等方法在分布式机器学习中得到广泛应用，核心挑战是通信效率与收敛速度的平衡。
+    \item \textbf{非凸优化理论突破}：深度学习中的优化问题本质是非凸的，近期研究在过参数化（Over-parameterization）、隐式正则化（Implicit Regularization）等方面取得重要进展，解释了为什么梯度法能在高维非凸 landscape 中找到好的解。
+    \item \textbf{自动微分与可微编程}：PyTorch、JAX等框架实现了高效的自动微分，使得任意复杂模型的梯度计算变得简单，推动了"优化即编程"的新范式。
+    \item \textbf{随机优化的方差缩减技术}：从SGD到SVRG、SAGA，再到近年来结合了动量和方差缩减的先进方法，大幅度提升了大规模机器学习中的收敛效率。
+    \item \textbf{混合整数规划与组合优化}：结合深度学习与传统优化方法（如Learning to Optimize），利用神经网络预测分支策略或初始解，正在革新运筹学中NP-hard问题的求解方式。
+    \item \textbf{量子优化算法}：量子退火（Quantum Annealing）和变分量子本征求解器（VQE）为组合优化问题提供了全新的计算范式，虽然仍处于早期阶段，但已展现出在某些问题上的潜力。
+\end{enumerate}
+\end{conceptbox}
+
+\begin{notebox}[进一步学习建议]
+\begin{itemize}[itemsep=0.3em]
+    \item 理论基础：Boyd \& Vandenberghe《Convex Optimization》（经典教材，免费在线）
+    \item 算法实现：熟练运用 scipy.optimize、CVXPY、JuMP等优化建模工具
+    \item 前沿追踪：关注 NeurIPS、ICML、COLT 等顶级会议中的优化相关论文
+    \item 实践结合：在深度学习、信号处理、运筹学等应用中尝试不同优化方法的对比实验
+\end{itemize}
+\end{notebox}
+
+

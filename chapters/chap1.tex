@@ -1,0 +1,814 @@
+\chapter{绪论}\label{chap:intro}
+\section{运筹学与最优化概述}\label{sec:overview}
+
+\subsection{运筹学的定义}
+
+\begin{conceptbox}[运筹学的各种定义]
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{大英百科全书}："运筹学是一门应用于管理有组织系统的科学"，"为掌管这类系统的人提供决策目标和数量分析的工具"。
+    \item \textbf{中国大百科全书}："用数学方法研究经济、民政和国防等部门在内外环境的约束条件下合理分配人力、物力、财力等资源，使实际系统有效运行的技术科学"。
+    \item \textbf{辞海}："主要研究经济活动与军事活动中能用数量来表达有关运用、筹划与管理方面的问题"。
+\end{itemize}
+\end{conceptbox}
+
+\begin{property}[运筹学的核心特征]
+运筹学所研究的，通常是在\textbf{必须分配稀缺资源的条件下}，科学地决定如何最佳地设计和运营\textbf{人机系统}：
+\begin{itemize}[itemsep=0.2em]
+    \item \textbf{对象}：人机系统
+    \item \textbf{条件}：资源稀缺
+    \item \textbf{方法}：模型化、定量化
+    \item \textbf{特点}：最优化
+    \item \textbf{目的}：决策支持
+\end{itemize}
+\end{property}
+
+\subsection{运筹学简史}
+
+\begin{notebox}[历史脉络]
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \textbf{起源}：古代战争、娱乐、建设
+    \begin{itemize}
+        \item 田忌赛马
+        \item 丁渭修皇宫（北宋真宗时期）
+    \end{itemize}
+    \item \textbf{学科产生}：第二次世界大战
+    \begin{itemize}
+        \item 1938年7月，波得塞雷达站罗伊用 Operational Research 命名防空作战系统研究
+        \item 1940年9月英国成立第一个运筹学小组（布莱克特领导）
+        \item 1942年美国和加拿大相继成立运筹学小组
+    \end{itemize}
+    \item \textbf{扩展}：战后用于民用事业
+    \item \textbf{成型}：各个分支成熟
+    \item \textbf{成熟}：计算机、信息技术结合
+    \item \textbf{发展}：学科结合、渗透
+\end{enumerate}
+\end{notebox}
+
+\subsection{学科分支}
+
+\begin{conceptbox}[运筹学主要分支]
+\begin{itemize}[itemsep=0.2em]
+    \item \textbf{规划理论}：线性规划、非线性规划、运输问题、整数规划、动态规划、目标规划
+    \item \textbf{图与网络理论}
+    \item \textbf{排队论、存储论、决策论}
+    \item \textbf{对策论（博弈论）、冲突分析}
+    \item \textbf{搜索论、可靠性理论}
+    \item \textbf{计划协调技术（PERT）、图解协调技术}
+\end{itemize}
+\end{conceptbox}
+
+\subsection{最优化问题的一般形式}
+
+\begin{definition}[最优化问题]
+\[
+\min_{x \in \R^n}\ f(x)\quad \text{s.t.}\quad c_i(x) \geq 0,\ i \in \mathcal{I};\quad c_i(x) = 0,\ i \in \mathcal{E}
+\]
+\begin{itemize}
+    \item 第一：\textbf{无约束极值问题} —— $\min_{x \in \R^n} f(x)$
+    \item 第二：\textbf{具有约束的极值问题} —— 带等式和不等式约束
+\end{itemize}
+\end{definition}
+
+\subsection{优化问题的分类}
+
+根据不同的标准，最优化问题可从多个维度进行分类。
+
+\begin{conceptbox}[优化问题的分类维度]
+\begin{enumerate}[label=(\arabic*), itemsep=0.4em]
+    \item \textbf{连续优化与离散优化}
+    \begin{itemize}
+        \item \textbf{连续优化}：决策变量在连续空间中取值，即 $x \in \R^n$
+        \item \textbf{离散优化}：决策变量取离散值（如整数），典型问题如背包问题、旅行商问题
+        \item 连续优化相对容易，有梯度、导数等数学工具可用
+    \end{itemize}
+
+    \item \textbf{约束优化与无约束优化}
+    \begin{itemize}
+        \item \textbf{无约束优化}：$\min_{x \in \R^n} f(x)$，没有任何限制条件
+        \item \textbf{约束优化}：带有等式和/或不等式约束
+        \item 注意：有界约束（$l \leq x \leq u$）在算法中常作特殊处理，本质上也是约束优化
+    \end{itemize}
+
+    \item \textbf{确定性优化与随机性优化}
+    \begin{itemize}
+        \item \textbf{确定性优化}：目标函数、约束条件和参数都是确定已知的
+        \item \textbf{随机性优化}：问题中存在不确定因素，需用概率统计方法建模
+        \item 例如：投资组合优化中，未来收益率是不确定的，需考虑期望收益和风险
+    \end{itemize}
+
+    \item \textbf{线性规划与非线性规划}
+    \begin{itemize}
+        \item \textbf{线性规划}（见第~\ref{chap:lp}~章）：目标函数和约束条件均为线性（仿射）函数
+        \item \textbf{非线性规划}：目标函数或约束条件中至少有一个是非线性的
+        \item 非线性规划求解难度远大于线性规划，且通常只能找到局部最优解
+    \end{itemize}
+
+    \item \textbf{单目标优化与多目标优化}
+    \begin{itemize}
+        \item \textbf{单目标优化}：只有一个目标函数
+        \item \textbf{多目标优化}：同时优化多个目标，各目标之间可能存在冲突
+        \item 多目标优化通常不存在单一最优解，而是寻找 Pareto 最优解集
+    \end{itemize}
+
+    \item \textbf{静态优化与动态优化}
+    \begin{itemize}
+        \item \textbf{静态优化}：问题不随时间变化
+        \item \textbf{动态优化}：问题随时间演变，需要在不同时间点做出决策（如动态规划）
+    \end{itemize}
+
+    \item \textbf{单层优化与多层优化}
+    \begin{itemize}
+        \item \textbf{单层优化}：只有一个决策层
+        \item \textbf{多层优化}：存在层次化的决策结构，上层决策影响下层的可行域和目标
+        \item 例如：Stackelberg 博弈中，领导者先决策，跟随者再优化
+    \end{itemize}
+\end{enumerate}
+\end{conceptbox}
+
+\begin{notebox}[分类总结]
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{分类标准} & \textbf{类别} & \textbf{典型方法} \\
+\midrule
+变量类型 & 连续 / 离散 & 梯度法 / 分支定界 \\
+约束条件 & 无约束 / 约束 & 拟牛顿法 / 拉格朗日法 \\
+参数性质 & 确定性 / 随机性 & 精确算法 / 随机规划 \\
+函数类型 & 线性 / 非线性 & 单纯形法 / 梯度下降 \\
+目标个数 & 单目标 / 多目标 & 标量化 / Pareto方法 \\
+时间因素 & 静态 / 动态 & 数学规划 / 动态规划 \\
+决策层次 & 单层 / 多层 & 标准优化 / 双层规划 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{notebox}
+
+\subsection{运筹学方法论}
+
+\begin{conceptbox}[运筹学研究步骤]
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \textbf{提出问题}：确定目标，明确约束，抓主要矛盾
+    \item \textbf{建立模型}：选择模型、设定变量、描述约束和目标
+    \item \textbf{优化求解}：选择求解方法、求解问题
+    \item \textbf{评价分析}：灵敏度分析、评价
+    \item \textbf{决策支持}：汇总、解释结果、报告
+\end{enumerate}
+\end{conceptbox}
+
+\section{经典极值问题}\label{sec:classical}
+
+\subsection{无约束极值问题}
+
+\begin{example}[正方形剪角问题]\label{ex:box}
+\textbf{问题}：对边长为 $a$ 的正方形铁板，在四个角处剪去相等的正方形以制成无盖水槽，问如何剪法使水槽的容积最大？
+
+\textbf{解}：设剪去的小正方形边长为 $x$，则水槽容积：
+\[
+V(x) = x(a - 2x)^2 = x(a^2 - 4ax + 4x^2) = a^2 x - 4ax^2 + 4x^3,\quad 0 < x < \frac{a}{2}
+\]
+
+求导：
+\[
+V'(x) = a^2 - 8ax + 12x^2 = 0
+\]
+\[
+x = \frac{8a \pm \sqrt{64a^2 - 48a^2}}{24} = \frac{8a \pm 4a}{24}
+\]
+解得 $x_1 = \frac{a}{6}$，$x_2 = \frac{a}{2}$（舍去，边界点）。
+
+二阶验证：
+\[
+V''(x) = -8a + 24x,\quad V''\left(\frac{a}{6}\right) = -8a + 4a = -4a < 0
+\]
+
+故 $x^* = \frac{a}{6}$ 是极大值点，最大容积：
+\[
+V^* = \frac{a}{6}\left(a - \frac{a}{3}\right)^2 = \frac{a}{6} \cdot \frac{4a^2}{9} = \frac{2a^3}{27}
+\]
+\end{example}
+
+\subsection{等式约束极值问题}
+
+\begin{example}[球的表面积最小化问题]\label{ex:sphere-cylinder}
+\textbf{问题}：半径为1的实心金属球融化后，铸成一个实心圆柱体，问圆柱体取什么尺寸才能使它的表面积最小？
+
+\textbf{解}：设圆柱体底面半径为 $r$，高为 $h$。
+
+\textbf{约束条件}（体积守恒）：
+\[
+\pi r^2 h = \frac{4}{3}\pi \cdot 1^3 = \frac{4\pi}{3}
+\]
+
+\textbf{目标函数}（表面积最小）：
+\[
+\min\ S = 2\pi r^2 + 2\pi rh
+\]
+
+\textbf{方法1：消元法}
+
+由约束得 $h = \frac{4}{3r^2}$，代入目标函数：
+\[
+S(r) = 2\pi r^2 + 2\pi r \cdot \frac{4}{3r^2} = 2\pi r^2 + \frac{8\pi}{3r}
+\]
+
+求导：
+\[
+S'(r) = 4\pi r - \frac{8\pi}{3r^2} = 0 \Rightarrow r^3 = \frac{2}{3} \Rightarrow r = \sqrt[3]{\frac{2}{3}}
+\]
+
+对应：
+\[
+h = \frac{4}{3} \cdot \left(\frac{3}{2}\right)^{2/3} = 2 \cdot \sqrt[3]{\frac{2}{3}} = 2r
+\]
+
+二阶验证：$S''(r) = 4\pi + \frac{16\pi}{3r^3} > 0$，确为最小值。
+
+\textbf{方法2：Lagrange乘子法}
+
+构造 Lagrange 函数：
+\[
+\mathcal{L}(r, h, \lambda) = 2\pi r^2 + 2\pi rh - \lambda\left(\pi r^2 h - \frac{4\pi}{3}\right)
+\]
+
+KKT条件：
+\begin{align*}
+\frac{\partial \mathcal{L}}{\partial r} &= 4\pi r + 2\pi h - 2\lambda\pi r h = 0 \\
+\frac{\partial \mathcal{L}}{\partial h} &= 2\pi r - \lambda\pi r^2 = 0 \\
+\frac{\partial \mathcal{L}}{\partial \lambda} &= -\left(\pi r^2 h - \frac{4\pi}{3}\right) = 0
+\end{align*}
+
+由第二式（$r > 0$）：$\lambda = \frac{2}{r}$
+
+代入第一式：
+\[
+4\pi r + 2\pi h - 2 \cdot \frac{2}{r} \cdot \pi r h = 4\pi r + 2\pi h - 4\pi h = 4\pi r - 2\pi h = 0
+\]
+得 $h = 2r$，代入体积约束：
+\[
+\pi r^2 \cdot 2r = \frac{4\pi}{3} \Rightarrow r^3 = \frac{2}{3} \Rightarrow r = \sqrt[3]{\frac{2}{3}}
+\]
+
+\textbf{结论}：$r^* = \sqrt[3]{\frac{2}{3}}$，$h^* = 2r^* = 2\sqrt[3]{\frac{2}{3}}$，最小表面积 $S^* = 6\pi\left(\frac{2}{3}\right)^{2/3}$。
+\end{example}
+
+\begin{lstlisting}[language=Python, caption=经典极值问题求解]
+import numpy as np
+from scipy.optimize import minimize
+
+# === 正方形剪角问题 ===
+def box_volume(x, a=1.0):
+    """水槽容积"""
+    if x <= 0 or x >= a/2:
+        return 0
+    return x * (a - 2*x)**2
+
+def box_volume_neg(x, a=1.0):
+    """负容积（用于最小化）"""
+    return -box_volume(x, a)
+
+result1 = minimize(box_volume_neg, x0=0.2, args=(1.0,),
+                   bounds=[(0.01, 0.49)])
+print("正方形剪角问题:")
+print(f"  最优剪去边长: x* = {result1.x[0]:.6f} (理论: a/6 = {1/6:.6f})")
+print(f"  最大容积: V* = {-result1.fun:.6f} (理论: 2a^3/27 = {2/27:.6f})")
+
+# === 球变圆柱问题 ===
+def cylinder_surface(vars):
+    """圆柱表面积"""
+    r, h = vars
+    return 2*np.pi*r**2 + 2*np.pi*r*h
+
+def volume_constraint(vars):
+    """体积约束 = 0"""
+    r, h = vars
+    return np.pi*r**2*h - 4*np.pi/3
+
+result2 = minimize(cylinder_surface, x0=[0.5, 2.0],
+                   constraints={'type': 'eq', 'fun': volume_constraint})
+r_opt, h_opt = result2.x
+print(f"\n球变圆柱问题:")
+print(f"  最优半径: r* = {r_opt:.6f} (理论: {(2/3)**(1/3):.6f})")
+print(f"  最优高度: h* = {h_opt:.6f} (理论: {2*(2/3)**(1/3):.6f})")
+print(f"  h/r = {h_opt/r_opt:.4f} (理论: 2)")
+\end{lstlisting}
+
+\section{计算机学科中的典型最优化问题}\label{sec:cs-applications}
+
+\subsection{深度学习中的优化}
+
+\begin{conceptbox}[深度学习优化问题]
+给定 $n$ 个样本 $\{(x_i, y_i)\}_{i=1}^n$，其中 $x_i$ 为特征向量，$y_i$ 为标签。期望训练映射 $f(x; \theta)$ 使得 $f(x_i; \theta) \approx y_i$。
+
+\textbf{优化目标}（经验风险最小化）：
+\[
+\min_\theta\ J(\theta) = \frac{1}{n}\sum_{i=1}^{n} L(f(x_i; \theta), y_i) + \lambda R(\theta)
+\]
+其中 $L$ 为损失函数，$R$ 为正则化项，$\lambda$ 为正则化系数。
+\end{conceptbox}
+
+\begin{example}[神经网络的梯度下降]
+\textbf{经典梯度下降}：
+\[
+\theta^{(t+1)} = \theta^{(t)} - \eta \nabla J(\theta^{(t)})
+\]
+其中 $\eta$ 为步长（学习率）。
+
+\textbf{随机梯度下降（SGD）}：
+\[
+\theta^{(t+1)} = \theta^{(t)} - \eta \nabla L(f(x_i; \theta^{(t)}), y_i)
+\]
+每次只用一个样本计算梯度，适合大规模数据。
+\end{example}
+
+\subsection{优化求解的质量度量}
+
+在优化问题的求解过程中，需要度量解的质量。常用的度量工具包括范数和各类评价指标。
+
+\begin{conceptbox}[优化中的范数]
+\textbf{范数}用于衡量向量的"大小"，在优化中广泛用于定义目标函数和约束条件。
+
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{$2$-范数}（欧几里得范数）：$\|x\|_2 = \sqrt{x_1^2 + x_2^2 + \cdots + x_n^2}$
+    \begin{itemize}
+        \item 常见形式：$\|y - f(x; \theta)\|_2^2$，衡量预测值与真实值之间的偏差平方和
+        \item 在最小二乘问题中作为目标函数
+    \end{itemize}
+    \item \textbf{$\infty$-范数}（最大范数）：$\|x\|_\infty = \max(|x_1|, |x_2|, \ldots, |x_n|)$
+    \begin{itemize}
+        \item 衡量所有误差分量中的最大值，对异常值更敏感
+        \item 在极小极大（minimax）优化问题中使用
+    \end{itemize}
+\end{itemize}
+\end{conceptbox}
+
+\begin{conceptbox}[回归问题的评价指标]
+对于回归任务 $f(x; \theta)$，常用的评价指标有：
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{均方误差（MSE）}：$\displaystyle\text{MSE} = \frac{1}{n}\sum_{i=1}^{n}(y_i - f(x_i; \theta))^2$
+    \item \textbf{均方根误差（RMSE）}：$\text{RMSE} = \sqrt{\text{MSE}}$，与原始数据同量纲
+    \item \textbf{平均绝对误差（MAE）}：$\displaystyle\text{MAE} = \frac{1}{n}\sum_{i=1}^{n}|y_i - f(x_i; \theta)|$
+\end{itemize}
+\end{conceptbox}
+
+\begin{conceptbox}[分类问题的评价指标]
+对于分类任务，以二分类为例，设 $TP$、$TN$、$FP$、$FN$ 分别为真正例、真负例、假正例、假负例个数：
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{准确率（Accuracy）}：$\displaystyle\text{Acc} = \frac{TP + TN}{TP + TN + FP + FN}$
+    \item \textbf{精确率（Precision）}：$\displaystyle P = \frac{TP}{TP + FP}$，预测为正的样本中真正为正的比例
+    \item \textbf{召回率（Recall）}：$\displaystyle R = \frac{TP}{TP + FN}$，所有正样本中被正确预测的比例
+    \item \textbf{F1 值}：$\displaystyle F_1 = \frac{2PR}{P + R}$，精确率与召回率的调和平均
+\end{itemize}
+\end{conceptbox}
+
+\subsection{其他计算机领域优化问题}
+
+\begin{conceptbox}[典型优化问题]
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{多核任务调度}：如何高效地把任务分配到各个核上运行
+    \item \textbf{资源分配}：云计算中的虚拟机调度、负载均衡
+    \item \textbf{图像处理}：图像去噪、超分辨率重建、图像分割
+    \item \textbf{自然语言处理}：词向量训练、注意力机制优化
+    \item \textbf{强化学习}：策略优化、价值函数估计
+    \item \textbf{计算机图形学}：光线追踪、物理模拟
+\end{itemize}
+\end{conceptbox}
+
+\begin{example}[噪声模型与极大似然估计]\label{ex:mle-noise}
+给定测量模型 $y = Ax + \epsilon$，其中 $\epsilon$ 为噪声。不同噪声分布对应不同的优化目标。
+
+\textbf{(a) 拉普拉斯噪声}：若 $\epsilon_i \sim \text{Laplace}(0, b)$，联合对数似然为
+\[
+\log L(x) = -m \log(2b) - \frac{1}{b}\sum_{i=1}^m |y_i - a_i^T x|
+\]
+最大化对数似然等价于 $\min_x \|y - Ax\|_1$，即\textbf{$\ell_1$ 最小化}。$\ell_1$ 范数对异常值更鲁棒，常用于鲁棒回归。
+
+\textbf{(b) 高斯噪声}：若 $\epsilon_i \sim N(0, \sigma^2)$，对数似然为
+\[
+\log L(x) = -m \log(\sqrt{2\pi}\sigma) - \frac{1}{2\sigma^2}\|y - Ax\|_2^2
+\]
+最大化对数似然等价于 $\min_x \|y - Ax\|_2^2$，即\textbf{$\ell_2$ 最小二乘}。
+
+这说明：噪声的分布决定了优化问题中所用的范数——拉普拉斯噪声对应 $\ell_1$，高斯噪声对应 $\ell_2$。
+\end{example}
+
+\begin{example}[岭回归（Tikhonov 正则化）]\label{ex:ridge}
+当线性方程组 $Ax = y$ 不适定时（欠定或带噪声），岭回归通过正则化改善条件：
+\[
+\min_x \|y - Ax\|_2^2 + \lambda \|x\|_2^2, \quad \lambda > 0
+\]
+
+\textbf{(a) 最优解}：目标函数 $F(x) = (y - Ax)^T(y - Ax) + \lambda x^T x$，求梯度令其为零：
+\[
+-2A^T y + 2A^T A x + 2\lambda x = 0 \Rightarrow (A^T A + \lambda I)x = A^T y
+\]
+故 $x^* = (A^T A + \lambda I)^{-1} A^T y$。
+
+\textbf{(b) 可逆性}：对任意 $x \neq 0$，$x^T(A^T A + \lambda I)x = \|Ax\|_2^2 + \lambda \|x\|_2^2 > 0$（只要 $\lambda > 0$），故 $A^T A + \lambda I$ 正定，一定可逆。这解决了 $A^T A$ 不可逆（$A$ 不列满秩）的问题。
+\end{example}
+
+\section{最优化的基本数学概念}\label{sec:math-prelim}
+
+凸性是优化理论的基石。本节介绍凸集、凸函数、仿射函数等基本概念，为后续各章奠定数学基础。
+
+\subsection{凸集}
+
+\begin{definition}[凸集]
+集合 $C \subseteq \mathbb{R}^n$ 称为\textbf{凸集}（Convex Set），是指对任意 $x, y \in C$ 和任意 $\theta \in [0,1]$，都有
+\[
+\theta x + (1-\theta) y \in C
+\]
+即：集合中任意两点的连线仍在集合内。
+\end{definition}
+
+\begin{definition}[凸组合]
+设 $x_1, \ldots, x_k \in \mathbb{R}^n$，$\theta_1 + \cdots + \theta_k = 1$，$\theta_i \geq 0$，则称 $\sum_{i=1}^k \theta_i x_i$ 为 $x_1, \ldots, x_k$ 的\textbf{凸组合}（Convex Combination）。
+
+凸集等价于：对其中任意有限个点，其凸组合仍在集合内。
+\end{definition}
+
+\begin{definition}[仿射集]
+集合 $C \subseteq \mathbb{R}^n$ 称为\textbf{仿射集}（Affine Set），是指对任意 $x, y \in C$ 和任意 $\theta \in \mathbb{R}$，都有
+\[
+\theta x + (1-\theta) y \in C
+\]
+即：过集合中任意两点的整条直线都在集合内。超平面 $\{x \mid a^T x = b\}$ 是仿射集的典型例子。
+
+仿射集与凸集的区别在于：凸集只要求线段在集合内，仿射集要求整条直线在集合内。
+\end{definition}
+
+\begin{definition}[锥与凸锥]
+集合 $C \subseteq \mathbb{R}^n$ 称为\textbf{锥}（Cone），是指对任意 $x \in C$ 和 $\theta > 0$，都有 $\theta x \in C$。
+
+若 $C$ 还是凸集，则称为\textbf{凸锥}（Convex Cone），即对任意 $x, y \in C$ 和 $\theta_1, \theta_2 \geq 0$，有 $\theta_1 x + \theta_2 y \in C$。
+
+例如：$\{x \in \mathbb{R}^n \mid x \geq 0\}$（非负象限）是一个凸锥。
+\end{definition}
+
+\begin{conceptbox}[常见凸集]
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{超平面}：$\{x \mid a^T x = b\}$
+    \item \textbf{半空间}：$\{x \mid a^T x \leq b\}$
+    \item \textbf{球}：$\{x \mid \|x - x_0\| \leq r\}$
+    \item \textbf{多面体}：有限个半空间的交集 $\{x \mid Ax \leq b\}$——线性规划的可行域
+    \item \textbf{凸集的交集}仍是凸集
+\end{itemize}
+\end{conceptbox}
+
+\begin{property}[超平面与半空间的特征]
+\begin{itemize}[itemsep=0.3em]
+    \item 超平面 $H = \{x \mid a^T x = b\}$ 既是凸集也是仿射集
+    \item 闭半空间 $H^+ = \{x \mid a^T x \leq b\}$ 和 $H^- = \{x \mid a^T x \geq b\}$ 都是凸集，但不是仿射集
+    \item 开半空间 $\{x \mid a^T x < b\}$ 也是凸集
+\end{itemize}
+\end{property}
+
+\begin{property}[凸集的交集]
+设 $C_1, C_2, \ldots, C_m$ 均为凸集，则其交集
+\[
+C = \bigcap_{i=1}^{m} C_i
+\]
+仍是凸集。
+
+\textbf{证明思路}：设 $x, y \in C$，则 $x, y$ 同时属于每个 $C_i$。由每个 $C_i$ 的凸性，$\theta x + (1-\theta)y \in C_i$ 对所有 $i$ 成立，故 $\theta x + (1-\theta)y \in C$。
+\end{property}
+
+\subsection{仿射函数}
+
+\begin{definition}[仿射函数与线性函数]
+形如
+\[
+f(x) = a^T x + b, \quad a \in \mathbb{R}^n,\ b \in \mathbb{R}
+\]
+的函数称为\textbf{仿射函数}（Affine Function）。
+
+\textbf{特别注意}：仿射函数与线性函数的区别——
+\begin{itemize}
+    \item \textbf{仿射函数}：$f(x) = a^T x + b$，允许有常数偏移项 $b \neq 0$
+    \item \textbf{线性函数}（严格定义）：$f(x) = a^T x$，必须满足 $f(0) = 0$（即 $b = 0$）
+\end{itemize}
+
+在优化文献中，有时将仿射函数 loosely 称为"线性"，但严格数学意义上，线性函数必须满足叠加性 $f(\alpha x + \beta y) = \alpha f(x) + \beta f(y)$，这要求 $b = 0$。
+
+仿射函数的几何意义：图像是 $\mathbb{R}^{n+1}$ 中的超平面。
+\end{definition}
+
+\begin{property}[仿射函数的关键性质]
+仿射函数\textbf{既是凸函数也是凹函数}。
+
+这是因为对仿射函数 $f(x) = a^T x + b$：
+\[
+f(\theta x + (1-\theta)y) = \theta f(x) + (1-\theta) f(y)
+\]
+恰好取等号，同时满足凸性和凹性的定义。
+\end{property}
+
+\subsection{凸函数与凹函数}
+
+\begin{definition}[凸函数]
+设 $f: C \to \mathbb{R}$，$C \subseteq \mathbb{R}^n$ 为凸集。$f$ 称为\textbf{凸函数}（Convex Function），是指对任意 $x, y \in C$ 和 $\theta \in [0,1]$，有
+\[
+f(\theta x + (1-\theta) y) \leq \theta f(x) + (1-\theta) f(y)
+\]
+若不等号严格成立（$x \neq y$，$\theta \in (0,1)$），则称为\textbf{严格凸函数}。
+\end{definition}
+
+\begin{definition}[凹函数]
+若 $-f$ 是凸函数，则 $f$ 称为\textbf{凹函数}（Concave Function）。即：
+\[
+f(\theta x + (1-\theta) y) \geq \theta f(x) + (1-\theta) f(y)
+\]
+\end{definition}
+
+\begin{conceptbox}[凸函数的直观理解与判定]
+\textbf{几何直观}：凸函数的图像上任意两点间的弦，始终在图像上方（或重合）。
+
+\textbf{常见凸函数}：
+\begin{itemize}[itemsep=0.2em]
+    \item $f(x) = x^2$，$f(x) = |x|$，$f(x) = e^x$
+    \item $f(x) = \|x\|$（任意范数）
+    \item 仿射函数 $f(x) = a^T x + b$（当 $b=0$ 时为严格线性函数）
+    \item 非负加权的凸函数之和仍为凸函数
+\end{itemize}
+
+\textbf{二阶判定}：若 $f$ 二阶可微，则 $f$ 为凸函数 $\Leftrightarrow$ Hessian 矩阵 $\nabla^2 f(x)$ 处处半正定。
+\end{conceptbox}
+
+\begin{conceptbox}[保持凸性的运算]
+以下运算可以构造新的凸函数：
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{非负加权和}：若 $f_1, \ldots, f_m$ 为凸函数，$w_i \geq 0$，则
+    \[
+    f(x) = \sum_{i=1}^{m} w_i f_i(x)
+    \]
+    为凸函数。
+    \item \textbf{仿射映射复合}：若 $f$ 为凸函数，则 $g(x) = f(Ax + b)$ 也是凸函数。
+    \item \textbf{逐点最大}：若 $f_1, \ldots, f_m$ 为凸函数，则 $f(x) = \max\{f_1(x), \ldots, f_m(x)\}$ 为凸函数。
+    \item \textbf{逐点上确界}：若对每个 $y \in \mathcal{A}$，$f(x, y)$ 关于 $x$ 是凸的，则
+    \[
+    g(x) = \sup_{y \in \mathcal{A}} f(x, y)
+    \]
+    关于 $x$ 是凸函数。
+\end{itemize}
+\end{conceptbox}
+
+\begin{example}[最大$L$范数的凸性]\label{ex:max-L-norm}
+给定向量 $w \in \mathbb{R}^m$，令 $w_{[|k|]}$ 表示按绝对值从大到小排序后的第 $k$ 个元素，即 $|w_{[|1|]}| \geq |w_{[|2|]}| \geq \cdots \geq |w_{[|m|]}|$。定义最大 $L$ 范数为
+\[
+\|w\|_{[L]} \triangleq \sum_{k=1}^{L} |w_{[|k|]}|,\qquad L \in \{1,2,\ldots,m\}.
+\]
+证明 $\|w\|_{[L]}$ 是凸函数。
+
+\textbf{证明}："取绝对值最大的 $L$ 个分量求和"等价于在所有大小为 $L$ 的指标集合中取最大值：
+\[
+\|w\|_{[L]} = \max_{\substack{S \subset \{1,\ldots,m\} \\ |S|=L}} \sum_{i \in S} |w_i|.
+\]
+而对固定集合 $S$，又有
+\[
+\sum_{i \in S} |w_i| = \max_{\varepsilon_i \in \{-1,1\}} \sum_{i \in S} \varepsilon_i w_i.
+\]
+因此
+\[
+\|w\|_{[L]} = \max_{\substack{S \subset \{1,\ldots,m\},\, |S|=L \\ \varepsilon_i \in \{-1,1\}}} \sum_{i \in S} \varepsilon_i w_i.
+\]
+右端是有限多个线性函数关于 $w$ 的逐点最大值。线性函数既凸又凹，而凸函数的逐点最大值仍为凸函数，所以 $\|w\|_{[L]}$ 是凸函数。
+\end{example}
+
+\begin{definition}[强凸函数]
+设 $f: C \to \mathbb{R}$，$C \subseteq \mathbb{R}^n$ 为凸集。若存在常数 $m > 0$，使得对任意 $x, y \in C$ 和 $\theta \in [0,1]$，有
+\[
+f(\theta x + (1-\theta) y) \leq \theta f(x) + (1-\theta) f(y) - \frac{m}{2}\theta(1-\theta)\|x - y\|^2
+\]
+则称 $f$ 为\textbf{强凸函数}（Strongly Convex Function），$m$ 称为强凸系数。
+
+强凸函数一定是严格凸函数，且具有更快的收敛速度保证。
+\end{definition}
+
+\subsection{凸性与最优化的关系}
+
+\begin{conceptbox}[为什么凸性如此重要]
+凸优化问题具有以下优良性质：
+\begin{enumerate}[label=(\arabic*), itemsep=0.3em]
+    \item \textbf{局部最优 = 全局最优}：凸优化问题的任何局部最优解都是全局最优解
+    \item \textbf{高效求解}：存在多项式时间算法，不会陷入局部最优陷阱
+    \item \textbf{理论完备}：最优性条件（如KKT条件）既是必要的也是充分的
+\end{enumerate}
+
+\textbf{凸规划}：若目标函数 $f$ 和所有不等式约束函数 $g_i$ 均为凸函数，等式约束 $h_j$ 为仿射函数，则称该优化问题为\textbf{凸规划问题}。
+
+线性规划是凸规划的特例（目标函数和约束都是仿射的，仿射 = 既是凸也是凹）。
+
+KKT条件的详细推导与证明见第~\ref{chap:constrained-theory}~章第~\ref{sec:kkt-general}~节。
+\end{conceptbox}
+
+\begin{example}[凸集的运算性质]\label{ex:convex-set-ops}
+设 $S_1, S_2$ 是凸集，讨论下列集合是否是凸集。
+
+\textbf{(1) $S_1 \cup S_2$}：一般\textbf{不是凸集}。
+
+反例：取 $S_1 = \{0\}$，$S_2 = \{2\} \subset \mathbb{R}$，二者都是单点凸集，但 $S_1 \cup S_2 = \{0, 2\}$。中点 $\frac{1}{2} \cdot 0 + \frac{1}{2} \cdot 2 = 1 \notin S_1 \cup S_2$，违反凸集定义。只有在 $S_1 \subseteq S_2$ 或 $S_2 \subseteq S_1$ 时，并集才一定凸。
+
+\textbf{(2) $S_1 + S_2 = \{x + y : x \in S_1, y \in S_2\}$}：\textbf{是凸集}（Minkowski 和保持凸性）。
+
+证明：任取 $z_1, z_2 \in S_1 + S_2$，存在 $x_1, x_2 \in S_1$，$y_1, y_2 \in S_2$，使得 $z_1 = x_1 + y_1$，$z_2 = x_2 + y_2$。对 $\theta \in [0,1]$：
+\[
+\theta z_1 + (1-\theta) z_2 = \underbrace{[\theta x_1 + (1-\theta) x_2]}_{\in S_1} + \underbrace{[\theta y_1 + (1-\theta) y_2]}_{\in S_2} \in S_1 + S_2
+\]
+
+\textbf{(3) $S_1 - S_2 = \{x - y : x \in S_1, y \in S_2\}$}：\textbf{是凸集}。
+
+$-S_2 = \{-y : y \in S_2\}$ 仍是凸集，而 $S_1 - S_2 = S_1 + (-S_2)$，由 (2) 可知两个凸集的和仍凸。
+\end{example}
+
+\begin{example}[判断集合是否为凸集]\label{ex:convex-set-judge}
+判断下列集合是否为凸集。
+
+\textbf{(a)} $S = \{x : x_1^2 + x_2^2 \geq 4,\ 2x_1 + x_2 \leq 10,\ -x_1 - x_2 \leq -10x_2\}$：\textbf{不是凸集}。
+
+第一个约束 $x_1^2 + x_2^2 \geq 4$ 是圆外区域，本身非凸。取 $p = (2, 0)$，$q = (-2, -1)$，两点均满足全部约束，但中点 $\bar{x} = (0, -1/2)$ 满足 $\|\bar{x}\|_2^2 = 1/4 < 4$，违反第一个约束。
+
+\textbf{(b)} $S = \{x : x_1 + x_2 \leq 6,\ -2x_1 + 3x_2 \geq 2,\ 4x_1 - x_2 \leq 12\}$：\textbf{是凸集}。
+
+三个约束都是仿射不等式，每个定义一个半空间（凸集），有限个凸集的交集仍凸。
+
+\textbf{(c)} $S = \{x : -(x_1-1)^2 + x_2 \geq 1,\ x_1 + x_2 \geq 3,\ x_1 \geq 1\}$：\textbf{是凸集}。
+
+第一个约束等价于 $x_2 \geq 1 + (x_1 - 1)^2$，右端是凸函数，其上图集（epigraph）是凸集。由凸性：若 $u, v$ 均满足该约束，则
+\[
+1 + (\theta u_1 + (1-\theta) v_1 - 1)^2 \leq \theta[1 + (u_1-1)^2] + (1-\theta)[1 + (v_1-1)^2] \leq \theta u_2 + (1-\theta) v_2
+\]
+凸组合仍满足该约束。其余两个约束是半空间，故 $S$ 为凸集。
+
+\textbf{(d)} $S = \{x : x^2 \geq 1\}$：\textbf{不是凸集}。
+
+$S = (-\infty, -1] \cup [1, \infty)$，$-1, 1 \in S$ 但中点 $0 \notin S$。
+\end{example}
+
+\begin{example}[函数凸性判断]\label{ex:convex-func-judge}
+设 $f_1, \ldots, f_m$ 均为凸函数，讨论下列函数是否是凸函数。
+
+\textbf{(a)} $g(x) = \max\{f_1(x), \ldots, f_m(x)\}$：\textbf{是凸函数}。
+
+对 $x, y$ 和 $\theta \in [0,1]$，每个 $f_i$ 满足 $f_i(\theta x + (1-\theta)y) \leq \theta f_i(x) + (1-\theta) f_i(y) \leq \theta g(x) + (1-\theta) g(y)$。对 $i$ 取最大即得结论。
+
+\textbf{(b)} $g(x) = \min\{f_1(x), \ldots, f_m(x)\}$：一般\textbf{不是凸函数}。
+
+反例：$f_1(x) = x$，$f_2(x) = -x$ 均为仿射函数（凸），但 $g(x) = \min\{x, -x\} = -|x|$。取 $x = -1$，$y = 1$，$\theta = 1/2$：$g(0) = 0$，而 $\frac{1}{2}g(-1) + \frac{1}{2}g(1) = -1$，凸性要求 $0 \leq -1$，矛盾。
+
+\textbf{(c)} $g(x) = \sum_{i=1}^n x_i \log x_i$（$x_i > 0$）：\textbf{是凸函数}。
+
+令 $\phi(t) = t \log t$，$\phi''(t) = 1/t > 0$，$\phi$ 在 $(0, \infty)$ 上严格凸。Hessian 矩阵
+\[
+\nabla^2 g(x) = \text{diag}\left(\frac{1}{x_1}, \ldots, \frac{1}{x_n}\right) \succ 0
+\]
+故 $g$ 严格凸。这在信息论中是\textbf{熵函数}的负值。
+
+\textbf{(d)} $g(x) = \lfloor x \rfloor$（向下取整）：\textbf{不是凸函数}。
+
+取 $x = -0.5$，$y = 0.5$，$\theta = 1/2$：$g(0) = 0$，$\frac{1}{2}g(-0.5) + \frac{1}{2}g(0.5) = -1/2$，凸性要求 $0 \leq -1/2$，不成立。凸函数在开区间内必连续，而取整函数有跳跃间断。
+
+\textbf{(e)} $g(x) = \sum_{i=1}^k x_{(i)}$（$x_{(i)}$ 为第 $i$ 个最大分量）：\textbf{是凸函数}。
+
+可写为 $\sum_{i=1}^k x_{(i)} = \max_{|S|=k} \sum_{j \in S} x_j$，每个 $\sum_{j \in S} x_j$ 是线性函数，有限个线性函数的逐点最大值为凸函数。
+
+\textbf{(f)} $g(x) = x^2$：\textbf{是凸函数}，$g''(x) = 2 > 0$。
+\end{example}
+
+\begin{example}[非凸集合与非凸函数的凸化]\label{ex:convexification}
+\textbf{非凸集合转化为凸集合}的常见方法：
+\begin{itemize}[itemsep=0.2em]
+    \item \textbf{凸包}：用 $\text{conv}(S)$ 替代 $S$
+    \item \textbf{线性松弛}：将整数约束 $x \in \{0, 1\}$ 放宽为 $0 \leq x \leq 1$
+    \item \textbf{半正定松弛}：将二次约束提升为矩阵变量约束
+    \item \textbf{外逼近}：用若干半空间包围非凸集合
+\end{itemize}
+
+\textbf{非凸函数转化为凸函数}的常见方法：
+\begin{itemize}[itemsep=0.2em]
+    \item \textbf{凸包络}：用函数的凸包络替代原函数
+    \item \textbf{DC 分解}：$f(x) = g(x) - h(x)$，$g, h$ 均为凸，再线性化 $h$
+    \item \textbf{正则化}：加入强凸项 $\frac{\rho}{2}\|x\|^2$
+    \item \textbf{变量替换或提升}：将非凸二次项转化为矩阵变量
+\end{itemize}
+\end{example}
+
+\begin{notebox}[课程涵盖内容]
+本课程共计32学时，涵盖以下八章：
+\begin{enumerate}[label=第\arabic*章, leftmargin=3em]
+    \item 简介（2学时）—— 运筹学概述、最优化基础概念、凸集与凸函数（见第~\ref{sec:math-prelim}~节）
+    \item 线性规划（6学时）—— 单纯形法、对偶理论、灵敏度分析（见第~\ref{chap:lp}~章）
+    \item 非线性规划的数学模型（6学时）—— Taylor展开、最优性条件、凸规划（见第~\ref{sec:taylor}~节）
+    \item 一维搜索（2学时）—— 黄金分割法、Newton法、插值法（见第~\ref{chap:linesearch}~章）
+    \item 无约束最优化方法（6学时）—— 梯度法、Newton法、共轭梯度、拟Newton法（见第~\ref{chap:unconstrained}~章）
+    \item 约束最优化理论（2学时）—— KKT条件、对偶理论、Farkas引理（见第~\ref{chap:constrained-theory}~章）
+    \item 约束问题的最优化方法（6学时）—— 罚函数法、内点法、增广Lagrange法（见第~\ref{chap:constrained-methods}~章）
+    \item 智能优化计算与深度学习中的优化（2学时）—— SA、GA、PSO、DE等（见第~\ref{chap:advanced}~章）
+\end{enumerate}
+\end{notebox}
+
+\section{本章小结}\label{sec:ch1-summary}
+
+\subsection{本章知识框架}
+
+\begin{conceptbox}[第一章核心内容]
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \textbf{运筹学与最优化概述}
+    \begin{itemize}
+        \item 运筹学的定义、历史、学科分支
+        \item 最优化问题的一般形式
+        \item 优化问题的分类（7个维度：连续/离散、约束/无约束、确定性/随机性、线性/非线性、单目标/多目标、静态/动态、单层/多层）
+        \item 运筹学方法论
+    \end{itemize}
+    \item \textbf{经典极值问题}
+    \begin{itemize}
+        \item 无约束极值：正方形剪角求最大容积
+        \item 等式约束极值：球变圆柱最小表面积（Lagrange乘子法）
+    \end{itemize}
+    \item \textbf{计算机学科中的优化}
+    \begin{itemize}
+        \item 深度学习中的经验风险最小化
+        \item SGD等优化算法
+        \item 优化求解的质量度量：范数、MSE/RMSE/MAE、准确率/召回率/F1
+        \item 其他计算机领域应用
+    \end{itemize}
+    \item \textbf{最优化的基本数学概念}
+    \begin{itemize}
+        \item 凸集：凸组合、仿射集、锥与凸锥、常见凸集（超平面、半空间、多面体）
+        \item 仿射函数：既是凸也是凹
+        \item 凸函数与凹函数：Jensen不等式定义、Hessian半正定判定、保持凸性的运算、强凸函数
+        \item 凸性与优化：局部最优 = 全局最优
+    \end{itemize}
+\end{enumerate}
+\end{conceptbox}
+
+\subsection{关键公式汇总}
+
+\begin{table}[htbp]
+\centering
+\caption{核心公式速查}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{概念} & \textbf{公式} \\
+\midrule
+最优化一般形式 & $\min f(x)$ s.t. $c_i(x) \geq 0, c_i(x) = 0$ \\
+无约束问题 & $\min_{x \in \R^n} f(x)$ \\
+Lagrange函数 & $\mathcal{L}(x, \lambda) = f(x) - \lambda h(x)$ \\
+梯度下降 & $x^{(t+1)} = x^{(t)} - \eta \nabla f(x^{(t)})$ \\
+SGD更新 & $\theta^{(t+1)} = \theta^{(t)} - \eta \nabla L_i(\theta^{(t)})$ \\
+MSE & $\frac{1}{n}\sum_{i=1}^{n}(y_i - f(x_i))^2$ \\
+F1值 & $2PR/(P+R)$ \\
+凸集 & $\theta x + (1-\theta)y \in C,\ \forall \theta \in [0,1]$ \\
+凸函数 & $f(\theta x + (1-\theta)y) \leq \theta f(x) + (1-\theta)f(y)$ \\
+仿射函数 & $f(x) = a^T x + b$（既凸又凹） \\
+凸性二阶判定 & $\nabla^2 f(x) \succeq 0$（Hessian半正定） \\
+强凸函数 & $f(\theta x + (1-\theta)y) \leq \theta f(x) + (1-\theta)f(y) - \frac{m}{2}\theta(1-\theta)\|x-y\|^2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{关键术语中英对照}
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{中文} & \textbf{英文} \\
+\midrule
+运筹学 & Operations Research \\
+最优化 & Optimization \\
+无约束优化 & Unconstrained Optimization \\
+约束优化 & Constrained Optimization \\
+连续优化 & Continuous Optimization \\
+离散优化 & Discrete Optimization \\
+确定性优化 & Deterministic Optimization \\
+随机性优化 & Stochastic Optimization \\
+线性规划 & Linear Programming \\
+非线性规划 & Nonlinear Programming \\
+单目标优化 & Single-Objective Optimization \\
+多目标优化 & Multi-Objective Optimization \\
+动态优化 & Dynamic Optimization \\
+多层优化 & Multi-Level Optimization \\
+Lagrange乘子法 & Lagrange Multiplier Method \\
+梯度下降 & Gradient Descent \\
+随机梯度下降 & Stochastic Gradient Descent \\
+经验风险最小化 & Empirical Risk Minimization \\
+均方误差 & Mean Squared Error (MSE) \\
+准确率 & Accuracy \\
+召回率 & Recall \\
+精确率 & Precision \\
+凸集 & Convex Set \\
+凸函数 & Convex Function \\
+凹函数 & Concave Function \\
+仿射函数 & Affine Function \\
+仿射集 & Affine Set \\
+凸组合 & Convex Combination \\
+凸锥 & Convex Cone \\
+凸规划 & Convex Programming \\
+强凸函数 & Strongly Convex Function \\
+半正定 & Positive Semidefinite \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\newpage
+
+% ==================== 第二章 线性规划 ====================

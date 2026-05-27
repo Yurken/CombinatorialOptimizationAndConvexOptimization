@@ -1,0 +1,2150 @@
+\chapter{无约束最优化方法}\label{chap:unconstrained}
+% 第1节：引言
+\section{引言}\label{sec:ch5-intro}
+
+\subsection{为什么研究无约束最优化}
+
+实际优化问题通常含有大量约束，但研究无约束最优化方法具有重要意义：
+
+\begin{enumerate}
+    \item \textbf{转化工具}：许多算法可通过Lagrangian乘子法将有约束问题转化为一系列无约束问题，如Lagrangian对偶、鞍点最优性条件、惩罚函数法和障碍函数法。
+    
+    \item \textbf{基础组件}：大多数方法通过寻找方向并沿方向最小化来推进，这种线搜索本质上是无约束或简单约束的最小化问题。
+    
+    \item \textbf{自然推广}：几种无约束最优化方法可自然推广到有约束问题。
+\end{enumerate}
+
+\subsection{问题描述}
+
+无约束最优化问题的标准形式：
+\[
+\min_{x \in \mathbb{R}^n} f(x)
+\]
+
+\begin{conceptbox}[关键假设]
+\begin{itemize}
+    \item \textbf{零阶方法}：仅需函数值 $f(x)$
+    \item \textbf{一阶方法}：需要梯度 $\nabla f(x)$
+    \item \textbf{二阶方法}：需要Hessian矩阵 $\nabla^2 f(x)$
+\end{itemize}
+\end{conceptbox}
+
+\subsection{方法分类}
+
+本笔记涵盖的方法体系如下：
+
+\begin{notebox}[关于方法分类]
+本章聚焦\textbf{多维无约束最优化}的核心算法。一维线搜索方法（如二分搜索、黄金分割法、Fibonacci法）和非精确线搜索准则（Wolfe条件、Armijo规则）已在第~\ref{chap:linesearch}~章系统介绍，作为多维优化算法中的线搜索子程序。本章涵盖所有多维无约束优化方法，从仅需函数值的零阶方法到需要导数和Hessian的高阶方法。
+\end{notebox}
+
+
+\begin{table}[H]
+\centering
+\caption{无约束最优化方法分类}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{类别} & \textbf{方法} & \textbf{所需信息} \\
+\midrule
+\multirow{3}{*}{多维无导数}
+ & 坐标轮换法 & 函数值 \\
+ & Hooke-Jeeves方法 & 函数值 \\
+ & Rosenbrock方法 & 函数值 \\
+\midrule
+\multirow{2}{*}{一阶方法} 
+ & 最速下降法（梯度法） & 梯度 \\
+ & 共轭梯度法 & 梯度 \\
+\midrule
+\multirow{3}{*}{二阶方法} 
+ & 牛顿法 & Hessian \\
+ & Levenberg-Marquardt & Hessian修正 \\
+ & 信任域方法 & Hessian近似 \\
+\midrule
+拟牛顿法 & DFP、BFGS & 梯度 \\
+\midrule
+非光滑优化 & 次梯度方法 & 次梯度 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{收敛速度记号}
+
+\begin{definition}[收敛速度]
+设序列 $\{x_k\}$ 收敛到 $x^*$：
+\begin{itemize}
+    \item \textbf{线性收敛}：$\|x_{k+1} - x^*\| \leq q \|x_k - x^*\|$，$q \in (0,1)$
+    \item \textbf{超线性收敛}：$\|x_{k+1} - x^*\| / \|x_k - x^*\| \to 0$
+    \item \textbf{二次收敛}：$\|x_{k+1} - x^*\| \leq C \|x_k - x^*\|^2$
+\end{itemize}
+\end{definition}
+
+% 第2节：最速下降法
+
+% ==================== 从第四章移入 ====================
+% 多维无导数方法本质上属于n维无约束优化，
+% 从第四章移至第五章，使第五章覆盖全部多维无约束方法。
+% ====================
+
+\section{多维无导数搜索方法}\label{sec:derivative-free}
+
+对于问题 $\min_{x \in \mathbb{R}^n} f(x)$，当导数信息不可得或计算代价高昂时，使用仅依赖函数值的方法。
+
+\subsection{坐标轮换法（Cyclic Coordinate Method）}\label{sec:cyclic}
+
+\begin{conceptbox}[基本思想]
+沿坐标轴方向依次搜索，每次只改变一个变量。搜索方向为标准基向量 $e_1, e_2, \ldots, e_n$。
+\end{conceptbox}
+
+\textbf{算法步骤：}
+\begin{algorithm}[H]
+\caption{坐标轮换法}
+\begin{algorithmic}[1]
+\Require 初始点 $x^{(0)}$，精度 $\varepsilon > 0$
+\State $k \gets 0$
+\While{未收敛}
+    \State $y^{(0)} \gets x^{(k)}$
+    \For{$i = 1$ \textbf{to} $n$}
+        \State 求 $\lambda_i = \arg\min f(y^{(i-1)} + \lambda e_i)$
+        \State $y^{(i)} = y^{(i-1)} + \lambda_i e_i$
+    \EndFor
+    \State $x^{(k+1)} \gets y^{(n)}$
+    \If{$\|x^{(k+1)} - x^{(k)}\| < \varepsilon$}
+        \State \textbf{break}
+    \EndIf
+    \State $k \gets k + 1$
+\EndWhile
+\State \Return $x^{(k+1)}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{example}[坐标轮换法]
+求解 $\min f(x) = x_1^2 - x_1 x_2 + x_2^2 - 2x_1$，初始点 $(0, 3)$，最优解 $(2, 1)$。
+
+\textbf{第1轮迭代}：
+
+沿 $e_1 = (1, 0)$ 搜索：$\min f(\lambda, 3) = \lambda^2 - 3\lambda + 9 - 2\lambda$
+\[
+\frac{df}{d\lambda} = 2\lambda - 5 = 0 \Rightarrow \lambda = 2.5
+\]
+得 $y^{(1)} = (2.5, 3)$
+
+沿 $e_2 = (0, 1)$ 搜索：$\min f(2.5, 3 + \lambda) = 6.25 - 2.5(3+\lambda) + (3+\lambda)^2 - 5$
+\[
+\frac{df}{d\lambda} = -2.5 + 6 + 2\lambda = 0 \Rightarrow \lambda = -1.75
+\]
+得 $x^{(1)} = (2.5, 1.25)$
+
+继续迭代直至收敛。
+\end{example}
+
+\begin{notebox}[坐标轮换法的特点]
+\begin{itemize}
+    \item 每轮迭代进行 $n$ 次一维搜索
+    \item 函数可微时收敛到梯度为零的点
+    \item 不可微时可能在非最优点停止
+    \item 收敛速度与最速下降法相当
+    \item 可使用Gauss-Southwell变体：每次选偏导数绝对值最大的方向
+\end{itemize}
+\end{notebox}
+
+\subsection{Hooke-Jeeves方法}\label{sec:hooke-jeeves}
+
+\begin{conceptbox}[基本思想]
+结合两种搜索策略：
+\begin{itemize}
+    \item \textbf{试探搜索（Exploratory Search）}：沿各坐标方向试探，寻找改进方向
+    \item \textbf{模式搜索（Pattern Search）}：沿成功方向加速前进
+\end{itemize}
+\end{conceptbox}
+
+\textbf{算法步骤：}
+\begin{enumerate}
+    \item \textbf{初始化}：$x^{(0)}$（基点），步长 $\delta > 0$，缩减因子 $\rho \in (0, 1)$
+    
+    \item \textbf{Step 1（试探搜索）}：
+    从 $y = x^{(k)}$ 出发，沿各坐标方向 $e_i$ 试探：
+    \begin{itemize}
+        \item 若 $f(y + \delta e_i) < f(y)$，则 $y \leftarrow y + \delta e_i$（成功）
+        \item 否则若 $f(y - \delta e_i) < f(y)$，则 $y \leftarrow y - \delta e_i$
+        \item 否则保持 $y$ 不变（失败）
+    \end{itemize}
+    设结果为 $x^{(k+1)}$
+    
+    \item \textbf{Step 2（模式搜索判断）}：
+    \begin{itemize}
+        \item 若 $f(x^{(k+1)}) < f(x^{(k)})$（试探成功）：
+        \begin{itemize}
+            \item 沿模式方向 $d = x^{(k+1)} - x^{(k)}$ 前进：$y = x^{(k+1)} + d = 2x^{(k+1)} - x^{(k)}$
+            \item $x^{(k)} \leftarrow x^{(k+1)}$，从 $y$ 转Step 1
+        \end{itemize}
+        \item 否则（试探失败）：
+        \begin{itemize}
+            \item 若 $\delta < \varepsilon$，停止
+            \item 否则 $\delta \leftarrow \rho \delta$，从 $x^{(k)}$ 转Step 1
+        \end{itemize}
+    \end{itemize}
+\end{enumerate}
+
+\begin{example}[Hooke-Jeeves方法]
+求解 $\min f(x) = x_1^2 - x_1 x_2 + x_2^2 - 2x_1$，初始点 $(0, 0)$，$\delta = 0.5$。
+
+\textbf{第1轮}：
+
+从 $(0,0)$ 试探：
+- $e_1$ 方向：$f(0.5, 0) = -0.75 < f(0,0) = 0$ (成功)，$y = (0.5, 0)$
+- $e_2$ 方向：$f(0.5, 0.5) = -0.5 < f(0.5, 0) = -0.75$ (失败)，$f(0.5, -0.5) = 0.25 > -0.75$ (失败)
+
+得 $x^{(1)} = (0.5, 0)$，试探成功。
+
+模式方向 $d = (0.5, 0) - (0, 0) = (0.5, 0)$，新模式基点：
+$y = (0.5, 0) + (0.5, 0) = (1, 0)$
+
+继续迭代直至满足精度要求。
+\end{example}
+
+\subsection{Rosenbrock方法}\label{sec:rosenbrock}
+
+\begin{conceptbox}[基本思想]
+每次迭代沿 $n$ 个线性无关的正交方向进行一维搜索，搜索完成后根据搜索轨迹构造一组新的正交方向（Gram-Schmidt正交化）。
+\end{conceptbox}
+
+\textbf{算法步骤：}
+
+\textbf{Step 1}：给定初始点 $x^{(0)}$，初始正交方向 $d_1, \ldots, d_n$（通常取坐标轴），步长 $\delta_1, \ldots, \delta_n$
+
+\textbf{Step 2}：沿各方向依次搜索：
+\begin{itemize}
+    \item 对 $i = 1, \ldots, n$：
+    \begin{itemize}
+        \item 若 $f(x + \delta_i d_i) < f(x)$，成功：$x \leftarrow x + \delta_i d_i$，$\delta_i \leftarrow \alpha \delta_i$（$\alpha > 1$）
+        \item 否则失败：$\delta_i \leftarrow -\beta \delta_i$（$\beta \in (0, 1)$）
+    \end{itemize}
+\end{itemize}
+
+\textbf{Step 3}：一轮完成后若所有方向都有成功搜索，转Step 2
+
+\textbf{Step 4}：若存在未成功的方向：
+\begin{itemize}
+    \item 若 $|\delta_i| < \varepsilon$（所有 $i$），停止
+    \item 否则，利用Gram-Schmidt正交化构造新的正交方向，转Step 2
+\end{itemize}
+
+\begin{notebox}[Gram-Schmidt正交化]
+设第 $k$ 轮搜索的位移为 $\Delta x_1, \ldots, \Delta x_n$，新方向构造为：
+\begin{align*}
+s_1 &= \Delta x_1, \quad d_1^{new} = \frac{s_1}{\|s_1\|} \\
+s_i &= \Delta x_i - \sum_{j=1}^{i-1} \frac{\Delta x_i^T s_j}{s_j^T s_j} s_j, \quad d_i^{new} = \frac{s_i}{\|s_i\|}
+\end{align*}
+\end{notebox}
+
+\subsection{Python代码实现}\label{sec:df-code}
+
+\begin{codebox}[坐标轮换法]
+\begin{lstlisting}
+import numpy as np
+from scipy.optimize import minimize_scalar
+
+def cyclic_coordinate(f, x0, eps=1e-6, max_iter=1000):
+    """
+    坐标轮换法
+    
+    Parameters:
+        f: 目标函数
+        x0: 初始点
+        eps: 精度
+        max_iter: 最大迭代次数
+    
+    Returns:
+        x_opt: 最优解
+        f_opt: 最优值
+        history: 迭代历史
+    """
+    n = len(x0)
+    x = x0.copy()
+    history = [x.copy()]
+    
+    for _ in range(max_iter):
+        x_old = x.copy()
+        
+        for i in range(n):
+            # 沿第i个坐标方向搜索
+            def phi(lam):
+                x_new = x.copy()
+                x_new[i] += lam
+                return f(x_new)
+            
+            res = minimize_scalar(phi)
+            x[i] += res.x
+        
+        history.append(x.copy())
+        
+        if np.linalg.norm(x - x_old) < eps:
+            break
+    
+    return x, f(x), history
+
+# 示例
+def f(x):
+    return x[0]**2 - x[0]*x[1] + x[1]**2 - 2*x[0]
+
+x0 = np.array([0.0, 3.0])
+x_opt, f_opt, hist = cyclic_coordinate(f, x0)
+print(f"最优解: {x_opt}")
+print(f"最优值: {f_opt:.6f}")
+\end{lstlisting}
+\end{codebox}
+
+\begin{codebox}[Hooke-Jeeves方法]
+\begin{lstlisting}
+def hooke_jeeves(f, x0, delta=0.5, rho=0.5, eps=1e-6, max_iter=1000):
+    """
+    Hooke-Jeeves模式搜索法
+    
+    Parameters:
+        f: 目标函数
+        x0: 初始点
+        delta: 初始步长
+        rho: 步长缩减因子
+        eps: 精度
+        max_iter: 最大迭代次数
+    
+    Returns:
+        x_opt: 最优解
+        history: 迭代历史
+    """
+    n = len(x0)
+    x_base = x0.copy()
+    x = x0.copy()
+    history = [x.copy()]
+    
+    for _ in range(max_iter):
+        # 试探搜索
+        y = x_base.copy()
+        success = False
+        
+        for i in range(n):
+            e_i = np.zeros(n)
+            e_i[i] = 1
+            
+            # 正向试探
+            if f(y + delta * e_i) < f(y):
+                y = y + delta * e_i
+                success = True
+            # 负向试探
+            elif f(y - delta * e_i) < f(y):
+                y = y - delta * e_i
+                success = True
+        
+        if success:
+            # 模式搜索
+            x = y + (y - x_base)
+            x_base = y.copy()
+            history.append(y.copy())
+        else:
+            if delta < eps:
+                break
+            delta *= rho
+            x = x_base.copy()
+    
+    return x_base, history
+
+# 示例
+x0 = np.array([0.0, 0.0])
+x_opt, hist = hooke_jeeves(f, x0, delta=0.5)
+print(f"最优解: {x_opt}")
+\end{lstlisting}
+\end{codebox}
+
+\subsection{方法比较}
+
+\begin{table}[H]
+\centering
+\caption{多维无导数方法比较}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{方法} & \textbf{搜索方向} & \textbf{步长策略} & \textbf{收敛性} \\
+\midrule
+坐标轮换 & 固定坐标轴 & 精确线搜索 & 线性收敛 \\
+Hooke-Jeeves & 坐标轴+模式方向 & 离散步长 & 局部收敛 \\
+Rosenbrock & 正交方向（自适应） & 离散步长 & 局部收敛 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{最速下降法（梯度法）}\label{sec:gradient}
+
+\subsection{基本思想}
+
+\begin{conceptbox}[最速下降方向]
+1847年Cauchy提出。在点 $x$ 处，归一化的最速下降方向为：
+\[
+d = -\frac{\nabla f(x)}{\|\nabla f(x)\|}
+\]
+即负梯度方向，是在单位球面上使函数局部下降最快的方向。
+\end{conceptbox}
+
+\begin{lemma}[最速下降方向的验证]
+设 $f: \mathbb{R}^n \to \mathbb{R}$ 在 $x$ 处可微，$\nabla f(x) \neq 0$。求解：
+\[
+\min_{\|d\| \leq 1} \nabla f(x)^T d
+\]
+其解为 $d = -\frac{\nabla f(x)}{\|\nabla f(x)\|}$。
+\end{lemma}
+
+\textbf{证明}：由Cauchy-Schwarz不等式：
+\[
+\nabla f(x)^T d \geq -\|\nabla f(x)\| \cdot \|d\| \geq -\|\nabla f(x)\|
+\]
+等号成立当且仅当 $d = -\frac{\nabla f(x)}{\|\nabla f(x)\|}$。
+
+\subsection{最速下降法算法}
+
+\begin{algorithm}[H]
+\caption{最速下降法}
+\begin{algorithmic}[1]
+\Require 初始点 $x^{(0)}$，精度 $\varepsilon > 0$
+\State $k \gets 0$
+\While{$\|\nabla f(x^{(k)})\| \geq \varepsilon$}
+    \State $d_k = -\nabla f(x^{(k)})$
+    \State 求 $\lambda_k = \arg\min_{\lambda \geq 0} f(x^{(k)} + \lambda d_k)$
+    \State $x^{(k+1)} = x^{(k)} + \lambda_k d_k$
+    \State $k \gets k + 1$
+\EndWhile
+\State \Return $x^{(k)}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{example}[最速下降法]
+求解 $\min f(x) = x_1^2 + 4x_2^2$，初始点 $(4, 1)$。
+
+$\nabla f(x) = (2x_1, 8x_2)$，$x^{(0)} = (4, 1)$
+
+\textbf{第1次迭代}：$d_0 = (-8, -8)$
+
+$\phi(\lambda) = f(4-8\lambda, 1-8\lambda) = (4-8\lambda)^2 + 4(1-8\lambda)^2$
+
+$\phi'(\lambda) = -16(4-8\lambda) - 64(1-8\lambda) = -128 + 640\lambda = 0$
+
+解得 $\lambda_0 = 0.2$，$x^{(1)} = (2.4, -0.6)$
+
+\textbf{第2次迭代}：$d_1 = (-4.8, 4.8)$
+
+$\phi(\lambda) = f(2.4-4.8\lambda, -0.6+4.8\lambda) = (2.4-4.8\lambda)^2 + 4(-0.6+4.8\lambda)^2$
+
+$\phi'(\lambda) = -46.08 + 230.4\lambda = 0$
+
+解得 $\lambda_1 = 0.2$，$x^{(2)} = (1.44, 0.36)$，继续迭代。
+\end{example}
+
+\subsection{步长选择策略}\label{sec:step-size}
+
+\subsubsection{策略1：固定步长}
+
+$\lambda_k = \lambda$（常数）。
+
+\begin{theorem}[固定步长收敛条件]
+设 $f \in C^{1,1}(\mathbb{R}^n)$（Lipschitz连续梯度，常数为 $L$），若 $0 < \lambda < \frac{2}{L}$，则：
+\[
+f(x^{(k+1)}) - f(x^*) \leq f(x^{(k)}) - f(x^*) - \lambda\left(1 - \frac{L\lambda}{2}\right)\|\nabla f(x^{(k)})\|^2
+\]
+\end{theorem}
+
+最优固定步长：$\lambda = \frac{1}{L}$。
+
+\subsubsection{策略2：精确线搜索（全松弛）}
+
+$\lambda_k = \arg\min_{\lambda \geq 0} f(x^{(k)} + \lambda d_k)$。
+
+\begin{theorem}[精确线搜索的收敛率]
+设 $f$ 为强凸函数（参数 $\mu$）且 $L$-光滑，则：
+\[
+f(x^{(k+1)}) - f^* \leq \left(\frac{L - \mu}{L + \mu}\right)^2 (f(x^{(k)}) - f^*)
+\]
+即线性收敛，收敛因子为 $\frac{L-\mu}{L+\mu} = 1 - \frac{2}{L/\mu + 1}$。
+\end{theorem}
+
+\begin{notebox}[条件数的影响]
+定义条件数 $\kappa = \frac{L}{\mu}$（Hessian最大与最小特征值之比）。
+
+收敛因子 $\approx 1 - \frac{2}{\kappa}$，当 $\kappa$ 很大时（病态问题），收敛极慢。
+\end{notebox}
+
+\subsubsection{策略3：Armijo规则}
+
+实际中最常用的策略（详见第\ref{sec:armijo}节）。
+
+\subsection{梯度法的收敛性分析}\label{sec:gradient-convergence}
+
+\begin{theorem}[梯度下降下降量]
+设 $f \in C^{1,1}$ 且 $L$-光滑，采用步长 $\lambda_k = \frac{1}{L}$，则：
+\[
+f(x^{(k+1)}) \leq f(x^{(k)}) - \frac{1}{2L}\|\nabla f(x^{(k)})\|^2
+\]
+\end{theorem}
+
+\textbf{证明}：由Lipschitz梯度的二次上界：
+\[
+f(y) \leq f(x) + \nabla f(x)^T(y-x) + \frac{L}{2}\|y-x\|^2
+\]
+代入 $y = x - \frac{1}{L}\nabla f(x)$：
+\[
+f(y) \leq f(x) - \frac{1}{L}\|\nabla f(x)\|^2 + \frac{1}{2L}\|\nabla f(x)\|^2 = f(x) - \frac{1}{2L}\|\nabla f(x)\|^2
+\]
+
+\subsubsection{凸函数情形}
+
+\begin{theorem}[凸函数收敛率]
+设 $f$ 为凸函数且 $L$-光滑，$\|x^{(0)} - x^*\| \leq R$，则梯度法（步长 $\frac{1}{L}$）满足：
+\[
+f(x^{(k)}) - f^* \leq \frac{2LR^2}{k}
+\]
+即收敛速率为 $O(1/k)$。
+\end{theorem}
+
+\subsubsection{强凸函数情形}
+
+\begin{theorem}[强凸函数线性收敛]
+设 $f$ 为 $\mu$-强凸且 $L$-光滑，则：
+\[
+\|x^{(k)} - x^*\|^2 \leq \left(1 - \frac{\mu}{L}\right)^k \|x^{(0)} - x^*\|^2
+\]
+即线性收敛。
+\end{theorem}
+
+\subsection{梯度法的局限性}\label{sec:gradient-limitation}
+
+\begin{enumerate}
+    \item \textbf{锯齿现象}：相邻搜索方向正交，在最优解附近路径呈锯齿状
+    \item \textbf{条件数敏感}：对病态问题（$\kappa \gg 1$）收敛极慢
+    \item \textbf{只能保证收敛到稳定点}：不一定收敛到局部极小点
+    \item \textbf{鞍点困难}：可能停滞在鞍点
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.72]
+    % 坐标轴
+    \draw[->,thick] (-0.3,0) -- (7.5,0) node[right] {$x_1$};
+    \draw[->,thick] (0,-0.3) -- (0,5.5) node[above] {$x_2$};
+    % 等值线（椭圆，条件数大——病态）
+    \foreach \a/\b in {0.5/1.5, 1/3, 1.5/4.5, 2/6} {
+        \draw[blue!30] (3,2.5) ellipse ({\a} and {\b*0.5});
+    }
+    % 最优点
+    \fill[red] (3,2.5) circle (3pt) node[below right,scale=0.8] {$x^*$};
+    % 锯齿路径
+    \draw[->,very thick,red!70!black] (0.5,0.5) -- (2.5,0.5);
+    \draw[->,very thick,red!70!black] (2.5,0.5) -- (2.5,4);
+    \draw[->,very thick,red!70!black] (2.5,4) -- (3.8,4);
+    \draw[->,very thick,red!70!black] (3.8,4) -- (3.8,1.5);
+    \draw[->,very thick,red!70!black] (3.8,1.5) -- (3.2,1.5);
+    \draw[->,very thick,red!70!black] (3.2,1.5) -- (3.2,3);
+    \draw[->,very thick,red!70!black] (3.2,3) -- (3.5,3);
+    % 起点
+    \fill (0.5,0.5) circle (2.5pt) node[below left,scale=0.75] {$x^{(0)}$};
+    % 标注
+    \node[scale=0.8,red!70!black] at (1,4.8) {锯齿路径};
+    % 条件数标注
+    \node[scale=0.7,blue!60] at (6,4.5) {\small 椭圆越扁};
+    \node[scale=0.7,blue!60] at (6,4) {\small 条件数越大};
+    \node[scale=0.7,blue!60] at (6,3.5) {\small 收敛越慢};
+\end{tikzpicture}
+\caption{最速下降法的锯齿现象：对病态问题（大条件数）收敛缓慢}
+\label{fig:gradient-zigzag}
+\end{figure}
+
+\begin{example}[非凸函数的梯度法]
+$f(x, y) = x^3 - 3x + y^3 - 3y$
+
+稳定点：$(1,1)$（极小），$(-1,-1)$（极大），$(1,-1)$ 和 $(-1,1)$（鞍点）
+
+以 $(-1, 0.5)$ 为初始点，梯度法可能收敛到鞍点 $(-1, 1)$。
+\end{example}
+
+\subsection{梯度法的Python实现}\label{sec:gradient-code}
+
+\begin{codebox}[最速下降法完整实现]
+\begin{lstlisting}
+import numpy as np
+from scipy.optimize import minimize_scalar
+
+def gradient_descent(f, grad, x0, method='exact', alpha=1e-4,
+                     rho=0.5, L=None, mu=None, eps=1e-6, 
+                     max_iter=1000):
+    """
+    最速下降法
+    
+    Parameters:
+        f: 目标函数
+        grad: 梯度函数
+        x0: 初始点
+        method: 'exact'(精确线搜索), 'fixed'(固定步长), 
+                'armijo'(Armijo回溯)
+        alpha: Armijo参数
+        rho: 步长缩减因子
+        L: Lipschitz常数（固定步长时使用）
+        eps: 梯度范数精度
+        max_iter: 最大迭代次数
+    
+    Returns:
+        x_opt: 最优解
+        f_opt: 最优值
+        history: 迭代历史
+    """
+    x = x0.copy()
+    history = [x.copy()]
+    
+    for k in range(max_iter):
+        g = grad(x)
+        
+        if np.linalg.norm(g) < eps:
+            break
+        
+        d = -g  # 最速下降方向
+        
+        if method == 'exact':
+            # 精确线搜索
+            def phi(lam):
+                return f(x + lam * d)
+            res = minimize_scalar(phi, bounds=(0, 10))
+            lam = res.x
+        elif method == 'fixed':
+            # 固定步长
+            lam = 1.0 / L if L else 0.01
+        elif method == 'armijo':
+            # Armijo回溯
+            lam = 1.0
+            fx = f(x)
+            grad_dot_d = np.dot(g, d)
+            for _ in range(20):
+                if f(x + lam * d) <= fx + alpha * lam * grad_dot_d:
+                    break
+                lam *= rho
+        
+        x = x + lam * d
+        history.append(x.copy())
+    
+    return x, f(x), history
+
+# 示例：二次函数
+def f(x):
+    return x[0]**2 + 4*x[1]**2
+
+def grad(x):
+    return np.array([2*x[0], 8*x[1]])
+
+x0 = np.array([4.0, 1.0])
+x_opt, f_opt, hist = gradient_descent(f, grad, x0, method='exact')
+print(f"最优解: {x_opt}")
+print(f"最优值: {f_opt:.8f}")
+print(f"迭代次数: {len(hist)}")
+\end{lstlisting}
+\end{codebox}
+
+\subsection{批量与小批量梯度下降}\label{sec:sgd}
+
+\begin{conceptbox}[随机梯度下降（SGD）]
+在机器学习中，目标函数为经验风险：
+\[
+f(x) = \frac{1}{N}\sum_{i=1}^{N} f_i(x)
+\]
+
+\textbf{批量梯度下降（Batch GD）}：每次用全部数据
+\[
+x_{k+1} = x_k - \eta \nabla f(x_k) = x_k - \frac{\eta}{N}\sum_{i=1}^{N} \nabla f_i(x_k)
+\]
+
+\textbf{随机梯度下降（SGD）}：每次用一个样本
+\[
+x_{k+1} = x_k - \eta \nabla f_{i_k}(x_k)
+\]
+其中 $i_k$ 随机选取。
+
+\textbf{小批量梯度下降（Mini-Batch GD）}：每次用 $m$ 个样本
+\[
+x_{k+1} = x_k - \frac{\eta}{m}\sum_{i \in B_k} \nabla f_i(x_k)
+\]
+\end{conceptbox}
+
+\begin{notebox}[SGD的特点]
+\begin{itemize}
+    \item 计算效率高，适合大规模数据
+    \item 不保证单调下降
+    \item 学习率选择困难
+    \item 鞍点问题严重
+    \item 需要学习率衰减策略
+\end{itemize}
+\end{notebox}
+
+% 第6节：牛顿法
+\section{牛顿法}\label{sec:newton}
+
+\subsection{基本思想}
+
+\begin{conceptbox}[牛顿法]
+利用二阶Taylor展开在 $x_k$ 处近似：
+\[
+f(x) \approx f(x_k) + \nabla f(x_k)^T(x-x_k) + \frac{1}{2}(x-x_k)^T \nabla^2 f(x_k)(x-x_k)
+\]
+
+令梯度为0，得迭代公式：
+\[
+x_{k+1} = x_k - [\nabla^2 f(x_k)]^{-1} \nabla f(x_k)
+\]
+即搜索方向 $d_k = -H_k^{-1} g_k$（$H_k$ 为Hessian，$g_k$ 为梯度）。
+\end{conceptbox}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.8]
+    % 坐标轴
+    \draw[->,thick] (-0.3,0) -- (6.5,0) node[right] {$x$};
+    \draw[->,thick] (0,-0.3) -- (0,4.5) node[above] {$f(x)$};
+    % 原函数
+    \draw[very thick,blue]
+        (0.3,4) .. controls (1,2) and (2,0.5) .. (3,0.3) .. controls (4,0.5) and (5,2) .. (6,4);
+    \node[blue,scale=0.8] at (6.2,4.2) {$f$};
+    % 当前点 x_k
+    \fill[red] (1,2) circle (2.5pt) node[below left,scale=0.75] {\small $x_k$};
+    % 二次近似（抛物线）
+    \draw[red,thick,dashed]
+        (0.3,3.5) .. controls (1.5,1.2) and (2.5,0.8) .. (3,1.5) .. controls (3.5,2.2) .. (4.5,4);
+    \node[red,scale=0.7] at (4.8,4.2) {\small 二次近似};
+    % 牛顿步
+    \draw[->,very thick,green!50!black] (1,2) -- (2.8,0.35);
+    \node[green!50!black,scale=0.75,above] at (1.6,1.6) {\small 牛顿步};
+    % 新点 x_{k+1}
+    \fill[green!50!black] (2.8,0.35) circle (2.5pt) node[below,scale=0.75] {\small $x_{k+1}$};
+    % 最优解
+    \fill[black] (3,0.3) circle (2pt) node[below,scale=0.7] {\small $x^*$};
+    % 切线（梯度方向）
+    \draw[orange,dotted,thick] (0.3,3) -- (2.5,0);
+    \node[orange,scale=0.65] at (0.3,3.2) {\small 切线};
+    % 标注
+    \node[scale=0.7,gray] at (5,1) {\small 二阶收敛};
+    \node[scale=0.7,gray] at (5,0.6) {\small 步收敛};
+\end{tikzpicture}
+\caption{牛顿法：用二次Taylor展开的极小点作为下一次迭代点}
+\label{fig:newton-method}
+\end{figure}
+
+\subsection{牛顿法算法}
+
+\begin{algorithm}[H]
+\caption{牛顿法}
+\begin{algorithmic}[1]
+\Require 初始点 $x^{(0)}$，精度 $\varepsilon > 0$
+\State $k \gets 0$
+\While{$\|\nabla f(x^{(k)})\| \geq \varepsilon$}
+    \State 计算 $g_k = \nabla f(x^{(k)})$
+    \State 计算 $H_k = \nabla^2 f(x^{(k)})$
+    \State 解线性方程组 $H_k d_k = -g_k$
+    \State $x^{(k+1)} = x^{(k)} + d_k$
+    \State $k \gets k + 1$
+\EndWhile
+\State \Return $x^{(k)}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{example}[牛顿法解二次函数]
+$f(x) = x_1^2 + 4x_2^2$，初始点 $(4, 1)$。
+
+$g(x) = \begin{bmatrix} 2x_1 \\ 8x_2 \end{bmatrix}$，
+$H(x) = \begin{bmatrix} 2 & 0 \\ 0 & 8 \end{bmatrix}$
+
+$H^{-1} = \begin{bmatrix} 0.5 & 0 \\ 0 & 0.125 \end{bmatrix}$
+
+$d_0 = -H^{-1} g(4,1) = -\begin{bmatrix} 0.5 & 0 \\ 0 & 0.125 \end{bmatrix}\begin{bmatrix} 8 \\ 8 \end{bmatrix} = \begin{bmatrix} -4 \\ -1 \end{bmatrix}$
+
+$x^{(1)} = (4,1) + (-4,-1) = (0, 0) = x^*$！
+
+对二次函数，牛顿法一步收敛。
+\end{example}
+
+\subsection{牛顿法的收敛性分析}\label{sec:newton-convergence}
+
+\begin{theorem}[局部二次收敛]
+设 $f \in C^2(\mathbb{R}^n)$，$\nabla^2 f(x^*)$ 正定，$\nabla^2 f$ 在 $x^*$ 附近Lipschitz连续。则存在 $\delta > 0$，使得当 $\|x^{(0)} - x^*\| < \delta$ 时：
+\[
+\|x^{(k+1)} - x^*\| \leq C \|x^{(k)} - x^*\|^2
+\]
+即二次收敛。
+\end{theorem}
+
+\textbf{证明概要}：
+\begin{align*}
+x_{k+1} - x^* &= x_k - x^* - H_k^{-1} g_k \\
+&= H_k^{-1}(H_k(x_k - x^*) - g_k) \\
+&= H_k^{-1}(\nabla^2 f(x_k)(x_k - x^*) - (\nabla f(x_k) - \nabla f(x^*)))
+\end{align*}
+由 $\nabla^2 f$ 的Lipschitz连续性：
+\[
+\|\nabla f(x_k) - \nabla f(x^*) - \nabla^2 f(x_k)(x_k - x^*)\| = O(\|x_k - x^*\|^2)
+\]
+
+\subsection{牛顿法的优缺点}
+
+\begin{table}[H]
+\centering
+\caption{牛顿法的优缺点}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{优点} & \textbf{缺点} \\
+\midrule
+局部二次收敛 & 需要计算Hessian矩阵 \\
+对二次函数一步收敛 & 需解线性方程组 $O(n^3)$ \\
+尺度不变性 & Hessian可能不正定（非凸问题） \\
+& 初始点需充分接近最优解 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{牛顿法的改进策略}\label{sec:newton-improvements}
+
+\subsubsection{阻尼牛顿法（Damped Newton）}
+
+引入步长参数：
+\[
+x_{k+1} = x_k - \lambda_k H_k^{-1} g_k
+\]
+其中 $\lambda_k$ 由线搜索确定（如Armijo条件）。
+
+\subsubsection{修正牛顿法（Modified Newton）}
+
+当 $H_k$ 不正定时，修正为：
+\[
+\tilde{H}_k = H_k + \nu_k I
+\]
+其中 $\nu_k > 0$ 使得 $\tilde{H}_k$ 正定（如取 $\nu_k = \max(0, \delta - \lambda_{\min}(H_k))$）。
+
+\subsubsection{Cholesky分解修正}
+
+对 $H_k$ 进行Cholesky分解时，若遇到非正定增广对角线元素，强制其为正数。
+
+\subsection{牛顿法的Python实现}\label{sec:newton-code}
+
+\begin{codebox}[牛顿法完整实现]
+\begin{lstlisting}
+import numpy as np
+from scipy.linalg import solve
+
+def newton_method(f, grad, hess, x0, line_search=True,
+                  alpha=1e-4, rho=0.5, eps=1e-6, max_iter=100):
+    """
+    牛顿法
+    
+    Parameters:
+        f: 目标函数
+        grad: 梯度函数
+        hess: Hessian矩阵函数
+        x0: 初始点
+        line_search: 是否使用线搜索
+        eps: 精度
+        max_iter: 最大迭代次数
+    
+    Returns:
+        x_opt: 最优解
+        f_opt: 最优值
+        history: 迭代历史
+    """
+    x = x0.copy()
+    history = [x.copy()]
+    
+    for k in range(max_iter):
+        g = grad(x)
+        
+        if np.linalg.norm(g) < eps:
+            break
+        
+        H = hess(x)
+        
+        # 解线性方程组 H * d = -g
+        try:
+            d = solve(H, -g)
+        except np.linalg.LinAlgError:
+            # Hessian奇异，回退到最速下降
+            d = -g
+        
+        if line_search:
+            # Armijo回溯线搜索
+            lam = 1.0
+            fx = f(x)
+            grad_dot_d = np.dot(g, d)
+            if grad_dot_d >= 0:  # 非下降方向
+                d = -g
+                grad_dot_d = np.dot(g, d)
+            for _ in range(20):
+                if f(x + lam * d) <= fx + alpha * lam * grad_dot_d:
+                    break
+                lam *= rho
+        else:
+            lam = 1.0
+        
+        x = x + lam * d
+        history.append(x.copy())
+    
+    return x, f(x), history
+
+# 示例: Rosenbrock函数
+def rosenbrock(x):
+    return (1 - x[0])**2 + 100 * (x[1] - x[0]**2)**2
+
+def rosen_grad(x):
+    return np.array([
+        -2*(1 - x[0]) - 400*x[0]*(x[1] - x[0]**2),
+        200*(x[1] - x[0]**2)
+    ])
+
+def rosen_hess(x):
+    return np.array([
+        [2 + 1200*x[0]**2 - 400*x[1], -400*x[0]],
+        [-400*x[0], 200]
+    ])
+
+x0 = np.array([-1.0, 2.0])
+x_opt, f_opt, hist = newton_method(rosenbrock, rosen_grad, 
+                                   rosen_hess, x0)
+print(f"最优解: {x_opt}")
+print(f"最优值: {f_opt:.10f}")
+print(f"迭代次数: {len(hist)}")
+\end{lstlisting}
+\end{codebox}
+
+\begin{codebox}[带Hessian修正的牛顿法]
+\begin{lstlisting}
+def modified_newton(f, grad, hess, x0, eps=1e-6, max_iter=100):
+    """
+    修正牛顿法（处理非正定Hessian）
+    """
+    x = x0.copy()
+    history = [x.copy()]
+    
+    for k in range(max_iter):
+        g = grad(x)
+        
+        if np.linalg.norm(g) < eps:
+            break
+        
+        H = hess(x)
+        
+        # 特征值修正
+        eigvals, eigvecs = np.linalg.eigh(H)
+        eigvals = np.maximum(eigvals, 1e-4)  # 强制正
+        
+        # H^{-1} = Q * Lambda^{-1} * Q^T
+        H_inv = eigvecs @ np.diag(1.0 / eigvals) @ eigvecs.T
+        d = -H_inv @ g
+        
+        # Armijo线搜索
+        lam = 1.0
+        fx = f(x)
+        for _ in range(20):
+            if f(x + lam * d) <= fx + 1e-4 * lam * np.dot(g, d):
+                break
+            lam *= 0.5
+        
+        x = x + lam * d
+        history.append(x.copy())
+    
+    return x, f(x), history
+\end{lstlisting}
+\end{codebox}
+
+\begin{notebox}[最速下降法、牛顿法、拟牛顿法的统一形式]
+上述方法都可统一写成
+\[
+x_{k+1} = x_k + \alpha_k d_k, \quad d_k = -B_k^{-1} g_k, \quad g_k = \nabla f(x_k)
+\]
+不同方法对应不同的 $B_k$：
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{方法} & $B_k$ & \textbf{搜索方向} \\
+\midrule
+最速下降法 & $I$ & $d_k = -g_k$ \\
+牛顿法 & $\nabla^2 f(x_k)$ & $d_k = -[\nabla^2 f(x_k)]^{-1} g_k$ \\
+修正牛顿法 & $\nabla^2 f(x_k) + E_k$（保证正定） & 保证下降方向 \\
+拟牛顿法 & Hessian 近似 $B_k$ 或逆近似 $H_k$ & $d_k = -H_k g_k$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+拟牛顿法的核心思想是：不直接计算 Hessian，而是通过梯度差 $y_k = g_{k+1} - g_k$ 和步长差 $s_k = x_{k+1} - x_k$ 构造满足割线方程 $B_{k+1} s_k = y_k$（或 $H_{k+1} y_k = s_k$）的矩阵更新。DFP 和 BFGS 是典型代表。
+\end{notebox}
+
+% 第7节：Levenberg-Marquardt方法与信任域方法
+\section{牛顿方法的变种：LM与信任域方法}\label{sec:lm-trust}
+
+\subsection{Levenberg-Marquardt（LM）方法}\label{sec:lm}
+
+\begin{conceptbox}[LM方法]
+LM方法是处理非线性最小二乘问题的牛顿型方法，通过自适应调节在梯度下降和牛顿法之间切换：
+
+对于问题：$\min f(x) = \frac{1}{2}\sum_{i=1}^{m} r_i(x)^2 = \frac{1}{2}\|r(x)\|^2$
+
+迭代公式：
+\[
+(J_k^T J_k + \lambda_k I) d_k = -J_k^T r(x_k)
+\]
+其中 $J(x)$ 是残差向量 $r(x)$ 的Jacobian矩阵。
+\end{conceptbox}
+
+\textbf{LM方法的解释}：
+\begin{itemize}
+    \item 当 $\lambda_k \to 0$：趋近于高斯-牛顿法（$J^T J \approx$ Hessian的近似）
+    \item 当 $\lambda_k \to \infty$：趋近于梯度下降（$d_k \approx -\frac{1}{\lambda_k} J^T r$）
+\end{itemize}
+
+\subsubsection{LM算法}
+
+\begin{algorithm}[H]
+\caption{Levenberg-Marquardt方法}
+\begin{algorithmic}[1]
+\Require 初始点 $x_0$，初始参数 $\lambda_0 > 0$，$\nu > 1$
+\State $k \gets 0$
+\While{未收敛}
+    \State 计算 $J_k = J(x_k)$，$r_k = r(x_k)$
+    \State 解 $(J_k^T J_k + \lambda_k I) d_k = -J_k^T r_k$
+    \State 计算实际下降与预测下降比：
+    \State $\rho_k = \dfrac{f(x_k) - f(x_k + d_k)}{f(x_k) - q_k(d_k)}$
+    \State 其中 $q_k(d) = f(x_k) + (J_k^T r_k)^T d + \frac{1}{2}d^T(J_k^T J_k + \lambda_k I)d$
+    \If{$\rho_k > 0$}
+        \State $x_{k+1} = x_k + d_k$
+        \State 若 $\rho_k > 0.75$，$\lambda_{k+1} = \lambda_k / \nu$
+        \State 否则若 $\rho_k < 0.25$，$\lambda_{k+1} = \nu \lambda_k$
+    \Else
+        \State $x_{k+1} = x_k$
+        \State $\lambda_{k+1} = \nu \lambda_k$
+    \EndIf
+    \State $k \gets k + 1$
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
+\begin{example}[曲线拟合]
+拟合模型 $y = ae^{bx}$ 到数据点 $(t_i, y_i)$：
+
+$\min f(a,b) = \sum_{i=1}^{n} (ae^{bt_i} - y_i)^2$
+
+残差：$r_i(a,b) = ae^{bt_i} - y_i$
+
+Jacobian：$J_{i1} = e^{bt_i}$，$J_{i2} = ate^{bt_i}$
+
+用LM方法迭代求解。
+\end{example}
+
+\subsection{信任域方法（Trust Region Methods）}\label{sec:trust-region}
+
+\begin{conceptbox}[信任域方法]
+与线搜索不同，信任域方法先确定搜索范围（信任域），再在此范围内优化模型：
+\[
+\min_d q_k(d) = f(x_k) + g_k^T d + \frac{1}{2}d^T H_k d, \quad \text{s.t. } \|d\| \leq \Delta_k
+\]
+其中 $\Delta_k > 0$ 为信任域半径。
+\end{conceptbox}
+
+\subsubsection{信任域方法的框架}
+
+\begin{enumerate}
+    \item \textbf{求解子问题}：在给定半径 $\Delta_k$ 内求 $d_k$
+    \item \textbf{评估比率}：
+    \[
+    \rho_k = \frac{f(x_k) - f(x_k + d_k)}{q_k(0) - q_k(d_k)}
+    \]
+    \item \textbf{更新信任域半径}：
+    \begin{itemize}
+        \item 若 $\rho_k$ 接近1：增大 $\Delta_k$
+        \item 若 $\rho_k$ 较小：减小 $\Delta_k$
+        \item 若 $\rho_k > \eta_0$：接受 $x_{k+1} = x_k + d_k$
+        \item 否则：拒绝步，$x_{k+1} = x_k$
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{信任域子问题的求解}
+
+\begin{theorem}[子问题最优性条件]
+$d^*$ 是信任域子问题的全局最优解当且仅当存在 $\lambda \geq 0$ 使得：
+\begin{align}
+(H + \lambda I)d^* &= -g \\
+\lambda(\Delta - \|d^*\|) &= 0 \\
+H + \lambda I &\succeq 0
+\end{align}
+\end{theorem}
+
+\textbf{Cauchy点}：
+在信任域内沿最速下降方向的最优点：
+\[
+d_k^C = -\tau_k \frac{\Delta_k}{\|g_k\|} g_k
+\]
+其中：
+\[
+\tau_k = \begin{cases} 1 & \text{if } g_k^T H_k g_k \leq 0 \\ \min\left(\frac{\|g_k\|^3}{\Delta_k g_k^T H_k g_k}, 1\right) & \text{otherwise} \end{cases}
+\]
+
+\subsubsection{Dogleg方法}
+
+\begin{conceptbox}[Dogleg方法]
+结合最速下降方向和牛顿方向的折线路径：
+\begin{enumerate}
+    \item 若牛顿步在信任域内（$\|d^N\| \leq \Delta$），取 $d = d^N$
+    \item 否则，沿最速下降到Cauchy点的路径
+    \item 若Cauchy点在信任域外（$\|d^{SD}\| \geq \Delta$），取边界点
+    \item 否则在折线路径上取信任域边界点
+\end{enumerate}
+\end{conceptbox}
+
+\subsection{信任域方法的Python实现}\label{sec:trust-code}
+
+\begin{codebox}[Levenberg-Marquardt方法]
+\begin{lstlisting}
+import numpy as np
+from scipy.optimize import least_squares
+
+def lm_method(residuals, jac, x0, lam=0.01, nu=10, 
+              eps=1e-6, max_iter=100):
+    """
+    Levenberg-Marquardt方法
+    
+    Parameters:
+        residuals: 残差函数 r(x)
+        jac: Jacobian函数 J(x)
+        x0: 初始点
+        lam: 初始正则化参数
+        nu: 调节因子
+        eps: 精度
+        max_iter: 最大迭代次数
+    
+    Returns:
+        x_opt: 最优解
+        history: 迭代历史
+    """
+    x = x0.copy()
+    history = [x.copy()]
+    
+    for k in range(max_iter):
+        r = residuals(x)
+        J = jac(x)
+        g = J.T @ r
+        
+        if np.linalg.norm(g) < eps:
+            break
+        
+        # 解 (J^T J + lam*I) d = -J^T r
+        A = J.T @ J + lam * np.eye(len(x))
+        d = np.linalg.solve(A, -g)
+        
+        # 计算比率
+        rho = (np.linalg.norm(r)**2 - 
+               np.linalg.norm(residuals(x + d))**2) / \
+              (np.linalg.norm(r)**2 - 
+               np.linalg.norm(r + J @ d)**2)
+        
+        if rho > 0:
+            x = x + d
+            history.append(x.copy())
+            if rho > 0.75:
+                lam = lam / nu
+            elif rho < 0.25:
+                lam = lam * nu
+        else:
+            lam = lam * nu
+    
+    return x, history
+
+# 示例：非线性最小二乘拟合
+# 数据
+np.random.seed(42)
+t = np.linspace(0, 4, 50)
+y = 2.5 * np.exp(-1.3 * t) + 0.1 * np.random.randn(50)
+
+def residuals(params):
+    a, b = params
+    return a * np.exp(b * t) - y
+
+def jac(params):
+    a, b = params
+    J = np.zeros((len(t), 2))
+    J[:, 0] = np.exp(b * t)
+    J[:, 1] = a * t * np.exp(b * t)
+    return J
+
+x0 = np.array([1.0, -0.5])
+x_opt, hist = lm_method(residuals, jac, x0)
+print(f"拟合参数: a={x_opt[0]:.4f}, b={x_opt[1]:.4f}")
+\end{lstlisting}
+\end{codebox}
+
+\begin{codebox}[信任域方法（简化版）]
+\begin{lstlisting}
+def trust_region(f, grad, hess, x0, Delta=1.0, eta=0.1,
+                 eps=1e-6, max_iter=100):
+    """
+    简化信任域方法（Cauchy点策略）
+    
+    Parameters:
+        f: 目标函数
+        grad: 梯度函数
+        hess: Hessian函数
+        x0: 初始点
+        Delta: 初始信任域半径
+        eta: 接受阈值
+        eps: 精度
+    
+    Returns:
+        x_opt: 最优解
+        history: 迭代历史
+    """
+    x = x0.copy()
+    history = [x.copy()]
+    Delta_max = 100.0
+    
+    for k in range(max_iter):
+        g = grad(x)
+        
+        if np.linalg.norm(g) < eps:
+            break
+        
+        H = hess(x)
+        
+        # 计算Cauchy点
+        g_norm = np.linalg.norm(g)
+        gHg = g.T @ H @ g
+        
+        if gHg <= 0:
+            tau = 1.0
+        else:
+            tau = min(g_norm**3 / (Delta * gHg), 1.0)
+        
+        d = -tau * Delta / g_norm * g
+        
+        # 评估比率
+        actual = f(x) - f(x + d)
+        predicted = -(g.T @ d + 0.5 * d.T @ H @ d)
+        
+        if abs(predicted) < 1e-10:
+            break
+            
+        rho = actual / predicted
+        
+        if rho > eta:
+            x = x + d
+            history.append(x.copy())
+        
+        # 更新信任域半径
+        if rho < 0.25:
+            Delta = 0.25 * Delta
+        elif rho > 0.75 and abs(np.linalg.norm(d) - Delta) < 1e-6:
+            Delta = min(2.0 * Delta, Delta_max)
+    
+    return x, f(x), history
+\end{lstlisting}
+\end{codebox}
+
+\subsection{LM与信任域方法的比较}
+
+\begin{table}[H]
+\centering
+\caption{LM与信任域方法比较}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{特性} & \textbf{LM方法} & \textbf{信任域方法} \\
+\midrule
+适用问题 & 最小二乘 & 一般无约束优化 \\
+模型 & $J^T J + \lambda I$ & $g^T d + \frac{1}{2}d^T H d$ \\
+参数 & $\lambda$（自适应） & $\Delta$（信任域半径） \\
+子问题求解 & 线性方程组 & 信赖域子问题 \\
+全局收敛 & 是 & 是 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% 第8节：共轭方向法
+\section{共轭方向法}\label{sec:conjugate}
+
+\subsection{共轭方向的概念}\label{sec:conjugate-def}
+
+\begin{conceptbox}[共轭方向]
+对于对称正定矩阵 $A$，非零向量 $d_1, d_2, \ldots, d_k$ 称为 $A$-共轭的，如果：
+\[
+d_i^T A d_j = 0, \quad \forall i \neq j
+\]
+即它们关于 $A$ 的内积正交。
+\end{conceptbox}
+
+\begin{theorem}[共轭方向法的有限步收敛]
+对于二次函数 $f(x) = \frac{1}{2}x^T A x - b^T x + c$（$A$ 正定），从任意 $x_0$ 出发，沿 $n$ 个 $A$-共轭方向精确线搜索，最多 $n$ 步收敛到最优解。
+\end{theorem}
+
+\textbf{证明}：设 $x^*$ 为最优解，$g_k = Ax_k - b$。由精确线搜索：
+$g_{k+1}^T d_k = 0$
+
+利用共轭性可证 $g_{k+1}^T d_j = 0$（$j = 0, \ldots, k$），即梯度与共轭方向正交。
+
+$n$ 步后 $g_n$ 与 $n$ 个线性无关方向正交，故 $g_n = 0$，$x_n = x^*$。
+
+\subsection{共轭梯度法（CG）}\label{sec:cg}
+
+\begin{conceptbox}[共轭梯度法]
+通过递推构造共轭方向，不需预先给定。对二次函数：
+\begin{align*}
+d_0 &= -g_0 \\
+d_{k+1} &= -g_{k+1} + \beta_k d_k
+\end{align*}
+其中 $\beta_k$ 使得 $d_{k+1}^T A d_k = 0$。
+\end{conceptbox}
+
+\subsubsection{二次函数的CG算法}
+
+\begin{algorithm}[H]
+\caption{线性共轭梯度法}
+\begin{algorithmic}[1]
+\Require $A$（SPD），$b$，初始点 $x_0$
+\State $g_0 = Ax_0 - b$，$d_0 = -g_0$
+\For{$k = 0, 1, \ldots, n-1$}
+    \If{$\|g_k\| = 0$} \textbf{break} \EndIf
+    \State $\alpha_k = \dfrac{g_k^T g_k}{d_k^T A d_k}$
+    \State $x_{k+1} = x_k + \alpha_k d_k$
+    \State $g_{k+1} = g_k + \alpha_k A d_k$
+    \State $\beta_k = \dfrac{g_{k+1}^T g_{k+1}}{g_k^T g_k}$
+    \State $d_{k+1} = -g_{k+1} + \beta_k d_k$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{CG的等价公式（$\beta_k$ 的不同形式）}
+
+\begin{table}[H]
+\centering
+\caption{共轭梯度法的$\beta_k$公式}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{公式} & \textbf{表达式} \\
+\midrule
+Fletcher-Reeves (FR) & $\beta_k = \dfrac{g_{k+1}^T g_{k+1}}{g_k^T g_k}$ \\
+Polak-Ribiere (PR) & $\beta_k = \dfrac{g_{k+1}^T(g_{k+1} - g_k)}{g_k^T g_k}$ \\
+Hestenes-Stiefel (HS) & $\beta_k = \dfrac{g_{k+1}^T(g_{k+1} - g_k)}{d_k^T(g_{k+1} - g_k)}$ \\
+Dai-Yuan (DY) & $\beta_k = \dfrac{g_{k+1}^T g_{k+1}}{d_k^T(g_{k+1} - g_k)}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{notebox}[PR方法]
+PR方法在实际中表现最好。若 $\beta_k < 0$ 可置 $\beta_k = 0$（重启CG），保证收敛。
+\end{notebox}
+
+\subsubsection{非线性共轭梯度法}
+
+\begin{algorithm}[H]
+\caption{非线性共轭梯度法（Fletcher-Reeves）}
+\begin{algorithmic}[1]
+\Require 初始点 $x_0$，精度 $\varepsilon$
+\State $g_0 = \nabla f(x_0)$，$d_0 = -g_0$
+\For{$k = 0, 1, \ldots$}
+    \If{$\|g_k\| < \varepsilon$} \textbf{break} \EndIf
+    \State 线搜索求 $\alpha_k$
+    \State $x_{k+1} = x_k + \alpha_k d_k$
+    \State $g_{k+1} = \nabla f(x_{k+1})$
+    \State $\beta_k = \dfrac{g_{k+1}^T g_{k+1}}{g_k^T g_k}$
+    \State $d_{k+1} = -g_{k+1} + \beta_k d_k$
+    \State 若 $k+1 \equiv 0 \pmod n$，$d_{k+1} = -g_{k+1}$（每$n$步重启）
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\begin{example}[CG法解二次函数]
+$f(x) = x_1^2 + 4x_2^2$，初始点 $(4, 1)$。
+
+$A = \begin{bmatrix} 2 & 0 \\ 0 & 8 \end{bmatrix}$，$b = \begin{bmatrix} 0 \\ 0 \end{bmatrix}$
+
+$g_0 = \begin{bmatrix} 8 \\ 8 \end{bmatrix}$，$d_0 = \begin{bmatrix} -8 \\ -8 \end{bmatrix}$
+
+$\alpha_0 = \dfrac{g_0^T g_0}{d_0^T A d_0} = \dfrac{128}{640} = 0.2$
+
+$x_1 = (4, 1) + 0.2(-8, -8) = (2.4, -0.6)$
+
+$g_1 = (4.8, -4.8)$，$\beta_0 = \dfrac{46.08}{128} = 0.36$
+
+$d_1 = -g_1 + \beta_0 d_0 = (-4.8, 4.8) + 0.36(-8,-8) = (-7.68, 1.92)$
+
+$\alpha_1 = \dfrac{46.08}{147.456} = 0.3125$
+
+$x_2 = (2.4, -0.6) + 0.3125(-7.68, 1.92) = (0, 0) = x^*$！
+\end{example}
+
+\subsection{拟牛顿法}\label{sec:quasi-newton}
+
+\begin{conceptbox}[拟牛顿法]
+用矩阵 $B_k \approx H_k^{-1}$ 近似逆Hessian，满足割线条件：
+\[
+s_k = x_{k+1} - x_k, \quad y_k = g_{k+1} - g_k
+\]
+\[
+B_{k+1} y_k = s_k \quad \text{（割线条件）}
+\]
+\end{conceptbox}
+
+\subsubsection{DFP公式（Davidon-Fletcher-Powell）}
+
+\begin{align}
+B_{k+1}^{DFP} &= \left(I - \frac{s_k y_k^T}{y_k^T s_k}\right) B_k \left(I - \frac{y_k s_k^T}{y_k^T s_k}\right) + \frac{s_k s_k^T}{y_k^T s_k} \\
+&= B_k - \frac{B_k y_k y_k^T B_k}{y_k^T B_k y_k} + \frac{s_k s_k^T}{y_k^T s_k}
+\end{align}
+
+\subsubsection{BFGS公式（Broyden-Fletcher-Goldfarb-Shanno）}
+
+\begin{align}
+B_{k+1}^{BFGS} &= B_k + \frac{(s_k - B_k y_k)(s_k - B_k y_k)^T}{y_k^T(s_k - B_k y_k)} \quad \text{(秩一修正)} \\
+&= \left(I - \frac{s_k y_k^T}{y_k^T s_k}\right) B_k \left(I - \frac{y_k s_k^T}{y_k^T s_k}\right) + \frac{s_k s_k^T}{y_k^T s_k}
+\end{align}
+
+或等价地对 $H$ 的更新：
+\[
+H_{k+1}^{BFGS} = H_k - \frac{H_k s_k s_k^T H_k}{s_k^T H_k s_k} + \frac{y_k y_k^T}{y_k^T s_k}
+\]
+
+\begin{algorithm}[H]
+\caption{BFGS方法}
+\begin{algorithmic}[1]
+\Require 初始点 $x_0$，初始矩阵 $B_0$（通常 $B_0 = I$）
+\State $k \gets 0$
+\While{$\|\nabla f(x_k)\| \geq \varepsilon$}
+    \State $d_k = -B_k \nabla f(x_k)$
+    \State 线搜索求 $\alpha_k$（满足Wolfe条件）
+    \State $s_k = \alpha_k d_k$，$x_{k+1} = x_k + s_k$
+    \State $y_k = \nabla f(x_{k+1}) - \nabla f(x_k)$
+    \If{$y_k^T s_k > 0$}
+        \State 用BFGS公式更新 $B_{k+1}$
+    \Else
+        \State $B_{k+1} = B_k$（或重启）
+    \EndIf
+    \State $k \gets k + 1$
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
+\begin{theorem}[BFGS的收敛性]
+若 $f$ 为凸函数且 $L$-光滑，采用Wolfe条件线搜索，则BFGS全局收敛到最优解。若 $f$ 还强凸，则超线性收敛。
+\end{theorem}
+
+\begin{example}[BFGS求解]
+$f(x) = x_1^2 + 4x_2^2$，$x_0 = (4, 1)$。
+
+$B_0 = I$，$d_0 = (-8, -8)$，$\alpha_0 = 0.2$
+
+$x_1 = (2.4, -0.6)$，$g_1 = (4.8, -4.8)$
+
+$s_0 = (-1.6, -1.6)$，$y_0 = g_1 - g_0 = (-3.2, -12.8)$
+
+计算BFGS更新得 $B_1 = \begin{bmatrix} 0.5 & 0 \\ 0 & 0.125 \end{bmatrix} = A^{-1}$
+
+$d_1 = -B_1 g_1 = (-2.4, 0.6)$，$x_2 = x_1 + d_1 = (0, 0) = x^*$！
+\end{example}
+
+\subsection{共轭梯度法与拟牛顿法的比较}
+
+\begin{table}[H]
+\centering
+\caption{共轭梯度法与拟牛顿法比较}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{特性} & \textbf{CG} & \textbf{BFGS} \\
+\midrule
+内存需求 & $O(n)$ & $O(n^2)$ \\
+每次迭代计算量 & 低 & 中等 \\
+收敛速度 & 线性/超线性 & 超线性 \\
+适合问题规模 & 大规模 & 中大规模 \\
+重启策略 & 需要 & 不需要 \\
+全局收敛 & 需配合线搜索 & 配合Wolfe条件 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Python代码实现}\label{sec:conjugate-code}
+
+\begin{codebox}[共轭梯度法]
+\begin{lstlisting}
+import numpy as np
+from scipy.optimize import minimize_scalar
+
+def conjugate_gradient(f, grad, x0, method='FR', eps=1e-6,
+                       max_iter=1000):
+    """
+    非线性共轭梯度法
+    
+    Parameters:
+        f: 目标函数
+        grad: 梯度函数
+        x0: 初始点
+        method: 'FR', 'PR', 'HS'
+        eps: 精度
+        max_iter: 最大迭代次数
+    
+    Returns:
+        x_opt: 最优解
+        history: 迭代历史
+    """
+    x = x0.copy()
+    n = len(x)
+    g = grad(x)
+    d = -g.copy()
+    history = [x.copy()]
+    
+    k = 0
+    for _ in range(max_iter):
+        if np.linalg.norm(g) < eps:
+            break
+        
+        # 线搜索
+        def phi(alpha):
+            return f(x + alpha * d)
+        res = minimize_scalar(phi)
+        alpha = res.x
+        
+        x = x + alpha * d
+        history.append(x.copy())
+        
+        g_new = grad(x)
+        
+        # 计算 beta
+        if method == 'FR':
+            beta = np.dot(g_new, g_new) / np.dot(g, g)
+        elif method == 'PR':
+            beta = np.dot(g_new, g_new - g) / np.dot(g, g)
+            beta = max(0, beta)  # PR+ 保证收敛
+        elif method == 'HS':
+            dy = g_new - g
+            beta = np.dot(g_new, dy) / np.dot(d, dy)
+        
+        # 重启
+        k += 1
+        if k % n == 0:
+            d = -g_new
+        else:
+            d = -g_new + beta * d
+        
+        g = g_new
+    
+    return x, f(x), history
+
+# 示例
+x0 = np.array([4.0, 1.0])
+x_opt, f_opt, hist = conjugate_gradient(
+    lambda x: x[0]**2 + 4*x[1]**2,
+    lambda x: np.array([2*x[0], 8*x[1]]),
+    x0
+)
+print(f"最优解: {x_opt}")
+print(f"最优值: {f_opt:.8f}")
+\end{lstlisting}
+\end{codebox}
+
+\begin{codebox}[BFGS方法]
+\begin{lstlisting}
+def bfgs(f, grad, x0, eps=1e-6, max_iter=1000):
+    """
+    BFGS拟牛顿法
+    
+    Parameters:
+        f: 目标函数
+        grad: 梯度函数
+        x0: 初始点
+        eps: 精度
+        max_iter: 最大迭代次数
+    
+    Returns:
+        x_opt: 最优解
+        history: 迭代历史
+    """
+    n = len(x0)
+    x = x0.copy()
+    B = np.eye(n)  # 初始Hessian逆近似
+    g = grad(x)
+    history = [x.copy()]
+    
+    for _ in range(max_iter):
+        if np.linalg.norm(g) < eps:
+            break
+        
+        # 搜索方向
+        d = -B @ g
+        
+        # Wolfe条件线搜索
+        alpha = 1.0
+        c1, c2 = 1e-4, 0.9
+        fx = f(x)
+        
+        for _ in range(20):
+            x_new = x + alpha * d
+            g_new = grad(x_new)
+            
+            # 充分下降
+            if f(x_new) <= fx + c1 * alpha * np.dot(g, d):
+                # 曲率条件
+                if np.dot(g_new, d) >= c2 * np.dot(g, d):
+                    break
+            alpha *= 0.5
+        
+        s = alpha * d
+        x = x + s
+        g_new = grad(x)
+        y = g_new - g
+        
+        # BFGS更新
+        if np.dot(y, s) > 1e-10:  # 保证正定性
+            rho = 1.0 / np.dot(y, s)
+            I = np.eye(n)
+            B = (I - rho * np.outer(s, y)) @ B @ \
+                (I - rho * np.outer(y, s)) + \
+                rho * np.outer(s, s)
+        
+        g = g_new
+        history.append(x.copy())
+    
+    return x, f(x), history
+
+# 示例：Rosenbrock函数
+x0 = np.array([-1.0, 2.0])
+x_opt, f_opt, hist = bfgs(rosenbrock, rosen_grad, x0)
+print(f"最优解: {x_opt}")
+print(f"最优值: {f_opt:.10f}")
+print(f"迭代次数: {len(hist)}")
+\end{lstlisting}
+\end{codebox}
+
+% 第9节：次梯度优化方法
+\section{次梯度优化方法}\label{sec:subgradient}
+
+\subsection{背景与动机}
+
+许多优化问题涉及非光滑目标函数（如L1正则化、hinge loss等），梯度不存在，需要推广导数的概念。
+
+\subsection{次梯度与次微分}\label{sec:subgradient-def}
+
+\begin{definition}[次梯度]
+设 $f: \mathbb{R}^n \to \mathbb{R}$ 为凸函数。向量 $g \in \mathbb{R}^n$ 称为 $f$ 在 $x$ 处的次梯度，如果：
+\[
+f(y) \geq f(x) + g^T(y - x), \quad \forall y \in \mathbb{R}^n
+\]
+几何意义：$g$ 定义了 $f$ 在 $x$ 处的一个支撑超平面。
+\end{definition}
+
+\begin{definition}[次微分]
+$f$ 在 $x$ 处的所有次梯度的集合称为次微分，记为 $\partial f(x)$：
+\[
+\partial f(x) = \{g : f(y) \geq f(x) + g^T(y - x), \forall y\}
+\]
+\end{definition}
+
+\begin{theorem}[次微分的性质]
+\begin{enumerate}
+    \item $\partial f(x)$ 是非空紧凸集
+    \item 若 $f$ 在 $x$ 处可微，则 $\partial f(x) = \{\nabla f(x)\}$
+    \item $x^*$ 是全局最优 $\Leftrightarrow 0 \in \partial f(x^*)$
+    \item（正齐次性）$\partial(\alpha f)(x) = \alpha \partial f(x)$（$\alpha > 0$）
+    \item（加法规则）$\partial(f_1 + f_2)(x) \supseteq \partial f_1(x) + \partial f_2(x)$
+\end{enumerate}
+\end{theorem}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.9]
+    % 坐标轴
+    \draw[->,thick] (-3.2,0) -- (3.2,0) node[right] {$x$};
+    \draw[->,thick] (0,-0.3) -- (0,3.5) node[above] {$f(x)$};
+    \node[below left] at (0,0) {$O$};
+    % 绝对值函数图像 f(x) = |x|
+    \draw[very thick,blue] (-3,3) -- (0,0) -- (3,3);
+    \node[blue,right] at (3.1,2.9) {$f(x) = |x|$};
+    % 在 x=1.5 处的次梯度（唯一，g = 1）
+    \fill[red] (1.5,1.5) circle (2.5pt) node[above right,scale=0.8] {$(1.5, 1.5)$};
+    \draw[thick,red,dashed] (-0.5,-0.5) -- (3,3);
+    \node[red,scale=0.75] at (3.3,2.7) {\small $g=1$};
+    % 在 x=-1 处的次梯度（唯一，g = -1）
+    \fill[red] (-1,1) circle (2.5pt) node[above left,scale=0.8] {$(-1, 1)$};
+    \draw[thick,green!50!black,dashed] (-3,3) -- (1,-1);
+    \node[green!50!black,scale=0.75] at (1.3,-0.7) {\small $g=-1$};
+    % 在 x=0 处的次梯度锥（整个区间 [-1, 1]）
+    \fill[orange] (0,0) circle (3pt);
+    \draw[thick,purple,dashed] (-2.5,2.5) -- (2.5,-2.5);
+    \node[purple,scale=0.75] at (2.8,-1.5) {\small $g=-1$};
+    \draw[thick,purple,dashed] (-2.5,-2.5) -- (2.5,2.5);
+    \node[purple,scale=0.75] at (2.8,1.5) {\small $g=1$};
+    \node[purple,scale=0.75] at (1.8,0.3) {\small 次微分 $[-1,1]$};
+\end{tikzpicture}
+\caption{次梯度与次微分的几何解释：$f(x)=|x|$ 在 $x \neq 0$ 处有唯一次梯度 $g = \operatorname{sign}(x)$，在 $x=0$ 处次微分为区间 $[-1, 1]$}
+\label{fig:subgradient-geom}
+\end{figure}
+
+\subsection{常见函数的次微分}\label{sec:common-subgradients}
+
+\begin{example}[绝对值函数的次微分]
+$f(x) = |x|$：
+\[
+\partial f(x) = \begin{cases} \{-1\} & x < 0 \\ \{-1, 1\} & x = 0 \\ \{+1\} & x > 0 \end{cases}
+\]
+\end{example}
+
+\begin{example}[欧几里得范数的次微分]
+$f(x) = \|x\|$：
+\[
+\partial f(x) = \begin{cases} \left\{\frac{x}{\|x\|}\right\} & x \neq 0 \\ \{g : \|g\| \leq 1\} & x = 0 \end{cases}
+\]
+\end{example}
+
+\begin{example}[最大值函数的次微分]
+$f(x) = \max_{i=1,\ldots,m} f_i(x)$：
+\[
+\partial f(x) = \text{conv}\left(\bigcup_{i \in I(x)} \partial f_i(x)\right)
+\]
+其中 $I(x) = \{i : f_i(x) = f(x)\}$ 为活跃指标集。
+\end{example}
+
+\subsection{次梯度方法}\label{sec:subgradient-method}
+
+\begin{conceptbox}[次梯度方法]
+直接推广梯度下降：
+\[
+x_{k+1} = x_k - \alpha_k g_k, \quad g_k \in \partial f(x_k)
+\]
+与梯度下降不同，$-\!g_k$ 不一定是下降方向。
+\end{conceptbox}
+
+\begin{theorem}[次梯度方法的收敛性]
+设 $f$ 为凸函数，$\|g_k\| \leq G$，$\|x_0 - x^*\| \leq R$。
+
+\textbf{固定步长} $\alpha_k = \alpha$：
+\[
+\min_{0 \leq i < k} f(x_i) - f^* \leq \frac{R^2 + G^2 \alpha^2 k}{2\alpha k} \to \frac{G^2 \alpha}{2}
+\]
+收敛到 $O(\alpha)$ 邻域内。
+
+\textbf{递减步长} $\alpha_k = \frac{R}{G\sqrt{k}}$：
+\[
+\min_{0 \leq i < k} f(x_i) - f^* \leq \frac{RG}{\sqrt{k}} = O\left(\frac{1}{\sqrt{k}}\right)
+\]
+\end{theorem}
+
+\begin{notebox}[次梯度方法的特点]
+\begin{itemize}
+    \item 收敛速率 $O(1/\sqrt{k})$，比梯度下降慢
+    \item 步长选择至关重要（递减步长）
+    \item 函数值不单调下降
+    \item 适合大规模问题（每次迭代简单）
+\end{itemize}
+\end{notebox}
+
+\subsubsection{投影次梯度方法}
+
+对于约束问题 $\min_{x \in C} f(x)$：
+\[
+x_{k+1} = P_C(x_k - \alpha_k g_k)
+\]
+其中 $P_C(x) = \arg\min_{y \in C} \|y - x\|$ 为到集合 $C$ 的投影。
+
+\subsection{近端梯度方法（Proximal Gradient）}\label{sec:proximal}
+
+\begin{conceptbox}[近端算子]
+对于函数 $h$ 和参数 $\lambda > 0$，近端算子定义为：
+\[
+\text{prox}_{\lambda h}(x) = \arg\min_u \left\{h(u) + \frac{1}{2\lambda}\|u - x\|^2\right\}
+\]
+\end{conceptbox}
+
+对于复合优化问题：$\min f(x) = g(x) + h(x)$
+
+其中 $g$ 光滑，$h$ 非光滑但简单（近端可计算）。
+
+\textbf{近端梯度法（ISTA）}：
+\[
+x_{k+1} = \text{prox}_{\alpha_k h}(x_k - \alpha_k \nabla g(x_k))
+\]
+
+\begin{example}[LASSO问题]
+$\min \frac{1}{2}\|Ax - b\|^2 + \lambda\|x\|_1$
+
+$g(x) = \frac{1}{2}\|Ax - b\|^2$，$h(x) = \lambda\|x\|_1$
+
+近端算子（软阈值）：
+\[
+[\text{prox}_{\lambda h}(x)]_i = \text{sign}(x_i) \max(|x_i| - \lambda, 0)
+\]
+
+迭代公式（ISTA）：
+\[
+x_{k+1} = S_{\alpha \lambda}(x_k - \alpha A^T(Ax_k - b))
+\]
+其中 $S$ 为软阈值算子。
+\end{example}
+
+\subsection{加速近端梯度法（FISTA）}\label{sec:fista}
+
+\begin{algorithm}[H]
+\caption{FISTA}
+\begin{algorithmic}[1]
+\Require 初始点 $x_0 = y_1$，步长 $\alpha \leq 1/L$
+\State $t_1 = 1$
+\For{$k = 1, 2, \ldots$}
+    \State $x_k = \text{prox}_{\alpha h}(y_k - \alpha \nabla g(y_k))$
+    \State $t_{k+1} = \frac{1 + \sqrt{1 + 4t_k^2}}{2}$
+    \State $y_{k+1} = x_k + \frac{t_k - 1}{t_{k+1}}(x_k - x_{k-1})$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\begin{theorem}[FISTA收敛率]
+FISTA的收敛率为 $O(1/k^2)$：
+\[
+f(x_k) - f^* \leq \frac{2L\|x_0 - x^*\|^2}{(k+1)^2}
+\]
+\end{theorem}
+
+\subsection{次梯度方法的Python实现}\label{sec:subgradient-code}
+
+\begin{codebox}[次梯度方法]
+\begin{lstlisting}
+import numpy as np
+
+def subgradient_method(f, subgrad, x0, step_rule='diminishing',
+                       alpha=0.01, eps=1e-6, max_iter=1000):
+    """
+    次梯度方法
+    
+    Parameters:
+        f: 目标函数
+        subgrad: 次梯度函数
+        x0: 初始点
+        step_rule: 'fixed', 'diminishing', 'polyak'
+        alpha: 步长参数
+        eps: 精度
+        max_iter: 最大迭代次数
+    
+    Returns:
+        x_best: 最优解
+        history: 函数值历史
+    """
+    x = x0.copy()
+    f_best = f(x)
+    x_best = x.copy()
+    history = [f_best]
+    
+    for k in range(1, max_iter + 1):
+        g = subgrad(x)
+        
+        if np.linalg.norm(g) < eps:
+            break
+        
+        # 步长选择
+        if step_rule == 'fixed':
+            step = alpha
+        elif step_rule == 'diminishing':
+            step = alpha / np.sqrt(k)
+        elif step_rule == 'polyak':
+            # 需要知道最优值 f*
+            step = (f(x) - 0) / (np.linalg.norm(g)**2 + 1e-10)
+        
+        x = x - step * g
+        f_val = f(x)
+        history.append(f_val)
+        
+        # 记录最优
+        if f_val < f_best:
+            f_best = f_val
+            x_best = x.copy()
+    
+    return x_best, history
+
+# 示例：绝对值函数求和
+f = lambda x: np.sum(np.abs(x))
+subgrad = lambda x: np.sign(x)  # 在零点取0
+
+x0 = np.array([5.0, -3.0, 2.0])
+x_best, hist = subgradient_method(f, subgrad, x0, 
+                                  step_rule='diminishing',
+                                  alpha=1.0)
+print(f"最优解: {x_best}")
+print(f"最优值: {f(x_best):.6f}")
+\end{lstlisting}
+\end{codebox}
+
+\begin{codebox}[近端梯度法（ISTA/FISTA）]
+\begin{lstlisting}
+def ista(g, grad_g, prox_h, x0, alpha=0.01, eps=1e-6,
+         max_iter=1000):
+    """
+    近端梯度法（ISTA）
+    
+    Parameters:
+        g: 光滑部分函数
+        grad_g: 光滑部分梯度
+        prox_h: 近端算子
+        x0: 初始点
+        alpha: 步长
+        eps: 精度
+    
+    Returns:
+        x_opt: 最优解
+        history: 迭代历史
+    """
+    x = x0.copy()
+    history = [g(x) + 0]  # 需要外部提供完整f值
+    
+    for _ in range(max_iter):
+        x_new = prox_h(x - alpha * grad_g(x), alpha)
+        
+        if np.linalg.norm(x_new - x) < eps:
+            break
+        
+        x = x_new
+        history.append(x.copy())
+    
+    return x, history
+
+def fista(g, grad_g, prox_h, x0, alpha=0.01, max_iter=1000):
+    """
+    加速近端梯度法（FISTA）
+    """
+    x = x0.copy()
+    y = x0.copy()
+    t = 1.0
+    history = [x.copy()]
+    
+    for _ in range(max_iter):
+        x_prev = x.copy()
+        
+        x = prox_h(y - alpha * grad_g(y), alpha)
+        
+        t_new = (1 + np.sqrt(1 + 4 * t**2)) / 2
+        y = x + ((t - 1) / t_new) * (x - x_prev)
+        
+        t = t_new
+        history.append(x.copy())
+    
+    return x, history
+
+# 软阈值算子（L1近端算子）
+def soft_threshold(x, lam):
+    return np.sign(x) * np.maximum(np.abs(x) - lam, 0)
+
+# LASSO: min 0.5*||Ax-b||^2 + lambda*||x||_1
+def solve_lasso(A, b, lam, alpha=None):
+    n = A.shape[1]
+    if alpha is None:
+        alpha = 1.0 / np.linalg.norm(A.T @ A, 2)
+    
+    grad_g = lambda x: A.T @ (A @ x - b)
+    prox_h = lambda x, alpha: soft_threshold(x, lam * alpha)
+    
+    x0 = np.zeros(n)
+    x_opt, hist = fista(None, grad_g, prox_h, x0, alpha,
+                        max_iter=1000)
+    return x_opt, hist
+\end{lstlisting}
+\end{codebox}
+
+\subsection{复杂度下界与加速方法}
+
+\begin{theorem}[一阶方法的复杂度下界]
+对于 $L$-光滑的凸函数，任何一阶方法的收敛速率下界为 $O(1/k^2)$。
+
+对于 $\mu$-强凸且 $L$-光滑的函数，下界为：
+\[
+f(x_k) - f^* \geq \left(\frac{\sqrt{\kappa} - 1}{\sqrt{\kappa} + 1}\right)^{2k} (f(x_0) - f^*)
+\]
+其中 $\kappa = L/\mu$ 为条件数。
+\end{theorem}
+
+\begin{notebox}[Nesterov加速梯度法]
+对于梯度下降 $O(1/k)$ 的收敛率，Nesterov加速可达 $O(1/k^2)$：
+
+\textbf{加速梯度法}：
+\begin{align*}
+y_k &= x_k + \beta_k(x_k - x_{k-1}) \\
+x_{k+1} &= y_k - \alpha_k \nabla f(y_k)
+\end{align*}
+其中 $\beta_k = \frac{k-1}{k+2}$（凸情形）或 $\beta_k = \frac{\sqrt{\kappa} - 1}{\sqrt{\kappa} + 1}$（强凸情形）。
+\end{notebox}
+
+% 第10节：总结
+\section{本章小结}\label{sec:ch5-summary}
+
+\subsection{核心思想}
+
+\begin{conceptbox}[多维无约束优化的两大支柱]
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \textbf{下降迭代框架}：$x_{k+1} = x_k + \alpha_k d_k$，其中 $d_k$ 为下降方向，$\alpha_k$ 为步长（由第~\ref{chap:linesearch}~章的线搜索方法确定）。
+    \item \textbf{以信息代价换取收敛速度}：仅函数值（零阶）$\rightarrow$ 梯度（一阶）$\rightarrow$ Hessian（二阶），信息越多，收敛越快。
+\end{enumerate}
+\end{conceptbox}
+
+\subsection{方法体系总览}
+
+\begin{table}[H]
+\centering
+\small
+\caption{无约束最优化方法总览（步长搜索统一使用第~\ref{chap:linesearch}~章的线搜索方法）}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}c>{\raggedright\arraybackslash}p{3cm}>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}p{4cm}@{}}
+\toprule
+\textbf{信息类型} & \textbf{代表方法} & \textbf{收敛速度} & \textbf{适用场景} \\
+\midrule
+\multirow{3}{*}{\textbf{零阶}} & 坐标轮换法 & 线性 & 小规模 \\
+ & Hooke-Jeeves & 线性 & 模式搜索 \\
+ & Rosenbrock & 超线性 & 峡谷函数 \\
+\midrule
+\multirow{3}{*}{\textbf{一阶}} & 最速下降法 & $O(1/k)$ & 大规模 \\
+ & CG & 超线性 & 大规模稀疏 \\
+ & SGD & $O(1/\sqrt{k})$ & 机器学习 \\
+\midrule
+\multirow{3}{*}{\textbf{二阶}} & 牛顿法 & 局部二次 & 中小规模 \\
+ & Levenberg-Marquardt & 超线性 & 最小二乘 \\
+ & 信任域方法 & 超线性 & 非凸问题 \\
+\midrule
+\textbf{拟牛顿} & DFP、BFGS & 超线性 & 中大规模 \\
+\midrule
+\multirow{3}{*}{\textbf{非光滑}} & 次梯度方法 & $O(1/\sqrt{k})$ & 凸非光滑 \\
+ & 近端梯度法 & $O(1/k)$ & 复合优化 \\
+ & FISTA & $O(1/k^2)$ & 复合优化 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{方法选择决策树}
+
+\begin{conceptbox}[如何选择多维无约束优化方法]
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \textbf{函数是否光滑？}
+    \begin{itemize}
+        \item 非光滑凸 $\rightarrow$ 近端梯度法 / FISTA
+        \item 非光滑且导数不可得 $\rightarrow$ 坐标轮换法 / Hooke-Jeeves
+        \item 光滑 $\rightarrow$ 继续判断
+    \end{itemize}
+    \item \textbf{能否计算Hessian？}
+    \begin{itemize}
+        \item 能且 $n < 1000$ $\rightarrow$ 牛顿法（二次收敛）或信任域方法（全局收敛）
+        \item 不能 $\rightarrow$ 继续判断
+    \end{itemize}
+    \item \textbf{问题规模？}
+    \begin{itemize}
+        \item $n > 10^5$（大规模）$\rightarrow$ 共轭梯度法 / SGD
+        \item $1000 < n < 10^5$（中规模）$\rightarrow$ BFGS（实用首选）
+        \item $n < 1000$（小规模）$\rightarrow$ BFGS 或 牛顿法
+    \end{itemize}
+    \item \textbf{特殊结构？}
+    \begin{itemize}
+        \item 最小二乘问题 $\rightarrow$ LM方法
+        \item 复合优化（$f = g + h$，$g$光滑$h$非光滑）$\rightarrow$ 近端梯度 / FISTA
+        \item 大数据/随机采样 $\rightarrow$ SGD及其变体
+    \end{itemize}
+\end{enumerate}
+\end{conceptbox}
+
+\subsection{关键概念回顾}
+
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \textbf{下降方向}：$d$ 满足 $\nabla f(x)^T d < 0$；最速下降方向 $d = -\nabla f(x)$
+    
+    \item \textbf{共轭性}：$d_i^T A d_j = 0$（$i \neq j$），保证二次函数 $n$ 步内收敛；CG法通过递推构造共轭方向
+    
+    \item \textbf{割线条件}：$B_{k+1} s_k = y_k$（其中 $s_k = x_{k+1}-x_k$，$y_k = \nabla f_{k+1}-\nabla f_k$），拟Newton法通过此条件更新Hessian近似
+    
+    \item \textbf{信任域 vs 线搜索}：信任域先限制步长范围再优化方向，全局收敛性更好；线搜索先确定方向再找步长
+    
+    \item \textbf{次梯度}：$g \in \partial f(x)$，满足 $f(y) \geq f(x) + g^T(y-x)$，推广梯度到非光滑凸函数
+    
+    \item \textbf{近端算子}：$\text{prox}_{\lambda h}(x) = \arg\min_y \{h(y) + \frac{1}{2\lambda}\|y-x\|^2\}$，将非光滑项的极小化显式求解
+    
+    \item \textbf{加速技术}：FISTA通过Nesterov动量将近端梯度法从 $O(1/k)$ 加速到 $O(1/k^2)$
+\end{enumerate}
+
+\subsection{收敛速度总结}
+
+\begin{table}[H]
+\centering
+\caption{各方法收敛速度对照}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{方法} & \textbf{一般凸} & \textbf{强凸} & \textbf{局部（光滑）} \\
+\midrule
+坐标轮换法 & $-$ & $-$ & 线性 \\
+最速下降法 & $O(1/k)$ & $O((1-\mu/L)^k)$ & 线性 \\
+共轭梯度法 & $-$ & $-$ & 超线性 \\
+牛顿法 & $-$ & $-$ & 二次 \\
+BFGS & $-$ & 超线性 & 超线性 \\
+SGD & $O(1/\sqrt{k})$ & $O(1/k)$ & $-$ \\
+次梯度方法 & $O(1/\sqrt{k})$ & $-$ & $-$ \\
+近端梯度法 & $O(1/k)$ & 线性 & $-$ \\
+FISTA & $O(1/k^2)$ & $-$ & $-$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{关键公式汇总}
+
+\begin{table}[H]
+\centering
+\caption{核心公式速查}
+\small
+\begin{tabular}{@{}lp{9.5cm}@{}}
+\toprule
+\textbf{概念/方法} & \textbf{公式} \\
+\midrule
+最速下降方向 & $d_k = -\nabla f(x_k)$ \\
+Newton方向 & $d_k = -[\nabla^2 f(x_k)]^{-1} \nabla f(x_k)$ \\
+CG（Fletcher-Reeves） & $d_k = -g_k + \beta_k d_{k-1}$，$\beta_k = \|g_k\|^2/\|g_{k-1}\|^2$ \\
+CG（Polak-Ribi\`ere） & $\beta_k = g_k^T(g_k-g_{k-1})/\|g_{k-1}\|^2$ \\
+DFP更新 & $B_{k+1} = B_k - \frac{B_k y_k y_k^T B_k}{y_k^T B_k y_k} + \frac{s_k s_k^T}{y_k^T s_k}$ \\
+BFGS更新 & $H_{k+1} = V_k^T H_k V_k + \rho_k s_k s_k^T$，$\rho_k = 1/(y_k^T s_k)$ \\
+LM方法 & $(J^T J + \lambda I) d = -J^T r$ \\
+信任域子问题 & $\min_{\|d\|\leq\Delta} m_k(d) = f_k + g_k^T d + \frac{1}{2}d^T B_k d$ \\
+次梯度迭代 & $x_{k+1} = x_k - \alpha_k g_k$，$g_k \in \partial f(x_k)$ \\
+近端梯度法 & $x_{k+1} = \text{prox}_{\alpha_k h}(x_k - \alpha_k \nabla g(x_k))$ \\
+FISTA & $x_k = \text{prox}_{\alpha h}(y_k - \alpha \nabla g(y_k))$ \\
+ & $y_{k+1} = x_k + \frac{k-1}{k+2}(x_k - x_{k-1})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{学习建议}
+
+\begin{notebox}[学习路径]
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item 掌握最速下降法的收敛性分析和步长选择（理解线搜索在多维优化中的作用）
+    \item 理解牛顿法的二次收敛性和局限性（Hessian计算代价、不正定问题）
+    \item 掌握BFGS和CG作为实用的大规模方法（拟Newton近似、共轭方向构造）
+    \item 了解信任域方法如何保证全局收敛（与线搜索策略的对比）
+    \item 了解次梯度方法处理非光滑问题（凸分析与近端算子）
+\end{enumerate}
+\end{notebox}
+
+\subsection{关键术语中英对照}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{中文} & \textbf{英文} \\
+\midrule
+最速下降法 & Steepest Descent / Gradient Descent \\
+牛顿法 & Newton's Method \\
+共轭梯度法 & Conjugate Gradient (CG) \\
+拟牛顿法 & Quasi-Newton Method \\
+DFP公式 & Davidon-Fletcher-Powell Formula \\
+BFGS公式 & Broyden-Fletcher-Goldfarb-Shanno Formula \\
+信任域方法 & Trust Region Method \\
+Levenberg-Marquardt & Levenberg-Marquardt Algorithm \\
+次梯度 & Subgradient \\
+次微分 & Subdifferential \\
+近端算子 & Proximal Operator \\
+近端梯度法 & Proximal Gradient Method \\
+FISTA & Fast Iterative Shrinkage-Thresholding Algorithm \\
+坐标轮换法 & Cyclic Coordinate Method \\
+Hooke-Jeeves方法 & Hooke-Jeeves Pattern Search \\
+Rosenbrock方法 & Rosenbrock's Method \\
+下降方向 & Descent Direction \\
+共轭方向 & Conjugate Direction \\
+割线条件 & Secant Condition \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\newpage
+
+% ==================== 第六章 约束最优化理论 ====================

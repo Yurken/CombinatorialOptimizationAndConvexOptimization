@@ -1,0 +1,1248 @@
+\chapter{约束最优化方法}\label{chap:constrained-methods}
+\section{非线性最小二乘问题}\label{sec:nls}
+
+\subsection{问题描述}
+
+\begin{definition}[非线性最小二乘问题]
+给定训练集 $S = \{(x_i, y_i)\}_{i=1}^{m}$，需要估计近似函数 $f(x, \theta)$ 来模拟数据变化趋势。定义残量：
+\[
+r_i(\theta) = f(x_i, \theta) - y_i,\quad i = 1, 2, \ldots, m
+\]
+
+非线性最小二乘问题为：
+\[
+\min_{\theta \in \R^n}\ F(\theta) = \frac{1}{2}\sum_{i=1}^{m} r_i(\theta)^2 = \frac{1}{2}\|r(\theta)\|^2
+\]
+其中 $r: \R^n \to \R^m$ 是残量向量函数。若 $r$ 为线性函数，则退化为线性最小二乘。
+\end{definition}
+
+\subsection{梯度和Hessian矩阵}
+
+设 $J(\theta)$ 是 $r(\theta)$ 的Jacobi矩阵：
+\[
+J(\theta) = \begin{pmatrix}
+\frac{\partial r_1}{\partial \theta_1} & \cdots & \frac{\partial r_1}{\partial \theta_n} \\
+\vdots & \ddots & \vdots \\
+\frac{\partial r_m}{\partial \theta_1} & \cdots & \frac{\partial r_m}{\partial \theta_n}
+\end{pmatrix} \in \R^{m \times n}
+\]
+
+\begin{property}[梯度和Hessian]
+\begin{align*}
+\nabla F(\theta) &= J(\theta)^T r(\theta) = \sum_{i=1}^{m} r_i(\theta) \nabla r_i(\theta) \\
+\nabla^2 F(\theta) &= J(\theta)^T J(\theta) + S(\theta)
+\end{align*}
+其中 $S(\theta) = \sum_{i=1}^{m} r_i(\theta) \nabla^2 r_i(\theta)$ 包含残量的二阶信息。
+\end{property}
+
+\subsection{高斯-牛顿法（Gauss-Newton）}
+
+\begin{conceptbox}[高斯-牛顿法原理]
+在Hessian中忽略 $S(\theta)$ 项（假设残量较小或接近线性），得到近似Hessian $J^T J$。Newton迭代变为：
+\[
+\theta_{k+1} = \theta_k - (J_k^T J_k)^{-1} J_k^T r_k
+\]
+\end{conceptbox}
+
+\begin{algobox}[高斯-牛顿法算法]
+\textbf{Step 1}：解线性方程组 $J_k^T J_k \, d_k = -J_k^T r_k$ 得到方向 $d_k$
+
+\textbf{Step 2}：更新 $\theta_{k+1} = \theta_k + d_k$（或加入线搜索）
+\end{algobox}
+
+\begin{notebox}[高斯-牛顿法的特点]
+\begin{itemize}[itemsep=0.3em]
+    \item 只需残量的一阶导数信息（Jacobi矩阵）
+    \item $J^T J$ 至少半正定，保证下降方向
+    \item 收敛速度取决于 $S(\theta)$ 的重要性：
+    \begin{itemize}
+        \item $S(\theta^*) = 0$：二阶收敛
+        \item $S(\theta)$ 较小：Q-线性收敛
+        \item $S(\theta)$ 较大：可能不收敛
+    \end{itemize}
+    \item 若 $J$ 不满秩，方法失效
+    \item 带线搜索的版本称为\textbf{阻尼高斯-牛顿法}
+\end{itemize}
+\end{notebox}
+
+\subsection{Levenberg-Marquardt方法}
+
+\begin{conceptbox}[LM方法原理]
+结合高斯-牛顿法和梯度下降法，引入信赖域思想：
+\[
+\min_d\ \frac{1}{2}\|J_k d + r_k\|^2 \quad \text{s.t.}\quad \|d\| \leq \Delta_k
+\]
+
+等价于求解：
+\[
+(J_k^T J_k + \lambda_k I) d = -J_k^T r_k
+\]
+其中 $\lambda_k > 0$ 为正则化参数。
+\end{conceptbox}
+
+\begin{notebox}[LM方法的特点]
+\begin{itemize}[itemsep=0.3em]
+    \item $\lambda_k$ 大时：接近梯度下降法（最速下降）
+    \item $\lambda_k$ 小时：接近高斯-牛顿法
+    \item $J^T J + \lambda I$ 正定，保证下降方向
+    \item 是最常用的非线性最小二乘算法
+    \item 通过调整 $\lambda$ 自适应地切换行为
+\end{itemize}
+\end{notebox}
+
+\begin{example}[高斯-牛顿法迭代两次]\label{ex:gn}
+\textbf{问题}：用高斯-牛顿法拟合 $f(x, \theta) = \theta_1 e^{\theta_2 x}$，数据点 $(0, 2), (1, 3)$。初始 $\theta_0 = (1, 0)^T$。
+
+\textbf{解}：残量 $r_1 = \theta_1 - 2$，$r_2 = \theta_1 e^{\theta_2} - 3$
+
+\textbf{Jacobi矩阵}：
+\[
+J = \begin{pmatrix} 1 & 0 \\ e^{\theta_2} & \theta_1 e^{\theta_2} \end{pmatrix}
+\]
+
+\textbf{第0轮}：$\theta_0 = (1, 0)^T$
+\[
+r_0 = \begin{pmatrix} -1 \\ -2 \end{pmatrix},\quad
+J_0 = \begin{pmatrix} 1 & 0 \\ 1 & 1 \end{pmatrix}
+\]
+\[
+J_0^T J_0 = \begin{pmatrix} 2 & 1 \\ 1 & 1 \end{pmatrix},\quad
+J_0^T r_0 = \begin{pmatrix} -3 \\ -2 \end{pmatrix}
+\]
+解 $J_0^T J_0 \, d_0 = -J_0^T r_0$ 得 $d_0 = (1, 1)^T$
+\[
+\theta_1 = \theta_0 + d_0 = (2, 1)^T
+\]
+
+\textbf{第1轮}：$\theta_1 = (2, 1)^T$
+\[
+r_1 = \begin{pmatrix} 0 \\ 2e - 3 \end{pmatrix} \approx \begin{pmatrix} 0 \\ 2.437 \end{pmatrix},\quad
+J_1 = \begin{pmatrix} 1 & 0 \\ e & 2e \end{pmatrix} \approx \begin{pmatrix} 1 & 0 \\ 2.718 & 5.437 \end{pmatrix}
+\]
+解 $J_1^T J_1 \, d_1 = -J_1^T r_1$ 得新的方向 $d_1$，更新到 $\theta_2$。
+\end{example}
+
+\begin{lstlisting}[language=Python, caption=Levenberg-Marquardt实现]
+import numpy as np
+from scipy.optimize import least_squares
+
+# === 非线性最小二乘：指数拟合 ===
+def model(theta, x):
+    """f(x) = theta1 * exp(theta2 * x)"""
+    return theta[0] * np.exp(theta[1] * x)
+
+def residuals(theta, x, y):
+    """残量"""
+    return model(theta, x) - y
+
+# 数据
+x_data = np.array([0.0, 1.0, 2.0, 3.0])
+y_data = np.array([2.0, 3.2, 5.1, 8.3])
+
+# 使用scipy的LM方法
+result = least_squares(residuals, x0=[1.0, 0.5], 
+                       args=(x_data, y_data), method='lm')
+print(f"最优参数: theta* = {result.x}")
+print(f"残量范数: ||r|| = {np.linalg.norm(result.fun):.6f}")
+print(f"迭代次数: {result.nfev}")
+
+# 手动实现高斯-牛顿法
+def gauss_newton(residuals, jac, theta0, x, y, max_iter=50, tol=1e-6):
+    theta = theta0.copy()
+    for k in range(max_iter):
+        r = residuals(theta, x, y)
+        J = jac(theta, x)
+        # 解正规方程
+        d = np.linalg.solve(J.T @ J, -J.T @ r)
+        theta = theta + d
+        if np.linalg.norm(d) < tol:
+            break
+    return theta, k+1
+
+def jac_exp(theta, x):
+    """Jacobi矩阵"""
+    n = len(x)
+    J = np.zeros((n, 2))
+    J[:, 0] = np.exp(theta[1] * x)
+    J[:, 1] = theta[0] * x * np.exp(theta[1] * x)
+    return J
+
+theta_gn, iters = gauss_newton(residuals, jac_exp, 
+                                np.array([1.0, 0.5]), x_data, y_data)
+print(f"\\n高斯-牛顿: theta* = {theta_gn}, 迭代{iters}次")
+\end{lstlisting}
+
+\section{最优性条件回顾}\label{sec:optimality}
+
+\subsection{无约束问题}
+
+\begin{theorem}[无约束一阶必要条件]
+设 $f$ 在 $x^*$ 处可微，若 $x^*$ 是局部最优解，则 $\nabla f(x^*) = 0$。
+\end{theorem}
+
+\begin{theorem}[无约束二阶必要条件]
+设 $f$ 在 $x^*$ 处二阶可微，若 $x^*$ 是局部最优解，则 $\nabla f(x^*) = 0$ 且 $\nabla^2 f(x^*) \succeq 0$。
+\end{theorem}
+
+\begin{theorem}[无约束二阶充分条件]
+设 $f$ 在 $x^*$ 处二阶可微，若 $\nabla f(x^*) = 0$ 且 $\nabla^2 f(x^*) \succ 0$，则 $x^*$ 是严格局部最优解。
+\end{theorem}
+
+\subsection{有约束问题——基本概念}
+
+考虑约束优化问题：
+\[
+\min\ f(x)\quad \text{s.t.}\quad g_i(x) \leq 0,\ i \in \mathcal{I};\quad h_j(x) = 0,\ j \in \mathcal{E}
+\]
+
+\begin{definition}[可行域]
+$\mathcal{X} = \{x \in \R^n \mid g_i(x) \leq 0,\ h_j(x) = 0,\ \forall i, j\}$
+\end{definition}
+
+\begin{definition}[起作用约束（Active Constraint）]
+在可行点 $x$ 处，满足 $g_i(x) = 0$ 的不等式约束称为\textbf{起作用约束}。起作用约束集记为：
+\[
+\mathcal{A}(x) = \{i \in \mathcal{I} \mid g_i(x) = 0\}
+\]
+\end{definition}
+
+\begin{definition}[可行方向]
+方向 $d$ 在点 $x$ 处是\textbf{可行方向}，若存在 $\bar{\alpha} > 0$ 使得：
+\[
+x + \alpha d \in \mathcal{X},\quad \forall \alpha \in [0, \bar{\alpha}]
+\]
+\end{definition}
+
+\begin{definition}[可行下降方向]
+方向 $d$ 在点 $x$ 处是\textbf{可行下降方向}，若：
+\begin{enumerate}[label=(\arabic*)]
+    \item $d$ 是可行方向
+    \item $\nabla f(x)^T d < 0$（下降方向）
+\end{enumerate}
+\end{definition}
+
+\subsection{等式约束问题}
+
+\begin{theorem}[等式约束的一阶条件]
+设 $x^*$ 是等式约束问题的局部最优点，约束梯度线性无关（LICQ），则存在 $\lambda^*$ 使得：
+\[
+\nabla f(x^*) + \sum_{j \in \mathcal{E}} \lambda_j^* \nabla h_j(x^*) = 0
+\]
+即 $\nabla f(x^*)$ 是约束梯度的线性组合。
+\end{theorem}
+
+\begin{example}[验证最优性条件]
+\textbf{问题}：$\min\ f(x) = x_1 + x_2$，s.t. $x_1^2 + x_2^2 = 2$。验证 $x^* = (-1, -1)$ 是否满足一阶必要条件。
+
+\textbf{解}：
+\[
+\nabla f = (1, 1)^T,\quad h(x) = x_1^2 + x_2^2 - 2 = 0,\quad \nabla h = (2x_1, 2x_2)^T
+\]
+在 $x^* = (-1, -1)$：
+\[
+\nabla h(x^*) = (-2, -2)^T
+\]
+需要找 $\lambda$ 使 $\nabla f + \lambda \nabla h = 0$：
+\[
+(1, 1)^T + \lambda(-2, -2)^T = 0 \Rightarrow 1 - 2\lambda = 0 \Rightarrow \lambda = \frac{1}{2}
+\]
+满足一阶必要条件。
+\end{example}
+
+\section{KKT条件回顾}\label{sec:ch7-kkt-review}
+
+本章讨论约束优化的数值方法，这些方法通常需要判断当前迭代点是否满足最优性条件。
+\begin{conceptbox}[KKT条件速查]
+KKT条件的详细推导与证明见第~\ref{chap:constrained-theory}~章第~\ref{sec:ch6-kkt}~节。
+\begin{itemize}
+    \item \textbf{平稳性}：$\nabla f(x^*) + \sum \mu_i^* \nabla g_i(x^*) + \sum \lambda_j^* \nabla h_j(x^*) = 0$
+    \item \textbf{原始可行性}：$g_i(x^*) \leq 0$，$h_j(x^*) = 0$
+    \item \textbf{对偶可行性}：$\mu_i^* \geq 0$
+    \item \textbf{互补松弛}：$\mu_i^* g_i(x^*) = 0$
+\end{itemize}
+\end{conceptbox}
+\section{可行方向法}\label{sec:ch7-feasible-direction}
+
+可行方向法的理论基础是最优性条件（见第~\ref{chap:constrained-theory}~章第~\ref{sec:ch6-feasible-direction}~节）：在局部最优点处不存在可行下降方向。因此，通过系统地寻找可行下降方向来迭代逼近最优解。
+
+\subsection{基本思想}
+
+可行方向法（Feasible Direction Method）在每次迭代中寻找一个\textbf{可行下降方向}，然后沿该方向进行一维搜索。
+
+\begin{algobox}[可行方向法框架]
+\textbf{迭代格式}：$x_{k+1} = x_k + \alpha_k d_k$
+
+要求方向 $d_k$ 满足：
+\begin{enumerate}[label=(\arabic*)]
+    \item 可行性：$x_k + \alpha d_k \in \mathcal{X}$ 对充分小的 $\alpha > 0$
+    \item 下降性：$\nabla f(x_k)^T d_k < 0$
+\end{enumerate}
+\end{algobox}
+
+\subsection{线性约束情况}
+
+考虑问题：
+\[
+\min\ f(x)\quad \text{s.t.}\quad Ax \leq b,\quad Ex = e
+\]
+
+\begin{theorem}[可行方向判定的充要条件]
+设 $x$ 是可行解，$A_1 x = b_1$（起作用约束），$A_2 x < b_2$（不起作用约束）。则：
+\begin{enumerate}[label=(\arabic*)]
+    \item $d$ 是可行方向的充要条件：$A_1 d \leq 0$，$Ed = 0$
+    \item 若还满足 $\nabla f(x)^T d < 0$，则 $d$ 是可行下降方向
+\end{enumerate}
+\end{theorem}
+
+\textbf{求解可行下降方向}：转化为线性规划问题
+\[
+\min_{d, z}\ z\quad \text{s.t.}\quad \nabla f(x)^T d \leq z,\ A_1 d \leq 0,\ Ed = 0,\ -1 \leq d_j \leq 1
+\]
+
+\begin{notebox}[判定准则]
+设最优解为 $(d^*, z^*)$：
+\begin{itemize}[itemsep=0.3em]
+    \item 若 $z^* < 0$：$d^*$ 是可行下降方向
+    \item 若 $z^* = 0$：$x$ 是KKT点（找不到可行下降方向）
+\end{itemize}
+\end{notebox}
+
+\subsection{非线性约束情况}
+
+对于非线性约束 $g_i(x) \leq 0$，可行方向条件变为：
+\[
+\nabla g_i(x)^T d \leq 0,\quad \forall i \in \mathcal{A}(x)
+\]
+
+同样转化为线性规划求解 $d$ 和 $z$：
+\[
+\min_{d, z}\ z\quad \text{s.t.}\quad \nabla f(x)^T d \leq z,\ \nabla g_i(x)^T d \leq 0\ (i \in \mathcal{A}),\ -1 \leq d_j \leq 1
+\]
+
+\subsection{计算步骤}
+
+\begin{algobox}[可行方向法计算步骤]
+\textbf{Step 1}：给定初始可行点 $x_0$，允许误差 $\varepsilon > 0$，$k = 0$
+
+\textbf{Step 2}：确定起作用约束集 $\mathcal{A}(x_k)$
+
+\textbf{Step 3}：若 $\mathcal{A} = \emptyset$（内点）：
+\begin{itemize}
+    \item 若 $\|\nabla f(x_k)\| < \varepsilon$，停
+    \item 否则取 $d_k = -\nabla f(x_k)$（最速下降），转Step 6
+\end{itemize}
+
+\textbf{Step 4}：若 $\mathcal{A} \neq \emptyset$（边界点），求解方向LP得 $(d_k^*, z^*)$
+
+\textbf{Step 5}：若 $|z^*| < \varepsilon$，停（$x_k$ 近似KKT点）；否则令 $d_k = d_k^*$
+
+\textbf{Step 6}：沿 $d_k$ 线搜索求 $\alpha_k$，更新 $x_{k+1} = x_k + \alpha_k d_k$
+
+\textbf{Step 7}：$k \leftarrow k+1$，转Step 2
+\end{algobox}
+
+\begin{example}[可行方向法——迭代两次]\label{ex:fd}
+\textbf{问题}：$\min\ f(x) = 2x_1^2 + 2x_2^2 - 2x_1 x_2 - 4x_1 - 6x_2$
+s.t. $x_1 + x_2 \leq 2$，$x_1 + 5x_2 \leq 5$，$x_1 \geq 0$，$x_2 \geq 0$。
+取 $x_0 = (0, 0)^T$，$\varepsilon = 0.001$。
+
+\textbf{解}：$\nabla f = (4x_1 - 2x_2 - 4,\ 4x_2 - 2x_1 - 6)^T$
+
+\textbf{第0轮}：$x_0 = (0, 0)$
+\begin{itemize}
+    \item 约束值：$g_1 = 0$，$g_2 = 0$（前两个约束都起作用）
+    \item $\nabla f(x_0) = (-4, -6)^T$
+    \item 求解方向LP：$\min\ z$ s.t. $-4d_1 - 6d_2 \leq z$，$d_1 + d_2 \leq 0$，$d_1 + 5d_2 \leq 0$，$-1 \leq d \leq 1$
+    \item 解得 $d_0 = (1, -0.2)^T$，$z = -2.8 < 0$，是下降方向
+    \item 线搜索求 $\alpha_0$：$\min_{0 \leq \alpha \leq \alpha_{\max}} f(x_0 + \alpha d_0)$
+    \item 由约束 $x_1 + 5x_2 \leq 5$：$\alpha + 5(-0.2\alpha) \leq 5$ 恒成立
+    \item 求稳定点得 $\alpha_0 \approx 0.5$，$x_1 = (0.5, -0.1)$
+\end{itemize}
+
+\textbf{第1轮}：从 $x_1$ 继续迭代，确定新的起作用约束集，求解新的方向LP，直到收敛。
+
+最优解：$x^* \approx (0.5, 0.9)$，$f^* \approx -3.57$。
+\end{example}
+
+\begin{lstlisting}[language=Python, caption=可行方向法实现]
+import numpy as np
+from scipy.optimize import linprog
+
+def feasible_direction_method(f, grad_f, A, b, x0, 
+                               eps=1e-6, max_iter=100):
+    """
+    可行方向法（线性约束 Ax <= b）
+    """
+    x = x0.copy()
+    n = len(x)
+    history = [x.copy()]
+    
+    for k in range(max_iter):
+        g = grad_f(x)
+        
+        # 确定起作用约束
+        slack = b - A @ x
+        active = np.where(np.abs(slack) < 1e-8)[0]
+        
+        if len(active) == 0:
+            # 内点：梯度下降
+            if np.linalg.norm(g) < eps:
+                break
+            d = -g
+        else:
+            # 边界点：求解方向LP
+            # min z s.t. g^T d <= z, A_active d <= 0, -1 <= d <= 1
+            A_active = A[active] if len(active) > 0 else np.zeros((1, n))
+            
+            # 变量 [d; z]
+            c = np.zeros(n + 1)
+            c[-1] = 1  # 最小化 z
+            
+            A_ub = np.zeros((1 + len(active) + 2*n, n + 1))
+            A_ub[0, :n] = g      # g^T d <= z 即 g^T d - z <= 0
+            A_ub[0, -1] = -1
+            
+            for i, idx in enumerate(active):
+                A_ub[1+i, :n] = A[idx]  # A_i d <= 0
+            
+            # -1 <= d <= 1
+            for i in range(n):
+                A_ub[1+len(active)+i, i] = 1
+                A_ub[1+len(active)+n+i, i] = -1
+            
+            b_ub = np.zeros(1 + len(active) + 2*n)
+            b_ub[1+len(active):1+len(active)+n] = 1
+            b_ub[1+len(active)+n:] = 1
+            
+            res = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=[(None,None)]*n+[(None,None)])
+            
+            if not res.success:
+                break
+            
+            d = res.x[:n]
+            z = res.x[-1]
+            
+            if abs(z) < eps:
+                break
+        
+        # 一维搜索
+        alpha_max = 1.0
+        slack = b - A @ x
+        Ad = A @ d
+        for i in range(len(Ad)):
+            if Ad[i] > 1e-10:
+                alpha_max = min(alpha_max, slack[i] / Ad[i])
+        
+        # 精确线搜索
+        alphas = np.linspace(0, alpha_max, 100)
+        best_alpha = alphas[np.argmin([f(x + a*d) for a in alphas])]
+        
+        x = x + best_alpha * d
+        history.append(x.copy())
+    
+    return x, f(x), k+1, history
+
+
+# === 测试 ===
+def f(x):
+    return 2*x[0]**2 + 2*x[1]**2 - 2*x[0]*x[1] - 4*x[0] - 6*x[1]
+
+def grad_f(x):
+    return np.array([4*x[0] - 2*x[1] - 4, 
+                     4*x[1] - 2*x[0] - 6])
+
+A = np.array([[1, 1], [1, 5], [-1, 0], [0, -1]])
+b = np.array([2, 5, 0, 0])
+
+x_opt, f_opt, iters, hist = feasible_direction_method(
+    f, grad_f, A, b, np.array([0.0, 0.0]))
+print(f"最优解: x* = {x_opt}")
+print(f"最优值: f* = {f_opt:.6f}")
+print(f"迭代次数: {iters}")
+\end{lstlisting}
+
+\section{制约函数法（罚函数法与内点法）}\label{sec:ch7-penalty}
+
+罚函数法与内点法的理论基础见第~\ref{chap:constrained-theory}~章第~\ref{sec:ch6-penalty}~节。本章侧重算法的具体实现与数值计算。
+
+\subsection{外点罚函数法}
+
+\begin{conceptbox}[外点罚函数法思想]
+通过构造\textbf{惩罚函数} $P(x, \sigma)$，将约束问题转化为一系列无约束问题：
+\[
+\min_x\ P(x, \sigma) = f(x) + \sigma \cdot \text{penalty}(x)
+\]
+其中惩罚项在可行域内为零，在可行域外取很大的正值。
+\end{conceptbox}
+
+\textbf{常用惩罚函数}：
+
+\textbf{等式约束}：$h_j(x) = 0$：
+\[
+P(x, \sigma) = f(x) + \frac{\sigma}{2}\sum_{j \in \mathcal{E}} h_j(x)^2
+\]
+
+\textbf{不等式约束}：$g_i(x) \leq 0$：
+\[
+g_i^+(x) = \max\{0, g_i(x)\},\quad
+P(x, \sigma) = f(x) + \frac{\sigma}{2}\sum_{i \in \mathcal{I}} g_i^+(x)^2
+\]
+
+\textbf{一般形式}：
+\[
+P(x, \sigma) = f(x) + \frac{\sigma}{2}\left[\sum_{j \in \mathcal{E}} h_j(x)^2 + \sum_{i \in \mathcal{I}} (g_i^+(x))^2\right]
+\]
+
+\begin{algobox}[外点罚函数法算法]
+\textbf{Step 1}：给定初始点 $x_0$，初始罚因子 $\sigma_0 > 0$，放大系数 $c > 1$，$\varepsilon > 0$，$k = 0$
+
+\textbf{Step 2}：以 $x_k$ 为初值，求解 $\min_x P(x, \sigma_k)$，得 $x_{k+1}$
+
+\textbf{Step 3}：若 $\sigma_k \cdot \text{penalty}(x_{k+1}) < \varepsilon$，停
+
+\textbf{Step 4}：$\sigma_{k+1} = c \sigma_k$，$k \leftarrow k+1$，转Step 2
+\end{algobox}
+
+\begin{theorem}[外点罚函数法收敛性]
+设 $\sigma_k \to +\infty$，$x_k$ 是 $P(x, \sigma_k)$ 的全局极小点，则 $\{x_k\}$ 的每个极限点都是原COP问题的全局极小点。
+\end{theorem}
+
+\begin{notebox}[外点罚函数法的优缺点]
+\textbf{优点}：不要求初始点为可行点
+
+\textbf{缺点}：
+\begin{itemize}
+    \item $\sigma \to \infty$ 时Hessian条件数恶化，数值不稳定
+    \item 中间迭代点不可行
+    \item 需要求解一系列越来越困难的无约束问题
+\end{itemize}
+\end{notebox}
+
+\subsection{内点法（障碍函数法）}
+
+\begin{conceptbox}[内点法思想]
+在可行域\textbf{内部}设置\textbf{障碍函数}（Barrier Function），使迭代点始终保持在可行域内部。当点接近边界时，障碍函数趋向 $+\infty$。
+
+\textbf{障碍问题}：
+\[
+\min_x\ B(x, \mu) = f(x) + \mu \cdot b(x)\quad \text{s.t.}\quad x \in \text{int}(\mathcal{X})
+\]
+其中 $\mu > 0$ 为障碍参数，随迭代减小至0。
+\end{conceptbox}
+
+\textbf{常用障碍函数}：
+
+\textbf{倒数障碍函数}：
+\[
+b(x) = \sum_{i=1}^{m} \frac{-1}{g_i(x)}
+\]
+
+\textbf{对数障碍函数}（更常用）：
+\[
+b(x) = -\sum_{i=1}^{m} \ln(-g_i(x))
+\]
+
+\begin{algobox}[内点法算法]
+\textbf{Step 1}：给定\textbf{严格内点} $x_0$（$g_i(x_0) < 0$），$\mu_0 > 0$，缩减因子 $\beta \in (0, 1)$，$\varepsilon > 0$，$k = 0$
+
+\textbf{Step 2}：以 $x_k$ 为初值，求解 $\min_x B(x, \mu_k)$，得 $x_{k+1}$
+
+\textbf{Step 3}：若 $\mu_k \cdot m < \varepsilon$（$m$ 为约束数），停
+
+\textbf{Step 4}：$\mu_{k+1} = \beta \mu_k$，$k \leftarrow k+1$，转Step 2
+\end{algobox}
+
+\begin{theorem}[内点法收敛性]
+设 $\mu_k \to 0$，$x_k$ 是障碍问题的解，则 $\{x_k\}$ 的每个极限点都是原问题的最优解。
+\end{theorem}
+
+\begin{example}[内点法——迭代两次]\label{ex:interior}
+\textbf{问题}：$\min\ f(x) = x^2$，s.t. $x \geq 2$。用对数障碍函数，$x_0 = 3$，$\mu_0 = 1$。
+
+\textbf{解}：约束改写为 $g(x) = 2 - x \leq 0$。
+
+障碍函数：$B(x, \mu) = x^2 - \mu \ln(x - 2)$
+
+求导：$\frac{\partial B}{\partial x} = 2x - \frac{\mu}{x-2} = 0 \Rightarrow 2x(x-2) = \mu$
+
+\textbf{第0轮}：$\mu_0 = 1$，解 $2x^2 - 4x - 1 = 0$：
+\[
+x_1 = \frac{4 + \sqrt{16+8}}{4} = \frac{4 + 2\sqrt{6}}{4} \approx 2.2247
+\]
+
+\textbf{第1轮}：$\mu_1 = 0.5$，解 $2x^2 - 4x - 0.5 = 0$：
+\[
+x_2 = \frac{4 + \sqrt{16+4}}{4} = \frac{4 + 2\sqrt{5}}{4} \approx 2.1180
+\]
+
+随着 $\mu \to 0$，$x_k \to 2 = x^*$。
+\end{example}
+
+\begin{lstlisting}[language=Python, caption=罚函数法与内点法实现]
+import numpy as np
+from scipy.optimize import minimize
+
+def penalty_method(f, h_eq, g_ineq, x0, sigma0=1.0, c=10.0,
+                   eps=1e-6, max_iter=20):
+    """外点罚函数法"""
+    x = x0.copy()
+    sigma = sigma0
+    history = []
+    
+    for k in range(max_iter):
+        # 构造罚函数
+        def P(x):
+            penalty = 0
+            if h_eq is not None:
+                for h in h_eq:
+                    penalty += h(x)**2
+            if g_ineq is not None:
+                for g in g_ineq:
+                    penalty += max(0, g(x))**2
+            return f(x) + 0.5 * sigma * penalty
+        
+        res = minimize(P, x, method='BFGS')
+        x = res.x
+        history.append(x.copy())
+        
+        # 计算约束违反度
+        violation = 0
+        if h_eq is not None:
+            for h in h_eq:
+                violation += abs(h(x))
+        if g_ineq is not None:
+            for g in g_ineq:
+                violation += max(0, g(x))
+        
+        if violation < eps:
+            break
+        sigma *= c
+    
+    return x, f(x), k+1, history
+
+
+def interior_point_method(f, g_ineq, x0, mu0=1.0, beta=0.1,
+                          eps=1e-6, max_iter=50):
+    """对数障碍函数内点法（简化版）"""
+    x = x0.copy()
+    mu = mu0
+    history = [x.copy()]
+    
+    for k in range(max_iter):
+        # 障碍函数
+        def B(x):
+            barrier = 0
+            for g in g_ineq:
+                val = g(x)
+                if val >= 0:
+                    return np.inf
+                barrier -= np.log(-val)
+            return f(x) + mu * barrier
+        
+        res = minimize(B, x, method='BFGS')
+        x = res.x
+        history.append(x.copy())
+        
+        if mu < eps:
+            break
+        mu *= beta
+    
+    return x, f(x), k+1, history
+
+
+# === 测试 ===
+print("=" * 50)
+print("罚函数法")
+print("=" * 50)
+x_opt, f_opt, iters, hist = penalty_method(
+    lambda x: x[0]**2 + x[1]**2,
+    [lambda x: x[0] + x[1] - 1],  # h(x) = 0
+    None,
+    np.array([0.5, 0.5])
+)
+print(f"最优解: x* = {x_opt}")
+print(f"最优值: f* = {f_opt:.6f}")
+
+print("\\n" + "=" * 50)
+print("内点法")
+print("=" * 50)
+x_opt2, f_opt2, iters2, hist2 = interior_point_method(
+    lambda x: x[0]**2,
+    [lambda x: 2 - x[0]],  # g(x) <= 0 means x >= 2
+    np.array([3.0])
+)
+print(f"最优解: x* = {x_opt2}")
+print(f"最优值: f* = {f_opt2:.6f}")
+print(f"迭代次数: {iters2}")
+\end{lstlisting}
+
+\section{增广拉格朗日函数法与乘子法}\label{sec:augmented-lagrangian}
+
+\subsection{罚函数的困难}
+
+外点罚函数法要求 $\sigma \to \infty$ 才能收敛到可行解，这导致：
+\begin{itemize}
+    \item Hessian矩阵条件数恶化
+    \item 子问题求解越来越困难
+    \item 数值不稳定
+\end{itemize}
+
+\begin{notebox}[关键观察]
+在罚函数最优解 $x^*(\sigma)$ 处：
+\[
+\nabla P(x^*, \sigma) = \nabla f(x^*) + \sigma \sum_{i} g_i^+(x^*) \nabla g_i(x^*) = 0
+\]
+对比KKT条件：$\nabla f(x^*) + \sum_i \mu_i^* \nabla g_i(x^*) = 0$
+
+要使两者一致，需要 $\sigma g_i^+(x^*) \approx \mu_i^*$，即约束违反度 $g_i^+(x^*) \approx \mu_i^*/\sigma$。当 $\sigma \to \infty$ 时违反度趋于0，但中间过程约束不被精确满足。
+\end{notebox}
+
+\subsection{增广拉格朗日函数法}
+
+\begin{conceptbox}[增广拉格朗日函数]
+将罚函数与拉格朗日函数结合，对\textbf{等式约束}问题 $h_j(x) = 0$：
+\[
+\mathcal{L}_A(x, \lambda, \sigma) = f(x) + \sum_j \lambda_j h_j(x) + \frac{\sigma}{2}\sum_j h_j(x)^2
+\]
+其中 $\lambda$ 是拉格朗日乘子估计。
+\end{conceptbox}
+
+\begin{algobox}[增广拉格朗日法（乘子法）]
+\textbf{Step 1}：给定 $x_0$，$\lambda_0$，$\sigma_0 > 0$，$k = 0$
+
+\textbf{Step 2}：求解 $\min_x \mathcal{L}_A(x, \lambda_k, \sigma_k)$ 得 $x_{k+1}$
+
+\textbf{Step 3}：更新乘子：
+\[
+\lambda_{k+1} = \lambda_k + \sigma_k h(x_{k+1})
+\]
+
+\textbf{Step 4}：若 $\|h(x_{k+1})\| < \varepsilon$，停
+
+\textbf{Step 5}：可适当增大 $\sigma_{k+1}$，$k \leftarrow k+1$，转Step 2
+\end{algobox}
+
+\begin{notebox}[增广拉格朗日法的优势]
+\begin{itemize}[itemsep=0.3em]
+    \item 若 $\lambda$ 接近最优乘子 $\lambda^*$，有限 $\sigma$ 即可使约束精确满足
+    \item 避免了 $\sigma \to \infty$ 导致的数值困难
+    \item 乘子更新使得约束违反度与 $\mu$ 成正比，接近最优时自动减小
+    \item 收敛速度比纯罚函数法快得多
+\end{itemize}
+\end{notebox}
+
+\subsection{不等式约束的处理}
+
+引入松弛变量 $s_i \geq 0$ 将不等式转为等式：$g_i(x) + s_i = 0$。
+
+增广拉格朗日函数变为：
+\[
+\mathcal{L}_A(x, s, \mu, \sigma) = f(x) + \sum_i \mu_i(g_i(x) + s_i) + \frac{\sigma}{2}\sum_i (g_i(x) + s_i)^2
+\]
+
+\begin{example}[增广拉格朗日法——迭代两次]\label{ex:alm}
+\textbf{问题}：$\min\ f(x) = x^2$，s.t. $x = 1$。
+
+增广拉格朗日函数：$\mathcal{L}_A = x^2 + \lambda(x-1) + \frac{\sigma}{2}(x-1)^2$
+
+\textbf{参数}：$\lambda_0 = 0$，$\sigma = 2$
+
+\textbf{第0轮}：$\min_x\ x^2 + (x-1)^2 = 2x^2 - 2x + 1$
+\[
+\frac{d}{dx} = 4x - 2 = 0 \Rightarrow x_1 = 0.5
+\]
+更新：$\lambda_1 = \lambda_0 + \sigma(x_1 - 1) = 0 + 2(-0.5) = -1$
+
+\textbf{第1轮}：$\mathcal{L}_A = x^2 - (x-1) + (x-1)^2 = x^2 - x + 1 + x^2 - 2x + 1 = 2x^2 - 3x + 2$
+\[
+\frac{d}{dx} = 4x - 3 = 0 \Rightarrow x_2 = 0.75
+\]
+更新：$\lambda_2 = -1 + 2(-0.25) = -1.5$
+
+\textbf{第2轮}：$\mathcal{L}_A = x^2 - 1.5(x-1) + (x-1)^2 = 2x^2 - 3.5x + 2.5$
+\[
+x_3 = \frac{3.5}{4} = 0.875
+\]
+可见 $x_k \to 1$，$\lambda_k \to -2 = \lambda^*$。
+\end{example}
+
+\section{线性规划的内点法}\label{sec:interior-point-lp}
+
+\subsection{解析中心}
+
+\begin{definition}[解析中心（Analytic Center）]
+设集合 $S$ 由不等式定义：$S = \{x \in \R^n \mid a_i^T x \geq b_i,\ i = 1, \ldots, m\}$，内点集非空。定义\textbf{势函数}：
+\[
+\psi(x) = -\sum_{i=1}^{m} \ln(a_i^T x - b_i)
+\]
+集合 $S$ 的\textbf{解析中心}定义为：
+\[
+x_{AC} = \argmin_{x \in \text{int}(S)} \psi(x)
+\]
+\end{definition}
+
+\begin{property}[解析中心性质]
+\begin{itemize}[itemsep=0.3em]
+    \item 解析中心是唯一的（因为 $\psi$ 严格凸）
+    \item 解析中心与不等式的表示方式有关（冗余约束会改变中心）
+    \item 势函数是松弛变量对数和的负数，等价于松弛变量乘积的倒数的对数
+\end{itemize}
+\end{property}
+
+\begin{example}[单位立方体的解析中心]
+$S = \{x \in \R^n \mid x_i \geq 0,\ 1 - x_i \geq 0,\ i = 1, \ldots, n\}$
+
+势函数：$\psi(x) = -\sum_{i=1}^{n}[\ln(x_i) + \ln(1-x_i)]$
+
+求导：$\frac{\partial \psi}{\partial x_i} = -\frac{1}{x_i} + \frac{1}{1-x_i} = 0 \Rightarrow x_i = \frac{1}{2}$
+
+解析中心为立方体中心 $x_{AC} = (\frac{1}{2}, \ldots, \frac{1}{2})^T$。
+\end{example}
+
+\subsection{中心路径}
+
+考虑LP问题：$\min\ c^T x$ s.t. $Ax = b$，$x \geq 0$。
+
+\begin{definition}[中心路径]
+对 $\mu > 0$，定义\textbf{障碍问题}：
+\[
+\min\ c^T x - \mu \sum_{j=1}^{n} \ln(x_j)\quad \text{s.t.}\quad Ax = b,\ x > 0
+\]
+当 $\mu$ 从 $\infty$ 变化到0时，障碍问题最优解的轨迹形成\textbf{中心路径}（Central Path），连接解析中心（$\mu \to \infty$）和LP最优面（$\mu \to 0$）。
+\end{definition}
+
+\subsection{KKT条件与原始-对偶系统}
+
+引入拉格朗日乘子 $y$（对偶变量），障碍问题的KKT条件：
+\begin{align*}
+c - \mu X^{-1}e - A^T y &= 0 \\
+Ax - b &= 0
+\end{align*}
+
+令 $s = \mu X^{-1}e$（即 $Xs = \mu e$），条件变为：
+\[
+\begin{cases}
+Xs = \mu e \\
+Ax = b \\
+A^T y + s = c
+\end{cases}
+\]
+
+\begin{definition}[原始-对偶内点法]
+求解一系列 $\mu_k \to 0$ 的扰动KKT系统，用Newton法求解每个子问题。
+\end{definition}
+
+\subsection{Newton步的求解}
+
+对当前点 $(x, y, s)$（满足 $x > 0, s > 0$），求Newton步 $(\Delta x, \Delta y, \Delta s)$：
+\[
+\begin{pmatrix}
+S & 0 & X \\
+A & 0 & 0 \\
+0 & A^T & I
+\end{pmatrix}
+\begin{pmatrix} \Delta x \\ \Delta y \\ \Delta s \end{pmatrix} =
+\begin{pmatrix} \mu e - Xs \\ b - Ax \\ c - A^T y - s \end{pmatrix}
+\]
+
+\textbf{简化计算}：
+\[
+A S^{-1} X A^T \Delta y = b - Ax + A S^{-1}(X(c-A^T y-s) - \mu e + Xs)
+\]
+
+\begin{notebox}[预测-校正方法（Predictor-Corrector）]
+Mehrotra预测-校正是最常用的原始-对偶内点法：
+\begin{enumerate}[label=\arabic*.]
+    \item \textbf{预测步}（仿射步）：求解 $\mu = 0$ 的Newton系统，预测中心路径方向
+    \item \textbf{计算步长}：确定最大可行步长 $\alpha_P, \alpha_D$
+    \item \textbf{更新} $\mu$：根据互补性减少程度调整
+    \item \textbf{校正步}：加入中心性校正，求解新的Newton系统
+\end{enumerate}
+\end{notebox}
+
+\begin{lstlisting}[language=Python, caption=原始-对偶内点法（简化版）]
+import numpy as np
+
+def interior_point_lp(c, A, b, x0, max_iter=50, tol=1e-8):
+    """
+    原始-对偶内点法求解 LP: min c^T x s.t. Ax=b, x>=0
+    """
+    m, n = A.shape
+    x = x0.copy()
+    y = np.zeros(m)
+    s = np.ones(n)
+    
+    history = []
+    
+    for k in range(max_iter):
+        # 计算互补间隙
+        mu = (x @ s) / n
+        history.append((x.copy(), mu))
+        
+        if mu < tol:
+            break
+        
+        # 构造并求解Newton系统
+        X = np.diag(x)
+        S = np.diag(s)
+        
+        # 右侧
+        r1 = mu * np.ones(n) - X @ s
+        r2 = b - A @ x
+        r3 = c - A.T @ y - s
+        
+        # 简化系统: (A S^{-1} X A^T) dy = rhs
+        SX_inv = np.diag(x / s)
+        M = A @ SX_inv @ A.T
+        
+        rhs = r2 + A @ (r1 / s) + A @ (X @ r3 / s)
+        
+        try:
+            dy = np.linalg.solve(M, rhs)
+        except np.linalg.LinAlgError:
+            dy = np.linalg.lstsq(M, rhs, rcond=None)[0]
+        
+        ds = r3 + A.T @ dy
+        dx = (r1 - X @ ds) / s
+        
+        # 线搜索保持正性
+        alpha_p = min(0.99 / max(-dx[x > 0] / x[x > 0], default=0, key=abs), 1) if np.any(dx < 0) else 0.99
+        alpha_d = min(0.99 / max(-ds[s > 0] / s[s > 0], default=0, key=abs), 1) if np.any(ds < 0) else 0.99
+        
+        x += alpha_p * dx
+        y += alpha_d * dy
+        s += alpha_d * ds
+    
+    return x, c @ x, k+1, history
+
+
+# === 测试 ===
+print("=" * 50)
+print("原始-对偶内点法求解LP")
+print("=" * 50)
+
+# min -x1 - 2*x2 s.t. x1 + x2 <= 2, x1 >= 0, x2 >= 0
+# 标准型: min c^T x s.t. Ax = b, x >= 0
+# 引入松弛: x1 + x2 + x3 = 2
+c = np.array([-1.0, -2.0, 0.0])
+A = np.array([[1.0, 1.0, 1.0]])
+b = np.array([2.0])
+
+x_opt, obj, iters, hist = interior_point_lp(c, A, b, np.array([0.5, 0.5, 1.0]))
+print(f"最优解: x* = {x_opt[:2]} (前两个变量)")
+print(f"最优值: c^T x = {obj:.6f}")
+print(f"迭代次数: {iters}")
+print(f"最终互补间隙: {hist[-1][1]:.8f}")
+\end{lstlisting}
+
+\section{ADMM与邻近算法简介}\label{sec:admm-proximal}
+
+\subsection{ADMM方法}
+
+\begin{definition}[交替方向乘子法（ADMM）]
+考虑结构化优化问题：
+\[
+\min\ f(x) + g(z)\quad \text{s.t.}\quad Ax + Bz = c
+\]
+
+ADMM迭代格式：
+\begin{align*}
+x_{k+1} &= \argmin_x\ \mathcal{L}_\rho(x, z_k, y_k) \\
+z_{k+1} &= \argmin_z\ \mathcal{L}_\rho(x_{k+1}, z, y_k) \\
+y_{k+1} &= y_k + \rho(Ax_{k+1} + Bz_{k+1} - c)
+\end{align*}
+其中增广拉格朗日函数：
+\[
+\mathcal{L}_\rho(x, z, y) = f(x) + g(z) + y^T(Ax + Bz - c) + \frac{\rho}{2}\|Ax + Bz - c\|^2
+\]
+\end{definition}
+
+\begin{notebox}[ADMM的特点]
+\begin{itemize}[itemsep=0.3em]
+    \item 将复杂问题分解为两个（或多个）子问题分别求解
+    \item $x$ 更新和 $z$ 更新可以独立进行，适合并行计算
+    \item 广泛用于统计学习、图像处理、分布式优化
+    \item 在凸问题上有收敛保证
+\end{itemize}
+\end{notebox}
+
+\begin{example}[LASSO的ADMM求解]
+\textbf{问题}：$\min\ \frac{1}{2}\|Ax - b\|^2 + \lambda\|z\|_1$ s.t. $x - z = 0$
+
+\textbf{ADMM迭代}：
+\begin{align*}
+x_{k+1} &= (A^T A + \rho I)^{-1}(A^T b + \rho(z_k - u_k)) \\
+z_{k+1} &= S_{\lambda/\rho}(x_{k+1} + u_k) \quad \text{（软阈值）} \\
+u_{k+1} &= u_k + x_{k+1} - z_{k+1}
+\end{align*}
+其中 $S_\kappa(v) = \text{sign}(v)\max\{|v| - \kappa, 0\}$ 是软阈值算子。
+\end{example}
+
+\subsection{邻近算子与邻近算法}
+
+\begin{definition}[邻近算子（Proximity Operator）]
+函数 $f$ 的\textbf{邻近算子}定义为：
+\[
+\text{prox}_f(x) = \argmin_y\ \left\{f(y) + \frac{1}{2}\|y - x\|^2\right\}
+\]
+\end{definition}
+
+\begin{property}[邻近算子性质]
+\begin{enumerate}[label=(\arabic*)]
+    \item 若 $f$ 为闭凸函数，则 $\text{prox}_f(x)$ 对任意 $x$ 有唯一解
+    \item $\text{prox}_f(x) = x$ 当且仅当 $x \in \argmin f$
+    \item Moreau分解：$x = \text{prox}_f(x) + \text{prox}_{f^*}(x)$
+\end{enumerate}
+\end{property}
+
+\begin{example}[常见邻近算子]
+\begin{itemize}[itemsep=0.3em]
+    \item $f(x) = I_C(x)$（指示函数）：$\text{prox}_f = \Pi_C$（投影到 $C$）
+    \item $f(x) = \lambda\|x\|_1$：$\text{prox}_f(x) = S_\lambda(x)$（软阈值）
+    \item $f(x) = \frac{\lambda}{2}\|x\|^2$：$\text{prox}_f(x) = \frac{x}{1+\lambda}$
+\end{itemize}
+\end{example}
+
+\begin{algobox}[邻近梯度法（Proximal Gradient Method）]
+用于求解 $F(x) = f(x) + g(x)$，其中 $f$ 光滑、$g$ 可能非光滑：
+\[
+x_{k+1} = \text{prox}_{\alpha_k g}\left(x_k - \alpha_k \nabla f(x_k)\right)
+\]
+即先沿梯度方向走一步，再做邻近投影。
+\end{algobox}
+
+\begin{lstlisting}[language=Python, caption=ADMM与邻近算法实现]
+import numpy as np
+
+def soft_threshold(x, kappa):
+    """软阈值算子"""
+    return np.sign(x) * np.maximum(np.abs(x) - kappa, 0)
+
+def admm_lasso(A, b, lam, rho=1.0, max_iter=100, tol=1e-4):
+    """
+    ADMM求解LASSO: min 0.5*||Ax-b||^2 + lam*||x||_1
+    """
+    n = A.shape[1]
+    x = np.zeros(n)
+    z = np.zeros(n)
+    u = np.zeros(n)
+    
+    # 预计算 (A^T A + rho I)^{-1}
+    ATA = A.T @ A
+    L = np.linalg.cholesky(ATA + rho * np.eye(n))
+    
+    history = []
+    
+    for k in range(max_iter):
+        # x更新
+        q = A.T @ b + rho * (z - u)
+        x = np.linalg.solve(L.T, np.linalg.solve(L, q))
+        
+        # z更新（软阈值）
+        z_old = z.copy()
+        z = soft_threshold(x + u, lam / rho)
+        
+        # u更新
+        u = u + x - z
+        
+        # 检查收敛
+        r_norm = np.linalg.norm(x - z)
+        s_norm = np.linalg.norm(-rho * (z - z_old))
+        history.append((r_norm, s_norm))
+        
+        if r_norm < tol and s_norm < tol:
+            break
+    
+    return z, k+1, history
+
+
+# === 测试 ===
+np.random.seed(42)
+n = 100
+m = 50
+A = np.random.randn(m, n)
+x_true = np.zeros(n)
+x_true[:5] = np.array([1, -2, 3, -4, 5])
+b = A @ x_true + 0.1 * np.random.randn(m)
+
+print("=" * 50)
+print("ADMM求解LASSO")
+print("=" * 50)
+x_opt, iters, hist = admm_lasso(A, b, lam=0.5, rho=1.0)
+nnz = np.sum(np.abs(x_opt) > 0.01)
+print(f"非零元素: {nnz}")
+print(f"迭代次数: {iters}")
+print(f"残量范数: {hist[-1][0]:.6f}")
+print(f"前10个分量: {x_opt[:10].round(4)}")
+\end{lstlisting}
+
+\section{本章小结}\label{sec:ch7-summary}
+
+\subsection{本章知识框架}
+
+\begin{conceptbox}[约束问题的最优化方法——核心内容]
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \textbf{非线性最小二乘}
+    \begin{itemize}
+        \item 高斯-牛顿法：忽略二阶项，利用 $J^T J$
+        \item Levenberg-Marquardt法：$J^T J + \lambda I$，最常用
+    \end{itemize}
+    \item \textbf{最优性条件}
+    \begin{itemize}
+        \item 无约束：$\nabla f = 0$，$\nabla^2 f \succeq 0$
+        \item 等式约束：$\nabla f + \lambda^T \nabla h = 0$
+        \item 一般约束：KKT条件（平稳性+可行性+对偶性+互补性）
+    \end{itemize}
+    \item \textbf{KKT条件的应用}
+    \begin{itemize}
+        \item 一阶必要条件和二阶充分条件
+        \item 凸规划中KKT是充要条件
+    \end{itemize}
+    \item \textbf{可行方向法}
+    \begin{itemize}
+        \item 线性约束：求解LP找可行下降方向
+        \item 非线性约束：利用梯度近似
+    \end{itemize}
+    \item \textbf{制约函数法}
+    \begin{itemize}
+        \item 外点罚函数法：$\sigma \to \infty$，不要求初始可行
+        \item 内点法（障碍函数法）：$\mu \to 0$，要求严格内点
+    \end{itemize}
+    \item \textbf{增广拉格朗日函数法}（见第~\ref{chap:constrained-theory}~章第~\ref{sec:ch6-penalty}~节理论）
+    \begin{itemize}
+        \item 结合罚函数和拉格朗日函数
+        \item 有限 $\sigma$ 即可精确满足约束
+        \item 乘子更新保证收敛
+    \end{itemize}
+    \item \textbf{线性规划的内点法}
+    \begin{itemize}
+        \item 解析中心、中心路径
+        \item 原始-对偶方法、预测-校正
+    \end{itemize}
+    \item \textbf{ADMM与邻近算法}
+    \begin{itemize}
+        \item ADMM：分解复杂问题，交替求解
+        \item 邻近算子：软阈值、投影等
+        \item 邻近梯度法：$x_{k+1} = \text{prox}_{\alpha g}(x_k - \alpha \nabla f)$
+    \end{itemize}
+\end{enumerate}
+\end{conceptbox}
+
+\subsection{方法特性对比}
+
+\begin{table}[htbp]
+\centering
+\caption{约束优化方法对比}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{方法} & \textbf{约束类型} & \textbf{需可行点} & \textbf{收敛性} & \textbf{特点} \\
+\midrule
+可行方向法 & 线性/非线性 & 是 & 保证 & 需解方向LP \\
+外点罚函数 & 等式+不等式 & 否 & $\sigma\to\infty$ & 数值不稳定 \\
+内点法 & 不等式 & 严格内点 & $\mu\to 0$ & 路径跟踪 \\
+增广拉格朗日 & 等式+不等式 & 否 & 有限$\sigma$ & 最好平衡 \\
+ADMM & 可分结构 & 否 & 凸保证 & 分布式 \\
+邻近梯度 & 非光滑项 & 否 & 次线性到线性 & 稀疏优化 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{关键公式汇总}
+
+\begin{table}[htbp]
+\centering
+\caption{核心公式速查}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{方法/概念} & \textbf{公式} \\
+\midrule
+高斯-Newton步 & $(J^T J) d = -J^T r$ \\
+LM步 & $(J^T J + \lambda I) d = -J^T r$ \\
+KKT平稳性 & $\nabla f + \mu^T \nabla g + \lambda^T \nabla h = 0$ \\
+互补松弛 & $\mu_i g_i(x) = 0$ \\
+外点罚函数 & $P = f + \frac{\sigma}{2}\sum h_j^2 + \frac{\sigma}{2}\sum (g_i^+)^2$ \\
+对数障碍函数 & $B = f - \mu\sum \ln(-g_i)$ \\
+增广拉格朗日 & $\mathcal{L}_A = f + \lambda^T h + \frac{\sigma}{2}\|h\|^2$ \\
+乘子更新 & $\lambda_{k+1} = \lambda_k + \sigma h(x_{k+1})$ \\
+中心路径 & $Xs = \mu e$, $Ax = b$, $A^T y + s = c$ \\
+ADMM $x$更新 & $x^+ = \argmin_x \mathcal{L}_\rho(x, z, y)$ \\
+ADMM $z$更新 & $z^+ = \argmin_z \mathcal{L}_\rho(x^+, z, y)$ \\
+邻近算子 & $\text{prox}_f(x) = \argmin_y\{f(y) + \frac{1}{2}\|y-x\|^2\}$ \\
+近端梯度 & $x^+ = \text{prox}_{\alpha g}(x - \alpha \nabla f)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{关键术语中英对照}
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{中文} & \textbf{英文} \\
+\midrule
+非线性最小二乘 & Nonlinear Least Squares \\
+Jacobi矩阵 & Jacobian Matrix \\
+高斯-牛顿法 & Gauss-Newton Method \\
+Levenberg-Marquardt & Levenberg-Marquardt Method \\
+起作用约束 & Active Constraint \\
+可行方向 & Feasible Direction \\
+KKT条件 & Karush-Kuhn-Tucker Conditions \\
+互补松弛性 & Complementary Slackness \\
+罚函数法 & Penalty Function Method \\
+障碍函数法 & Barrier Function Method \\
+内点法 & Interior Point Method \\
+增广拉格朗日法 & Augmented Lagrangian Method \\
+解析中心 & Analytic Center \\
+中心路径 & Central Path \\
+ADMM & Alternating Direction Method of Multipliers \\
+邻近算子 & Proximity/Proximal Operator \\
+近端梯度法 & Proximal Gradient Method \\
+软阈值 & Soft Thresholding \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{lstlisting}[language=Python, caption=综合比较代码]
+import numpy as np
+from scipy.optimize import minimize, least_squares
+import time
+
+def solve_qp_comparison():
+    """综合求解二次规划问题，比较各种方法"""
+    
+    # min 0.5*x^T Q x + c^T x s.t. A x = b
+    Q = np.array([[2, 0], [0, 2]])
+    c = np.array([-2, -6])
+    A = np.array([[1, 1]])
+    b = np.array([2.0])
+    
+    # 消元法: x2 = 2 - x1
+    # f = x1^2 + (2-x1)^2 - 2*x1 - 6*(2-x1)
+    #   = 2*x1^2 - 4*x1 + 4 - 2*x1 - 12 + 6*x1
+    #   = 2*x1^2 + 0*x1 - 8
+    # df/dx1 = 4*x1 = 0 -> x1 = 0, x2 = 2
+    
+    # 使用scipy
+    def obj(x):
+        return 0.5 * x @ Q @ x + c @ x
+    
+    def grad(x):
+        return Q @ x + c
+    
+    constraints = {'type': 'eq', 'fun': lambda x: A @ x - b}
+    
+    res = minimize(obj, [0, 0], jac=grad, method='SLSQP',
+                   constraints=constraints)
+    print(f"Scipy SLSQP: x* = {res.x}, f* = {res.fun:.6f}")
+    
+    # 解析解验证
+    x_analytical = np.array([0.0, 2.0])
+    print(f"解析解: x* = {x_analytical}, f* = {obj(x_analytical):.6f}")
+
+solve_qp_comparison()
+\end{lstlisting}
+
+\newpage
+
+% ==================== 第八章 复合优化与智能优化 ====================

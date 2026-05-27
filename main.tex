@@ -1,0 +1,195 @@
+\documentclass[12pt,a4paper]{report}
+
+% ==================== 基础包 ====================
+\usepackage{ctex}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{geometry}
+\geometry{a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\usepackage{graphicx,xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,patterns,decorations.markings,positioning}
+\usepackage{enumitem,booktabs,array,multirow,tabularx,makecell}
+\usepackage{algorithm,algpseudocode}
+\usepackage{float}
+
+% 代码高亮
+\usepackage{listings}
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray!70}\itshape,
+    stringstyle=\color{orange},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    frame=single,
+    breaklines=true,
+    showstringspaces=false,
+    tabsize=4,
+    backgroundcolor=\color{gray!5},
+    captionpos=b,
+    abovecaptionskip=0.5em,
+    belowcaptionskip=0.3em
+}
+
+% 增强盒子
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems,skins,breakable}
+
+% 页眉页脚
+\usepackage{fancyhdr}
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small 组合优化与凸优化}
+\fancyhead[R]{\small \nouppercase{\rightmark}}
+\fancyfoot[C]{\thepage}
+
+% 超链接（最后加载）
+\usepackage[
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    citecolor=darkgray,
+    urlcolor=blue,
+    bookmarks=true,
+    bookmarksnumbered=true,
+    unicode=true
+]{hyperref}
+
+% 目录深度
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{2}
+
+% ==================== 定理环境 ====================
+\newtheorem{definition}{定义}[section]
+\newtheorem{theorem}{定理}[section]
+\newtheorem{lemma}{引理}[section]
+\newtheorem{corollary}{推论}[section]
+\newtheorem{example}{例题}[section]
+\newtheorem{property}{性质}[section]
+\newtheorem{remark}{注}[section]
+
+% ==================== tcolorbox 样式 ====================
+\newtcolorbox{conceptbox}[1][]{
+    colback=blue!5!white,
+    colframe=blue!50!black,
+    fonttitle=\bfseries\color{white},
+    colbacktitle=blue!50!black,
+    title={#1},
+    breakable,
+    sharp corners,
+    boxrule=0.5pt,
+    left=5pt,right=5pt,top=3pt,bottom=3pt
+}
+
+\newtcolorbox{algobox}[1][]{
+    colback=green!5!white,
+    colframe=green!50!black,
+    fonttitle=\bfseries\color{white},
+    colbacktitle=green!50!black,
+    title={#1},
+    breakable,
+    sharp corners,
+    boxrule=0.5pt,
+    left=5pt,right=5pt,top=3pt,bottom=3pt
+}
+
+\newtcolorbox{notebox}[1][]{
+    colback=yellow!8!white,
+    colframe=orange!60!black,
+    fonttitle=\bfseries\color{white},
+    colbacktitle=orange!60!black,
+    title={#1},
+    breakable,
+    sharp corners,
+    boxrule=0.5pt,
+    left=5pt,right=5pt,top=3pt,bottom=3pt
+}
+
+\newtcolorbox{codebox}[1][]{
+    colback=gray!5!white,
+    colframe=gray!50!black,
+    fonttitle=\bfseries\color{white},
+    colbacktitle=gray!50!black,
+    title={#1},
+    breakable,
+    sharp corners,
+    boxrule=0.5pt,
+    left=3pt,right=3pt,top=2pt,bottom=2pt
+}
+
+\newtcolorbox{kktbox}[1][]{
+    colback=purple!5!white,
+    colframe=purple!50!black,
+    fonttitle=\bfseries\color{white},
+    colbacktitle=purple!50!black,
+    title={#1},
+    breakable,
+    sharp corners,
+    boxrule=0.5pt,
+    left=5pt,right=5pt,top=3pt,bottom=3pt
+}
+
+% ==================== 常用命令 ====================
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\norm}[1]{\|#1\|}
+\newcommand{\inner}[2]{\langle #1, #2 \rangle}
+\DeclareMathOperator{\argmin}{arg\,min}
+\DeclareMathOperator{\epi}{epi}
+\DeclareMathOperator{\dom}{dom}
+\DeclareMathOperator{\relint}{relint}
+\DeclareMathOperator{\conv}{conv}
+
+% ==================== 标题信息 ====================
+\title{
+    \textbf{\Huge 组合优化与凸优化}\\[0.8em]
+    \Large 课程完整笔记\\[0.3em]
+
+}
+\author{
+    哈尔滨工业大学 · 计算学部\\[0.2em]
+    \small 课程编号：CS64001 · 2026年春季
+}
+\date{\today}
+
+% ==================== 文档开始 ====================
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\vspace{1cm}
+
+
+\tableofcontents
+\newpage
+
+% ==================== 第一章 简介 ====================
+\input{chapters/chap1}
+
+% ==================== 第二章 线性规划 ====================
+\input{chapters/chap2}
+
+% ==================== 第三章 凸分析与数学模型 ====================
+\input{chapters/chap3}
+
+% ==================== 第四章 一维搜索与线搜索 ====================
+\input{chapters/chap4}
+
+% ==================== 第五章 无约束最优化方法 ====================
+\input{chapters/chap5}
+
+% ==================== 第六章 约束最优化理论 ====================
+\input{chapters/chap6}
+
+% ==================== 第七章 约束最优化方法 ====================
+\input{chapters/chap7}
+
+% ==================== 第八章 进阶专题 ====================
+\input{chapters/chap8}
+
+% ==================== 第九章 课程总结与展望 ====================
+\input{chapters/chap9}
+
+\end{document}

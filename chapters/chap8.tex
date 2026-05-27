@@ -1,0 +1,1493 @@
+\chapter{进阶专题}\label{chap:advanced}
+\section{复合优化问题}\label{sec:composite}
+
+\subsection{问题形式}
+
+\begin{definition}[复合优化问题]
+一般将目标函数写为多个函数之和的形式，每个函数可能具有不同的性质：
+\[
+\min_{x \in \R^n}\ \theta(x) = f(x) + g(x)
+\]
+其中 $f(x)$ 可微（通常光滑），$g(x)$ 可能不可微（如正则项、指示函数等）。
+\end{definition}
+
+\begin{conceptbox}[典型应用]
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{正则化问题}：$f$ 为数据拟合项（如最小二乘），$g$ 为正则项（如L1范数）
+    \item \textbf{约束优化}：$g$ 为集合的指示函数 $I_\mathcal{X}(x)$
+    \item \textbf{深度学习}：各种优化器的改进版本（Adagrad, 动量法, Adam等）都适用于此类问题
+\end{itemize}
+\end{conceptbox}
+
+\subsection{求解方法}
+
+\begin{notebox}[可用方法汇总]
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \textbf{梯度类方法}：各种梯度下降法的改进版本（理论基础见第~\ref{chap:unconstrained}~章第~\ref{sec:gradient}~节）
+    \begin{itemize}
+        \item Adagrad, 动量法, Nesterov动量法, RMSProp, AdaDelta, Adam
+    \end{itemize}
+    \item \textbf{约束最优化方法}：罚函数法、增广拉格朗日法、ADMM、坐标轮换下降法（详见第~\ref{chap:constrained-methods}~章）
+    \item \textbf{邻近点方法}（PPA, Proximal Point Algorithm，见第~\ref{sec:proximal}~节）
+    \item \textbf{交替方向乘子法}（ADMM）——特别适合可分离结构（见第~\ref{sec:admm-proximal}~节）
+\end{enumerate}
+\end{notebox}
+
+\begin{example}[LASSO作为复合优化]
+\[
+\min_x\ \frac{1}{2}\|Ax - b\|^2 + \lambda\|x\|_1
+\]
+其中 $f(x) = \frac{1}{2}\|Ax - b\|^2$（可微），$g(x) = \lambda\|x\|_1$（不可微）。
+
+\textbf{可用方法}：
+\begin{itemize}
+    \item 次梯度法
+    \item 近端梯度法（ISTA/FISTA）
+    \item ADMM
+\end{itemize}
+\end{example}
+
+\begin{lstlisting}[language=Python, caption=复合优化求解示例]
+import numpy as np
+
+def prox_l1(x, lam):
+    """L1范数的邻近算子 = 软阈值"""
+    return np.sign(x) * np.maximum(np.abs(x) - lam, 0)
+
+def ista(A, b, lam, max_iter=100, L=None):
+    """
+    近端梯度法(ISTA)求解 LASSO
+    min 0.5*||Ax-b||^2 + lam*||x||_1
+    """
+    if L is None:
+        L = np.linalg.norm(A.T @ A, 2)  # Lipschitz常数
+    
+    x = np.zeros(A.shape[1])
+    alpha = 1.0 / L
+    
+    history = []
+    for k in range(max_iter):
+        # 梯度步 + 邻近算子
+        grad = A.T @ (A @ x - b)
+        x = prox_l1(x - alpha * grad, alpha * lam)
+        
+        obj = 0.5 * np.linalg.norm(A @ x - b)**2 + lam * np.sum(np.abs(x))
+        history.append(obj)
+    
+    return x, history
+
+
+# === 测试 ===
+np.random.seed(42)
+n = 100
+m = 50
+A = np.random.randn(m, n)
+x_true = np.zeros(n)
+x_true[:5] = [1, -2, 3, -4, 5]
+b = A @ x_true + 0.01 * np.random.randn(m)
+
+x_opt, hist = ista(A, b, lam=0.1, max_iter=200)
+print(f"ISTA求解LASSO")
+print(f"非零元素: {np.sum(np.abs(x_opt) > 0.01)}")
+print(f"最终目标值: {hist[-1]:.4f}")
+\end{lstlisting}
+
+\section{变分不等式与邻近点算法}\label{sec:vi-ppa}
+
+\subsection{单调变分不等式}
+
+\begin{definition}[变分不等式（VI）]
+设 $\Omega \subset \R^n$ 是非空闭凸集，$F: \R^n \to \R^n$ 是算子映射。变分不等式问题为：求 $u^* \in \Omega$ 使得
+\[
+(u - u^*)^T F(u^*) \geq 0,\quad \forall u \in \Omega
+\]
+若 $F$ 满足 $(u - v)^T(F(u) - F(v)) \geq 0$，则称 $F$ 为\textbf{单调算子}，上述不等式称为\textbf{单调变分不等式}。
+\end{definition}
+
+\begin{property}[凸函数与变分不等式]
+可微凸函数 $f$ 的梯度算子 $\nabla f$ 是单调的。因此凸优化问题
+\[
+\min_{x \in \Omega}\ f(x)
+\]
+等价于变分不等式：求 $x^* \in \Omega$ 使得 $(x - x^*)^T \nabla f(x^*) \geq 0$，$\forall x \in \Omega$。
+\end{property}
+
+\subsection{线性约束凸优化的变分不等式}
+
+考虑线性约束凸优化问题：
+\[
+\min_{x \in \mathcal{X}}\ \theta(x)\quad \text{s.t.}\quad Ax = b
+\]
+
+其拉格朗日函数 $\mathcal{L}(x, \lambda) = \theta(x) - \lambda^T(Ax - b)$ 的鞍点 $(x^*, \lambda^*)$ 满足：
+\[
+\begin{cases}
+x^* \in \mathcal{X},\quad (x - x^*)^T(\nabla \theta(x^*) - A^T \lambda^*) \geq 0,\quad \forall x \in \mathcal{X} \\
+\lambda^* \in \R^m,\quad (\lambda - \lambda^*)^T(Ax^* - b) \geq 0,\quad \forall \lambda \in \R^m
+\end{cases}
+\]
+
+\begin{theorem}[等价变分不等式]
+上述鞍点条件可合并为\textbf{单调混合变分不等式}：求 $w^* = (x^*, \lambda^*) \in \Omega = \mathcal{X} \times \R^m$ 使得
+\[
+(w - w^*)^T F(w^*) \geq 0,\quad \forall w \in \Omega
+\]
+其中 $w = \begin{pmatrix} x \\ \lambda \end{pmatrix}$，$F(w) = \begin{pmatrix} \nabla \theta(x) - A^T \lambda \\ Ax - b \end{pmatrix}$。
+\end{theorem}
+
+\subsection{可分离结构}
+
+对于两个算子的可分离结构：
+\[
+\min_{x \in \mathcal{X}, y \in \mathcal{Y}}\ \theta_1(x) + \theta_2(y)\quad \text{s.t.}\quad Ax + By = b
+\]
+
+对应的变分不等式：求 $(x^*, y^*, \lambda^*) \in \mathcal{X} \times \mathcal{Y} \times \R^m$ 使得
+\[
+(w - w^*)^T F(w^*) \geq 0
+\]
+其中 $w = \begin{pmatrix} x \\ y \\ \lambda \end{pmatrix}$，$F(w) = \begin{pmatrix} \nabla \theta_1(x) - A^T \lambda \\ \nabla \theta_2(y) - B^T \lambda \\ Ax + By - b \end{pmatrix}$。
+
+\begin{notebox}[ADMM的收敛性]
+两个算子的可分离结构可用ADMM有效求解。但\textbf{三个及以上算子}的直接ADMM推广\textbf{不一定收敛}，需要基于变分不等式的预测-校正方法处理。
+\end{notebox}
+
+\subsection{邻近点算法（PPA）}
+
+\begin{definition}[邻近点算法]
+对于凸优化问题 $\min_{x \in \Omega}\ \theta(x)$，给定 $r > 0$，PPA迭代格式为：
+\[
+x_{k+1} = \argmin_{x \in \Omega}\ \left\{\theta(x) + \frac{r}{2}\|x - x_k\|^2\right\}
+\]
+\end{definition}
+
+\begin{property}[PPA性质]
+\begin{enumerate}[label=(\arabic*)]
+    \item PPA可写成 $x_{k+1} = \text{prox}_{\theta/r}(x_k)$
+    \item 对闭凸函数，PPA生成的序列 $\{x_k\}$ 收敛到最优解
+    \item PPA是求解凸优化和单调变分不等式的基本算法
+\end{enumerate}
+\end{property}
+
+\begin{example}[PPA的迭代]
+\textbf{问题}：$\min\ f(x) = x^2$ s.t. $x \in [1, 3]$，$x_0 = 3$，$r = 1$。
+
+\textbf{解}：PPA子问题：
+\[
+x_{k+1} = \argmin_{x \in [1,3]}\ \left\{x^2 + \frac{1}{2}(x - x_k)^2\right\}
+\]
+对内部无约束极小点：$2x + (x - x_k) = 0 \Rightarrow x = \frac{x_k}{3}$
+
+\textbf{第0轮}：$x_0 = 3$，候选 $x = 1$，但 $1 \in [1,3]$，$f(1) + 0.5(1-3)^2 = 1 + 2 = 3$
+与边界比较：$x_{k+1} = \max(1, \min(3, x_k/3)) = \max(1, 1) = 1$
+
+\textbf{第1轮}：$x_1 = 1$，候选 $x = 1/3 < 1$，故 $x_2 = 1$。
+
+已收敛到最优解 $x^* = 1$。
+\end{example}
+
+\section{启发式算法概述}\label{sec:heuristic-overview}
+
+\subsection{优化方法分类}
+
+\begin{conceptbox}[优化方法的多维分类]
+\begin{itemize}[itemsep=0.3em]
+    \item 全局优化 vs 局部优化
+    \item 单目标 vs 多目标
+    \item 无约束 vs 有约束
+    \item 基于梯度 vs 无梯度
+\end{itemize}
+\end{conceptbox}
+
+\begin{notebox}[梯度方法的限制]
+梯度方法（如第~\ref{chap:unconstrained}~章介绍的最速下降法、Newton法、共轭梯度法等）假设目标函数是单峰（单谷）函数，否则容易陷入局部极小点。对于复杂的多变量组合优化问题（大规模、非线性、非凸），需要\textbf{无梯度方法}——启发式方法。
+\end{notebox}
+
+\subsection{启发式算法 vs 近似算法}
+
+\begin{definition}[启发式算法]
+一种技术，使得在可接受的计算费用内寻找到最好的解，但\textbf{不一定能保证}所得解的可行性和最优性，甚至在多数情况下无法阐述所得解同最优解的近似程度。
+\end{definition}
+
+\begin{definition}[$\varepsilon$-近似算法]
+设 $A$ 是一个问题，$OPT(\pi)$ 和 $H(\pi)$ 分别为实例 $\pi$ 的最优解和启发式算法解。若
+\[
+|H(\pi) - OPT(\pi)| \leq \varepsilon \cdot |OPT(\pi)|,\quad \forall \pi \in A
+\]
+则称该算法为 $A$ 的 $\varepsilon$-近似算法。
+\end{definition}
+
+\begin{property}[启发式与近似的区别]
+\begin{itemize}[itemsep=0.3em]
+    \item 启发式算法集合包含近似算法集合
+    \item 近似算法强调最坏情况误差界，启发式算法不考虑
+    \item 最坏情况误差界估计需要较好的数学技巧，往往只能通过启发式解决
+\end{itemize}
+\end{property}
+
+\subsection{组合优化问题}
+
+\begin{conceptbox}[经典组合优化问题]
+\begin{itemize}[itemsep=0.2em]
+    \item 划分问题（Partitioning）
+    \item 调度问题（Scheduling）
+    \item 装箱问题（Bin Packing）
+    \item 背包问题（Knapsack）
+    \item 指派问题（Assignment）
+    \item 旅行商问题（TSP）
+    \item 斯坦纳最小树问题（Steiner Minimal Tree）
+    \item 最小生成树（MST）
+    \item 最大流/最小费用流问题
+\end{itemize}
+\end{conceptbox}
+
+\begin{example}[TSP问题的计算复杂度]
+城市数为 $n$ 时，解空间为 $(n-1)!/2$。
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{城市数} & \textbf{枚举时间}（每秒评估1000次） \\
+\midrule
+24 & 1秒 \\
+25 & 24秒 \\
+26 & 10分钟 \\
+27 & 4.3小时 \\
+28 & 4.9天 \\
+29 & 136.5天 \\
+30 & 10.8年 \\
+31 & 325年 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{example}
+
+\subsection{独立系统与拟阵}
+
+\begin{definition}[独立系统]
+集合系统 $(E, \mathcal{F})$ 称为独立系统，若：
+\begin{enumerate}[label=(\arabic*)]
+    \item $\emptyset \in \mathcal{F}$
+    \item 继承性：$Y \subseteq X \in \mathcal{F} \Rightarrow Y \in \mathcal{F}$
+\end{enumerate}
+集合 $\mathcal{F}$ 的元素称为\textbf{独立集}，$2^E \setminus \mathcal{F}$ 的元素称为\textbf{相关集}。
+\end{definition}
+
+\begin{definition}[基与秩]
+\begin{itemize}[itemsep=0.3em]
+    \item 最小相关集称为\textbf{环}（circuits）
+    \item 最大独立集称为\textbf{基}（bases）
+    \item $X \subseteq E$ 的\textbf{秩}：$r(X) = \max\{|Y| : Y \subseteq X, Y \in \mathcal{F}\}$
+\end{itemize}
+\end{definition}
+
+\subsection{启发式算法的特点}
+
+\textbf{优点}：
+\begin{itemize}[itemsep=0.2em]
+    \item 适用于NP-hard问题的近似求解
+    \item 简单易行，直观易被接受
+    \item 速度快，适合实时应用
+    \item 程序简单，易于修改
+    \item 可用在最优算法中估界（如分支定界）
+\end{itemize}
+
+\textbf{缺点}：
+\begin{itemize}[itemsep=0.2em]
+    \item 不能保证求得最优解
+    \item 表现不稳定
+    \item 算法好坏依赖于实际问题
+\end{itemize}
+
+\subsection{智能优化算法一览}
+
+\begin{table}[htbp]
+\centering
+\caption{现代智能优化算法}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{算法} & \textbf{英文名} & \textbf{灵感来源} & \textbf{跟随最优} \\
+\midrule
+遗传算法 & GA & 进化论 & 否 \\
+粒子群优化 & PSO & 鸟群觅食 & 是 \\
+差分进化 & DE & 进化论 & 否 \\
+人工蜂群 & ABC & 蜜蜂觅食 & 是 \\
+蚁群优化 & ACO & 蚂蚁觅食 & 是 \\
+人工鱼群 & AFSA & 鱼群觅食 & 是 \\
+杜鹃搜索 & CS & 杜鹃产卵 & 是 \\
+萤火虫算法 & FA & 萤火虫求偶 & 是 \\
+灰狼算法 & GWO & 狼群觅食 & 是 \\
+鲸鱼算法 & WOA & 鲸鱼觅食 & 是 \\
+烟花算法 & FWA & 烟花爆炸 & 是 \\
+菌群优化 & BFO & 菌群生长 & 是 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{notebox}[概率算法与墨菲定律]
+现代优化算法大都具有一定的随机性，能以概率跳出局部最优点。正如墨菲定律所说："If something can go wrong, it will."——有概率跳出局部最优，就一定有这种可能（前提是尝试次数足够多）。
+\end{notebox}
+
+\section{模拟退火算法}\label{sec:sa}
+
+\subsection{物理背景}
+
+模拟退火（Simulated Annealing, SA）模拟金属退火过程：
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \textbf{加热}：将固体加热至高温，原子高速运动，内能增加
+    \item \textbf{缓慢冷却}：温度下降，原子运动减慢，内能下降
+    \item \textbf{热平衡}：有时内能以Boltzmann概率随机增加，即温度 $t$ 时能量增加 $\Delta E$ 的概率密度为 $\exp(-\Delta E / kt)$
+    \item \textbf{最终状态}：足够慢地冷却，最终达到内能最低的稳定状态
+\end{enumerate}
+
+\subsection{Metropolis准则}
+
+\begin{definition}[Metropolis接受准则]
+设当前解为 $x$，邻域候选解为 $x^*$，温度参数为 $T$：
+\begin{itemize}
+    \item 若 $\Delta E = E(x^*) - E(x) < 0$（更优），\textbf{接受} $x^*$
+    \item 若 $\Delta E \geq 0$（更差），以概率 $P = \exp(-\Delta E / T)$ \textbf{接受} $x^*$
+\end{itemize}
+\end{definition}
+
+\begin{notebox}[模拟退火的关键机制]
+\begin{itemize}[itemsep=0.3em]
+    \item 温度高时，更可能接受劣解，有助于跳出局部最优
+    \item 温度低时，接受劣解概率小，趋向于稳定在最优解附近
+    \item 随着温度慢慢降至0，算法以相当高的概率收敛到全局最小值
+\end{itemize}
+\end{notebox}
+
+\subsection{算法流程}
+
+\begin{algobox}[模拟退火算法]
+\textbf{输入}：初始解 $x_0$，初始温度 $T_0$，降温系数 $\alpha \in (0, 1)$
+
+\textbf{Step 0}：$k = 0$，$x = x_0$，$T = T_0$
+
+\textbf{Step 1}（内循环）：在当前温度 $T$ 下重复 $L$ 次
+\begin{enumerate}[label=\arabic*., leftmargin=1em]
+    \item 从 $x$ 的邻域随机选取候选解 $x^*$
+    \item 计算 $\Delta E = E(x^*) - E(x)$
+    \item 若 $\Delta E < 0$，令 $x = x^*$；否则以概率 $\exp(-\Delta E / T)$ 令 $x = x^*$
+\end{enumerate}
+
+\textbf{Step 2}：降温 $T_{k+1} = \alpha \cdot T_k$
+
+\textbf{Step 3}：若满足终止条件（$T < T_{\min}$ 或迭代次数超限），输出最优解；否则 $k \leftarrow k+1$，转Step 1
+\end{algobox}
+
+\subsection{关键参数}
+
+\begin{table}[htbp]
+\centering
+\caption{模拟退火的关键参数}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{参数} & \textbf{含义} & \textbf{常用设置} \\
+\midrule
+$T_0$ & 初始温度 & 足够高，使接受率约80\% \\
+$\alpha$ & 降温系数 & $0.95 \sim 0.995$ \\
+$L$ & Markov链长度 & 每个温度下迭代次数 \\
+$T_{\min}$ & 终止温度 & 接近0的正值 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{example}[模拟退火求解函数极小值]\label{ex:sa}
+\textbf{问题}：用SA求解 $\min\ f(x) = x^2 - 4x + 4 = (x-2)^2$，$x \in [0, 5]$。
+初始 $x_0 = 0$，$T_0 = 10$，$\alpha = 0.9$，每个温度迭代2次。
+
+\textbf{解}：
+
+\textbf{温度 $T = 10$}：
+\begin{itemize}
+    \item 第1次：候选 $x^* = 1$（邻域随机选取），$f(1) = 1$，$f(0) = 4$，$\Delta E = -3 < 0$，接受 $x = 1$
+    \item 第2次：候选 $x^* = 0.5$，$f(0.5) = 2.25$，$\Delta E = 1.25 > 0$，概率 $\exp(-1.25/10) \approx 0.88$，假设接受
+\end{itemize}
+
+\textbf{温度 $T = 9$}：
+\begin{itemize}
+    \item 第1次：候选 $x^* = 1.5$，$f(1.5) = 0.25$，$\Delta E < 0$，接受 $x = 1.5$
+    \item 第2次：候选 $x^* = 2.5$，$f(2.5) = 0.25$，$\Delta E = 0$，概率 $\exp(0) = 1$，接受
+\end{itemize}
+
+继续迭代直到温度足够低，最终收敛到 $x^* = 2$。
+\end{example}
+
+\subsection{玻尔兹曼机}
+
+\begin{definition}[Boltzmann机]
+G.E. Hinton等于1983--1986提出。神经元只有两种输出状态（0或1），状态的取值根据概率统计法则决定，该法则的表达形式与Boltzmann分布类似。
+
+节点输出为1的概率：
+\[
+P(x_j = 1) = \frac{1}{1 + \exp(-\text{net}_j / T)}
+\]
+其中 $\text{net}_j = \sum_i w_{ij} x_i - \theta_j$。
+
+\textbf{网络能量函数}：
+\[
+E = -\frac{1}{2}\sum_{i,j} w_{ij} x_i x_j + \sum_j \theta_j x_j
+\]
+\end{definition}
+
+\begin{property}[Boltzmann分布]
+网络中任意两个状态出现的概率与能量之间的关系：
+\[
+\frac{P_A}{P_B} = \frac{\exp(-E_A / T)}{\exp(-E_B / T)} = \exp\left(-\frac{E_A - E_B}{T}\right)
+\]
+温度 $T$ 越高，不同状态出现的概率越接近；温度越低，低能量状态概率越大。
+\end{property}
+
+\begin{lstlisting}[language=Python, caption=模拟退火算法实现]
+import numpy as np
+
+def simulated_annealing(f, x0, T0=100, alpha=0.95, L=100, 
+                        T_min=1e-4, bounds=None):
+    """
+    模拟退火算法
+    f: 目标函数
+    x0: 初始解
+    bounds: [(lb, ub), ...]
+    """
+    x = np.array(x0, dtype=float)
+    T = T0
+    n = len(x)
+    
+    # 确定邻域搜索步长
+    if bounds is not None:
+        step = np.array([(ub - lb) * 0.1 for lb, ub in bounds])
+    else:
+        step = np.ones(n) * 0.1
+    
+    best_x = x.copy()
+    best_f = f(x)
+    history = [(T, best_f)]
+    
+    while T > T_min:
+        for _ in range(L):
+            # 邻域候选解
+            x_new = x + np.random.randn(n) * step
+            if bounds is not None:
+                x_new = np.clip(x_new, [b[0] for b in bounds], 
+                               [b[1] for b in bounds])
+            
+            delta_E = f(x_new) - f(x)
+            
+            # Metropolis准则
+            if delta_E < 0 or np.random.rand() < np.exp(-delta_E / T):
+                x = x_new.copy()
+                if f(x) < best_f:
+                    best_f = f(x)
+                    best_x = x.copy()
+        
+        T *= alpha
+        history.append((T, best_f))
+    
+    return best_x, best_f, history
+
+
+# === 测试: 多峰函数 ===
+def multimodal_f(x):
+    """多峰函数: f(x) = x*sin(5x) + x^2*cos(x)"""
+    return x[0] * np.sin(5*x[0]) + x[0]**2 * np.cos(x[0])
+
+print("=" * 50)
+print("模拟退火 - 多峰函数优化")
+print("=" * 50)
+
+x_opt, f_opt, hist = simulated_annealing(
+    multimodal_f, x0=[-2.0], T0=50, alpha=0.95, L=50,
+    bounds=[(-5, 5)])
+
+print(f"最优解: x* = {x_opt[0]:.6f}")
+print(f"最优值: f* = {f_opt:.6f}")
+print(f"温度迭代次数: {len(hist)}")
+
+# 多次运行统计
+results = []
+for _ in range(10):
+    x, fx, _ = simulated_annealing(multimodal_f, x0=[-2.0],
+                                    T0=50, alpha=0.95, L=30,
+                                    bounds=[(-5, 5)])
+    results.append(fx)
+print(f"10次运行最优值: min={min(results):.4f}, mean={np.mean(results):.4f}")
+\end{lstlisting}
+
+\section{遗传算法}\label{sec:ga}
+
+\subsection{生物启发}
+
+遗传算法（Genetic Algorithm, GA）借助生物学中\textbf{适者生存}的规律，通过模拟自然选择和遗传机制来搜索最优解。
+
+\begin{conceptbox}[遗传算法的核心特点]
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \textbf{编码}：解的编码称为\textbf{染色体}（Chromosome），优化问题的一切性质通过编码研究
+    \item \textbf{适应度}：自然选择决定哪些染色体产生超过平均数的后代，通过\textbf{适应函数}评价
+    \item \textbf{交叉}：染色体结合时，双亲遗传基因结合使子女保持父母特征
+    \item \textbf{变异}：染色体结合后，随机变异造成子代与父代的不同
+\end{enumerate}
+\end{conceptbox}
+
+\subsection{编码方式}
+
+\begin{example}[二进制编码]
+\textbf{问题}：$\max\ f(x) = x^2$，$x \in [0, 31]$，$x$ 为整数。
+
+采用5位二进制编码：
+\begin{itemize}
+    \item $x = 16$：染色体 $10000$
+    \item $x = 31$：染色体 $11111$
+    \item $x = 9$：染色体 $01001$
+    \item $x = 2$：染色体 $00010$
+\end{itemize}
+每个分量称为\textbf{基因}，两种状态0和1。
+\end{example}
+
+\subsection{基本遗传算法}
+
+\begin{algobox}[遗传算法]
+\textbf{Step 1}：选择编码方式，产生初始群体 $POP(0)$（$N$ 个染色体）
+
+\textbf{Step 2}：对 $POP(t)$ 中每个染色体 $x_i(t)$ 计算适应函数 $f(x_i)$
+
+\textbf{Step 3}：若停止准则满足，终止；否则计算选择概率：
+\[
+p_i = \frac{f(x_i)}{\sum_{j=1}^{N} f(x_j)},\quad i = 1, 2, \ldots, N
+\]
+以该概率从 $POP(t)$ 中选择染色体构成种群（轮盘赌选择）
+
+\textbf{Step 4}：通过交叉（概率 $p_c$）得到 $CROSS(t+1)$
+
+\textbf{Step 5}：以较小概率 $p_m$ 使染色体基因变异，形成 $MUT(t+1)$，令 $POP(t+1) = MUT(t+1)$，转Step 2
+\end{algobox}
+
+\subsection{遗传算子}
+
+\begin{conceptbox}[选择（Selection）——轮盘赌]
+适应度越大的个体入选概率越大。第 $i$ 个个体被选中的概率：
+\[
+p_i = \frac{\text{fitness}(x_i)}{\sum_j \text{fitness}(x_j)}
+\]
+\end{conceptbox}
+
+\begin{conceptbox}[交叉（Crossover）]
+随机选择两个父代染色体，按交叉点交换部分基因。例如：
+\begin{itemize}
+    \item 父代1：$0110|\textbf{1}$，父代2：$1010|\textbf{0}$
+    \item 交叉后：子代1 $= 0110\textbf{0}$，子代2 $= 1010\textbf{1}$
+\end{itemize}
+\end{conceptbox}
+
+\begin{conceptbox}[变异（Mutation）]
+以小概率随机翻转某个基因。例如 $01101 \to \textbf{1}1101$（第1位变异）。
+\end{conceptbox}
+
+\begin{example}[遗传算法——迭代两次]\label{ex:ga}
+\textbf{问题}：$\max\ f(x) = x^2$，$x \in [0, 31]$ 整数。群体大小 $N=4$，5位二进制编码。
+
+\textbf{初始群体}：$x_1 = 01101\ (13)$，$x_2 = 10101\ (21)$，$x_3 = 01001\ (9)$，$x_4 = 10000\ (16)$
+
+\textbf{适应度}：$f(x_1)=169$，$f(x_2)=441$，$f(x_3)=81$，$f(x_4)=256$，总和 $= 947$
+
+\textbf{选择概率}：$p_1=0.178$，$p_2=0.466$，$p_3=0.086$，$p_4=0.270$
+
+\textbf{轮盘赌选择}（假设选中 $x_1, x_2, x_2, x_4$）：
+
+\textbf{第1轮——交叉}（设 $p_c = 0.7$，交叉点在第3位后）：
+\begin{itemize}
+    \item 父代 $x_1=011|\textbf{01}$ 与 $x_2=101|\textbf{01}$ 交叉
+    \item 子代 $y_1 = 011\textbf{01}$，$y_2 = 101\textbf{01}$
+    \item 父代 $x_2=101|\textbf{01}$ 与 $x_4=100|\textbf{00}$ 交叉
+    \item 子代 $y_3 = 101\textbf{00}\ (20)$，$y_4 = 100\textbf{01}\ (17)$
+\end{itemize}
+
+\textbf{第2轮——变异}（设 $p_m = 0.01$）：
+\begin{itemize}
+    \item 假设 $y_3$ 第2位变异：$10100 \to \textbf{0}0100\ (4)$
+\end{itemize}
+
+\textbf{新一代群体}：计算适应度，继续迭代。
+\end{example}
+
+\begin{lstlisting}[language=Python, caption=遗传算法实现]
+import numpy as np
+
+def genetic_algorithm(fitness_func, n_bits, n_pop, n_gen,
+                     pc=0.8, pm=0.01, bounds=(0, 31)):
+    """
+    遗传算法（二进制编码）
+    fitness_func: 适应度函数
+    n_bits: 编码位数
+    n_pop: 群体大小
+    n_gen: 迭代代数
+    """
+    lb, ub = bounds
+    
+    # 初始化群体
+    pop = np.random.randint(0, 2, (n_pop, n_bits))
+    best_hist = []
+    
+    def decode(chrom):
+        val = np.sum(chrom * (2 ** np.arange(n_bits-1, -1, -1)))
+        return lb + val % (ub - lb + 1)
+    
+    for gen in range(n_gen):
+        # 评估适应度
+        fitness = np.array([fitness_func(decode(c)) for c in pop])
+        best_hist.append(np.max(fitness))
+        
+        # 选择概率
+        p = fitness / fitness.sum()
+        
+        # 轮盘赌选择
+        selected_idx = np.random.choice(n_pop, n_pop, p=p)
+        selected = pop[selected_idx].copy()
+        
+        # 交叉
+        offspring = []
+        for i in range(0, n_pop, 2):
+            p1, p2 = selected[i], selected[(i+1) % n_pop]
+            if np.random.rand() < pc:
+                pt = np.random.randint(1, n_bits)
+                c1 = np.concatenate([p1[:pt], p2[pt:]])
+                c2 = np.concatenate([p2[:pt], p1[pt:]])
+            else:
+                c1, c2 = p1.copy(), p2.copy()
+            offspring.extend([c1, c2])
+        
+        pop = np.array(offspring)
+        
+        # 变异
+        for i in range(n_pop):
+            for j in range(n_bits):
+                if np.random.rand() < pm:
+                    pop[i, j] = 1 - pop[i, j]
+    
+    # 最终最优
+    fitness = np.array([fitness_func(decode(c)) for c in pop])
+    best_idx = np.argmax(fitness)
+    return decode(pop[best_idx]), fitness[best_idx], best_hist
+
+
+# === 测试 ===
+print("=" * 50)
+print("遗传算法: max x^2, x in [0, 31]")
+print("=" * 50)
+
+x_opt, f_opt, hist = genetic_algorithm(
+    lambda x: x**2, n_bits=5, n_pop=20, n_gen=30,
+    pc=0.8, pm=0.01)
+
+print(f"最优解: x* = {x_opt}, f* = {f_opt}")
+print(f"迭代过程最优值: {hist[:10]}")
+\end{lstlisting}
+
+\section{粒子群优化与差分进化}\label{sec:pso-de}
+
+\subsection{粒子群优化算法（PSO）}
+
+\begin{conceptbox}[PSO原理]
+模拟鸟群、鱼群的觅食行为。每个粒子代表一个潜在解，通过跟踪个体最优（pbest）和全局最优（gbest）来更新速度和位置。
+\end{conceptbox}
+
+\begin{definition}[PSO迭代公式]
+粒子 $i$ 在第 $t$ 代的速度和位置更新：
+\begin{align*}
+v_i^{t+1} &= w \cdot v_i^t + c_1 r_1 (pbest_i - x_i^t) + c_2 r_2 (gbest - x_i^t) \\
+x_i^{t+1} &= x_i^t + v_i^{t+1}
+\end{align*}
+其中：
+\begin{itemize}[itemsep=0.2em]
+    \item $w$：惯性权重
+    \item $c_1, c_2$：认知系数和社会系数
+    \item $r_1, r_2 \sim U(0, 1)$：随机数
+\end{itemize}
+\end{definition}
+
+\begin{algobox}[PSO算法]
+\textbf{Step 1}：初始化粒子群（位置和速度）
+
+\textbf{Step 2}：评估每个粒子的适应度，更新 $pbest$ 和 $gbest$
+
+\textbf{Step 3}：按迭代公式更新每个粒子的速度和位置
+
+\textbf{Step 4}：若满足终止条件，停；否则转Step 2
+\end{algobox}
+
+\begin{example}[PSO迭代两次]\label{ex:pso}
+\textbf{问题}：$\min\ f(x) = (x-3)^2$，1维，2个粒子。
+
+\textbf{初始}：$x_1 = 0, v_1 = 0.5$；$x_2 = 5, v_2 = -0.3$；$w=0.8, c_1=c_2=1.5$
+
+\textbf{第0轮}（初始化）
+\begin{itemize}
+    \item 计算适应度：$f(0)=9$，$f(5)=4$
+    \item 个体最优：$pbest_1 = 0$（粒子1的历史最优位置），$pbest_2 = 5$（粒子2的历史最优位置）
+    \item 全局最优：$gbest = 5$（因为 $f(5)=4 < f(0)=9$，取适应度最好的位置）
+\end{itemize}
+
+\textbf{第1轮}（设随机数 $r_1=0.3, r_2=0.7$）
+
+更新粒子1：
+\begin{align*}
+v_1 &= 0.8 \times 0.5 + 1.5 \times 0.3 \times (0 - 0) + 1.5 \times 0.7 \times (5 - 0) \\
+&= 0.4 + 0 + 5.25 = 5.65 \\
+x_1 &= 0 + 5.65 = 5.65
+\end{align*}
+
+更新粒子2：
+\begin{align*}
+v_2 &= 0.8 \times (-0.3) + 1.5 \times 0.5 \times (5 - 5) + 1.5 \times 0.4 \times (5 - 5) \\
+&= -0.24 + 0 + 0 = -0.24 \\
+x_2 &= 5 + (-0.24) = 4.76
+\end{align*}
+
+\textbf{第2轮}：更新 $pbest$ 和 $gbest$（$f(5.65)=7.0225 > f(4.76)=1.5376$，故 $gbest$ 更新为 $4.76$），继续迭代直至收敛到 $x^* = 3$。
+\end{example}
+
+\subsection{差分进化算法（DE）}
+
+\begin{conceptbox}[DE原理]
+模拟群体进化，通过个体的合作与竞争过程进行优化。特点是使用差分向量生成变异个体。
+\end{conceptbox}
+
+\begin{definition}[DE的变异操作]
+对当前个体 $x_i$，随机选择三个不同个体 $x_{r1}, x_{r2}, x_{r3}$，生成变异向量：
+\[
+v_i = x_{r1} + F \cdot (x_{r2} - x_{r3})
+\]
+其中 $F \in (0, 2)$ 为缩放因子。
+\end{definition}
+
+\begin{definition}[DE的交叉操作]
+将变异向量 $v_i$ 与目标向量 $x_i$ 进行交叉，生成试验向量 $u_i$：
+\[
+u_{i,j} = \begin{cases} v_{i,j}, & \text{if } rand_j \leq CR \text{ or } j = j_{rand} \\ x_{i,j}, & \text{otherwise} \end{cases}
+\]
+其中 $CR \in [0, 1]$ 为交叉概率。
+\end{definition}
+
+\begin{algobox}[DE算法]
+\textbf{Step 1}：初始化种群
+
+\textbf{Step 2}：对每个个体 $x_i$
+\begin{itemize}
+    \item \textbf{变异}：随机选3个不同个体，生成 $v_i$
+    \item \textbf{交叉}：$v_i$ 与 $x_i$ 交叉生成 $u_i$
+    \item \textbf{选择}：若 $f(u_i) < f(x_i)$，则 $x_i \leftarrow u_i$
+\end{itemize}
+
+\textbf{Step 3}：若满足终止条件，停；否则转Step 2
+\end{algobox}
+
+\begin{lstlisting}[language=Python, caption=PSO与DE实现]
+import numpy as np
+
+def pso(f, dim, n_particles=30, max_iter=100, 
+        w=0.8, c1=1.5, c2=1.5, bounds=None):
+    """粒子群优化"""
+    if bounds is None:
+        bounds = [(-5, 5)] * dim
+    
+    lb = np.array([b[0] for b in bounds])
+    ub = np.array([b[1] for b in bounds])
+    
+    # 初始化
+    x = np.random.uniform(lb, ub, (n_particles, dim))
+    v = np.random.randn(n_particles, dim) * 0.1
+    
+    pbest = x.copy()
+    pbest_val = np.array([f(xi) for xi in x])
+    gbest_idx = np.argmin(pbest_val)
+    gbest = pbest[gbest_idx].copy()
+    
+    history = []
+    
+    for t in range(max_iter):
+        for i in range(n_particles):
+            r1, r2 = np.random.rand(2)
+            v[i] = (w * v[i] + c1 * r1 * (pbest[i] - x[i]) 
+                    + c2 * r2 * (gbest - x[i]))
+            x[i] = x[i] + v[i]
+            x[i] = np.clip(x[i], lb, ub)
+            
+            val = f(x[i])
+            if val < pbest_val[i]:
+                pbest_val[i] = val
+                pbest[i] = x[i].copy()
+                if val < f(gbest):
+                    gbest = x[i].copy()
+        
+        history.append(f(gbest))
+    
+    return gbest, f(gbest), history
+
+
+def de(f, dim, n_pop=50, max_iter=100, F=0.8, CR=0.9,
+       bounds=None):
+    """差分进化算法"""
+    if bounds is None:
+        bounds = [(-5, 5)] * dim
+    
+    lb = np.array([b[0] for b in bounds])
+    ub = np.array([b[1] for b in bounds])
+    
+    pop = np.random.uniform(lb, ub, (n_pop, dim))
+    fitness = np.array([f(x) for x in pop])
+    
+    history = []
+    
+    for t in range(max_iter):
+        for i in range(n_pop):
+            # 选择3个不同个体
+            idxs = [j for j in range(n_pop) if j != i]
+            r1, r2, r3 = np.random.choice(idxs, 3, replace=False)
+            
+            # 变异
+            v = pop[r1] + F * (pop[r2] - pop[r3])
+            v = np.clip(v, lb, ub)
+            
+            # 交叉
+            j_rand = np.random.randint(dim)
+            u = np.array([v[j] if np.random.rand() < CR or j == j_rand 
+                         else pop[i, j] for j in range(dim)])
+            
+            # 选择
+            fu = f(u)
+            if fu < fitness[i]:
+                pop[i] = u
+                fitness[i] = fu
+        
+        best_idx = np.argmin(fitness)
+        history.append(fitness[best_idx])
+    
+    best_idx = np.argmin(fitness)
+    return pop[best_idx], fitness[best_idx], history
+
+
+# === 测试 ===
+def rosenbrock(x):
+    return (1 - x[0])**2 + 100 * (x[1] - x[0]**2)**2
+
+print("=" * 50)
+print("PSO - Rosenbrock")
+print("=" * 50)
+x_pso, f_pso, _ = pso(rosenbrock, dim=2, n_particles=50, 
+                       max_iter=200, bounds=[(-2, 2), (-1, 3)])
+print(f"PSO: x* = {x_pso}, f* = {f_pso:.6f}")
+
+print("\n" + "=" * 50)
+print("DE - Rosenbrock")
+print("=" * 50)
+x_de, f_de, _ = de(rosenbrock, dim=2, n_pop=50, 
+                    max_iter=200, bounds=[(-2, 2), (-1, 3)])
+print(f"DE: x* = {x_de}, f* = {f_de:.6f}")
+\end{lstlisting}
+
+\section{其他群智能算法}\label{sec:swarm-intelligence}
+
+\subsection{人工蜂群算法（ABC）}
+
+\begin{conceptbox}[ABC原理]
+模拟蜜蜂的觅食行为，分为三类蜜蜂：
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{雇佣蜂}（Employed Bees）：在已知食物源（解）附近搜索
+    \item \textbf{观察蜂}（Onlooker Bees）：根据雇佣蜂的信息选择食物源
+    \item \textbf{侦察蜂}（Scout Bees）：当某个食物源枯竭时随机搜索新食物源
+\end{itemize}
+\end{conceptbox}
+
+\begin{algobox}[ABC算法]
+\textbf{Step 1}：初始化食物源（解）及其适应度
+
+\textbf{Step 2}（雇佣蜂阶段）：每个雇佣蜂在对应食物源邻域生成新解，贪心选择
+
+\textbf{Step 3}（观察蜂阶段）：按适应度选择食物源，在邻域搜索新解
+
+\textbf{Step 4}（侦察蜂阶段）：若某食物源迭代次数超过限制，放弃并随机生成新食物源
+
+\textbf{Step 5}：记录最优解，若满足终止条件则停；否则转Step 2
+\end{algobox}
+
+\subsection{蚁群优化算法（ACO）}
+
+\begin{conceptbox}[ACO原理]
+模拟蚂蚁觅食时通过信息素（Pheromone）通信的行为。蚂蚁在路径上释放信息素，后续蚂蚁倾向于选择信息素浓度高的路径，形成正反馈。
+\end{conceptbox}
+
+\textbf{关键机制}：
+\begin{enumerate}[label=\arabic*.]
+    \item \textbf{信息素更新}：优质路径上信息素增加，所有路径信息素随时间蒸发
+    \item \textbf{转移概率}：蚂蚁从节点 $i$ 到节点 $j$ 的概率：
+    \[
+    P_{ij} = \frac{\tau_{ij}^\alpha \cdot \eta_{ij}^\beta}{\sum_k \tau_{ik}^\alpha \cdot \eta_{ik}^\beta}
+    \]
+    其中 $\tau_{ij}$ 为信息素浓度，$\eta_{ij}$ 为启发信息（如距离的倒数），$\alpha, \beta$ 为参数。
+\end{enumerate}
+
+\subsection{灰狼算法（GWO）}
+
+\begin{conceptbox}[GWO原理]
+模拟灰狼的社会等级和狩猎行为：
+\begin{itemize}[itemsep=0.3em]
+    \item $\alpha$ 狼：群体首领，最优解
+    \item $\beta$ 狼：次优解，辅助 $\alpha$
+    \item $\delta$ 狼：第三优解
+    \item $\omega$ 狼：普通成员，跟随前三者
+\end{itemize}
+
+位置更新：
+\[
+\vec{x}(t+1) = \frac{\vec{x}_\alpha + \vec{x}_\beta + \vec{x}_\delta}{3}
+\]
+参数 $a$ 从2线性递减到0，控制探索和开发平衡。
+\end{conceptbox}
+
+\subsection{鲸鱼算法（WOA）}
+
+\begin{conceptbox}[WOA原理]
+模拟座头鲸的\textbf{泡泡网捕食}行为，有两种主要策略：
+\begin{enumerate}[label=\arabic*.]
+    \item \textbf{收缩包围}：向最优解（猎物）移动
+    \[
+    \vec{x}(t+1) = \vec{x}^*(t) - A \cdot |C \cdot \vec{x}^*(t) - \vec{x}(t)|
+    \]
+    \item \textbf{螺旋更新}：模拟螺旋形泡泡网
+    \[
+    \vec{x}(t+1) = |\vec{x}^*(t) - \vec{x}(t)| \cdot e^{bl} \cdot \cos(2\pi l) + \vec{x}^*(t)
+    \]
+\end{enumerate}
+其中 $A, C$ 为随机参数，$l \in [-1, 1]$。
+\end{conceptbox}
+
+\subsection{烟花算法（FWA）}
+
+\begin{conceptbox}[FWA原理]
+每个烟花的位置代表一个可行解。烟花\textbf{爆炸}产生两类火星：
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{正常火星}：在当前振幅内随机均匀分布
+    \item \textbf{特别火星}：在当前位置附近以正态分布产生
+\end{itemize}
+
+\textbf{振幅}与适应度有关：适应度越好（越亮），振幅越小；适应度越差，振幅越大（探索更广区域）。
+
+\textbf{火星保留}：每代产生多于应有数量的火星，通过适应度和距离选择保留指定数量。
+\end{conceptbox}
+
+\begin{table}[htbp]
+\centering
+\caption{群智能算法对比}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{算法} & \textbf{灵感来源} & \textbf{信息传递} & \textbf{探索/开发} & \textbf{特点} \\
+\midrule
+PSO & 鸟群 & 全局+局部最优 & 惯性权重平衡 & 简单高效 \\
+DE & 进化 & 差分向量 & 变异+交叉 & 全局搜索强 \\
+ABC & 蜂群 & 雇佣蜂舞蹈 & 三角色分工 & 局部搜索好 \\
+ACO & 蚁群 & 信息素 & 正反馈 & 适合组合优化 \\
+GWO & 狼群 & 等级制 & 线性递减 & 收敛快 \\
+WOA & 鲸鱼 & 螺旋+包围 & 概率切换 & 平衡好 \\
+FWA & 烟花 & 爆炸振幅 & 振幅自适应 & 多样性保持 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{lstlisting}[language=Python, caption=灰狼算法实现]
+import numpy as np
+
+def gwo(f, dim, n_wolves=30, max_iter=100, bounds=None):
+    """灰狼算法"""
+    if bounds is None:
+        bounds = [(-5, 5)] * dim
+    
+    lb = np.array([b[0] for b in bounds])
+    ub = np.array([b[1] for b in bounds])
+    
+    # 初始化
+    wolves = np.random.uniform(lb, ub, (n_wolves, dim))
+    fitness = np.array([f(w) for w in wolves])
+    
+    # 排序找alpha, beta, delta
+    idx = np.argsort(fitness)
+    alpha, beta, delta = wolves[idx[0]], wolves[idx[1]], wolves[idx[2]]
+    
+    history = []
+    
+    for t in range(max_iter):
+        a = 2 - 2 * t / max_iter  # a从2线性减到0
+        
+        for i in range(n_wolves):
+            for d in range(dim):
+                # 对alpha, beta, delta分别计算
+                r1, r2 = np.random.rand(2)
+                A1 = 2 * a * r1 - a
+                C1 = 2 * r2
+                D_alpha = abs(C1 * alpha[d] - wolves[i, d])
+                X1 = alpha[d] - A1 * D_alpha
+                
+                r1, r2 = np.random.rand(2)
+                A2 = 2 * a * r1 - a
+                C2 = 2 * r2
+                D_beta = abs(C2 * beta[d] - wolves[i, d])
+                X2 = beta[d] - A2 * D_beta
+                
+                r1, r2 = np.random.rand(2)
+                A3 = 2 * a * r1 - a
+                C3 = 2 * r2
+                D_delta = abs(C3 * delta[d] - wolves[i, d])
+                X3 = delta[d] - A3 * D_delta
+                
+                wolves[i, d] = (X1 + X2 + X3) / 3
+            
+            wolves[i] = np.clip(wolves[i], lb, ub)
+            fitness[i] = f(wolves[i])
+        
+        # 更新alpha, beta, delta
+        idx = np.argsort(fitness)
+        alpha, beta, delta = wolves[idx[0]], wolves[idx[1]], wolves[idx[2]]
+        history.append(fitness[idx[0]])
+    
+    return alpha, f(alpha), history
+
+
+# === 测试 ===
+print("=" * 50)
+print("灰狼算法 - Sphere函数")
+print("=" * 50)
+
+sphere = lambda x: np.sum(x**2)
+x_gwo, f_gwo, _ = gwo(sphere, dim=5, n_wolves=30, max_iter=100,
+                       bounds=[(-5, 5)] * 5)
+print(f"GWO: f* = {f_gwo:.10f}")
+\end{lstlisting}
+
+\section{应用实例}\label{sec:applications}
+
+\subsection{试飞任务规划}
+
+\begin{conceptbox}[问题描述]
+民用航空飞机的试飞阶段包含上千个试飞科目，各科目之间具有严格的逻辑关系、优先级约束、时间窗口约束、备选飞机约束等。高效的试飞任务调度是NP-hard问题。
+\end{conceptbox}
+
+\textbf{决策变量}：
+\begin{itemize}
+    \item $x_{i,k,h} \in \{0, 1\}$：第 $i$ 号任务分配给第 $k$ 架飞机，且为该飞机第 $h$ 项任务
+    \item $t_{i,k}$：第 $i$ 号任务在第 $k$ 号飞机上的开始时刻
+    \item $T_{i,k}$：第 $i$ 号任务在第 $k$ 号飞机上的完成时刻
+\end{itemize}
+
+\textbf{目标函数}：
+\[
+\min\ \max_{k} \{T_k\}\quad \text{（最小化最大完成时间）}
+\]
+其中 $T_k$ 为第 $k$ 架飞机的试飞完成天数。
+
+\textbf{关键约束}：
+\begin{enumerate}[label=(\arabic*)]
+    \item \textbf{优先级约束}：$t_{i,k} \geq \max_{j \in P_i} T_{j,l}$，任务 $i$ 必须在其所有前置任务完成后开始
+    \item \textbf{唯一分配}：$\sum_{k \in C_i} \sum_h x_{i,k,h} = 1$，每项任务恰好分配给一架飞机
+    \item \textbf{执行时长}：$T_{i,k} - t_{i,k} = \pi_i$（固定执行时长）
+    \item \textbf{时间窗口}：$Ta_i \leq t_{i,k} \leq Tb_i$
+    \item \textbf{试飞强度}：$\mu$ 控制单位时间内完成的任务量
+\end{enumerate}
+
+\subsection{柔性作业车间调度}
+
+\begin{conceptbox}[问题描述]
+建立多个工件和多个机器之间的匹配关系。每个工件有不同工序，工序之间有确定顺序，每道工序可与多台机器匹配。目标是建立工件、工序和机器的最优匹配。
+\end{conceptbox}
+
+\textbf{优化目标}：最小化订单完成时间（Makespan）
+
+\textbf{求解方法}：遗传算法、粒子群优化、模拟退火等智能优化算法。
+
+\subsection{旅行商问题（TSP）}
+
+\begin{conceptbox}[TSP的SA求解]
+\textbf{问题}：给定 $n$ 个城市，求访问每个城市恰好一次并返回起点的最短路径。
+
+\textbf{邻域定义}（2-opt）：任选路径中的两条边，反转它们之间的子路径。
+
+\textbf{能量函数}：路径总长度 $E(\pi) = \sum_{i=1}^{n} d(\pi_i, \pi_{i+1})$
+\end{conceptbox}
+
+\begin{example}[TSP的2-opt邻域]
+当前路径：$1 \to 2 \to 3 \to 4 \to 5 \to 6 \to 1$
+
+选择边 $(2,3)$ 和 $(5,6)$，反转中间子路径：
+
+新路径：$1 \to 2 \to \textbf{5} \to \textbf{4} \to \textbf{3} \to 6 \to 1$
+
+2-opt邻域大小为 $\frac{n(n-3)}{2}$，远小于完全解空间 $n!$。
+\end{example}
+
+\subsection{深度学习的优化}
+
+\begin{notebox}[深度学习中的优化特点]
+\begin{itemize}[itemsep=0.3em]
+    \item 大多数优化问题是\textbf{非凸的}，甚至是NP-hard的
+    \item 可控梯度下降：$x_{t+1} = x_t - \eta \nabla f(x_t)$
+    \item 需要确保：步长足够小以保证下降，同时Hessian大时允许梯度有较大波动
+    \item 挑战：局部最优、梯度消失/爆炸、学习率选择、初始化敏感
+    \item 随机网络（如Boltzmann机）通过概率机制跳出局部最优
+\end{itemize}
+\end{notebox}
+
+\begin{lstlisting}[language=Python, caption=多种智能算法对比测试]
+import numpy as np
+import time
+
+# === 测试函数集 ===
+def sphere(x):
+    """Sphere函数 (凸)"""
+    return np.sum(x**2)
+
+def rastrigin(x):
+    """Rastrigin函数 (多峰)"""
+    return 10 * len(x) + np.sum(x**2 - 10 * np.cos(2 * np.pi * x))
+
+def ackley(x):
+    """Ackley函数 (多峰)"""
+    a, b, c = 20, 0.2, 2 * np.pi
+    n = len(x)
+    return -a * np.exp(-b * np.sqrt(np.sum(x**2)/n)) \
+           - np.exp(np.sum(np.cos(c * x))/n) + a + np.e
+
+
+def compare_algorithms(func, dim=10, bounds=(-5, 5)):
+    """对比多种智能优化算法"""
+    results = {}
+    
+    # 模拟退火
+    from scipy.optimize import dual_annealing
+    start = time.time()
+    res = dual_annealing(func, [(bounds, bounds)] * dim, maxiter=200)
+    results['SA'] = {'f*': res.fun, 'time': time.time() - start}
+    
+    # 差分进化
+    from scipy.optimize import differential_evolution
+    start = time.time()
+    res = differential_evolution(func, [(bounds, bounds)] * dim, 
+                                  maxiter=200, tol=1e-6)
+    results['DE'] = {'f*': res.fun, 'time': time.time() - start}
+    
+    return results
+
+
+print("=" * 60)
+print("智能优化算法对比 (dim=10)")
+print("=" * 60)
+
+for name, f in [('Sphere', sphere), ('Rastrigin', rastrigin), 
+                ('Ackley', ackley)]:
+    print(f"\n--- {name} ---")
+    results = compare_algorithms(f, dim=10)
+    for alg, info in results.items():
+        print(f"  {alg:6s}: f* = {info['f*']:.6e}, "
+              f"time = {info['time']:.3f}s")
+\end{lstlisting}
+
+\newpage
+
+\section{支持向量机（SVM）}\label{sec:svm}
+
+支持向量机（Support Vector Machine, SVM）是凸优化理论在机器学习中的经典应用，其核心思想是通过求解一个凸二次规划问题来构造最大间隔分类器。SVM的求解过程涉及第~\ref{chap:constrained-theory}~章中的多个核心概念：KKT条件（第~\ref{sec:kkt-general}~节）、对偶理论（第~\ref{sec:duality}~节）和互补松弛条件。
+
+\subsection{线性可分与硬间隔SVM}
+
+给定训练样本 $\{(x_i, y_i)\}_{i=1}^{N}$，其中 $x_i \in \mathbb{R}^p$，$y_i \in \{-1, +1\}$。线性分类器用超平面 $w^T x + b = 0$ 将两类分开，预测规则为
+\[
+\hat{y} = \operatorname{sign}(w^T x + b).
+\]
+
+若样本线性可分，则 $y_i(w^T x_i + b) > 0$。由于 $(w, b)$ 同时乘以正数不改变分类面，可将函数间隔规范化为
+\[
+y_i(w^T x_i + b) \geq 1,\qquad i = 1, \ldots, N.
+\]
+
+样本点到超平面的几何间隔为 $y_i(w^T x_i + b) / \|w\|_2$。在上述规范化下，离分类面最近的样本的间隔为 $1/\|w\|_2$，两类支持超平面之间的总间隔为 $2/\|w\|_2$。因此最大间隔等价于：
+
+\begin{definition}[硬间隔SVM]
+\[
+\min_{w, b}\ \frac{1}{2}\|w\|_2^2,\qquad
+\text{s.t.}\ y_i(w^T x_i + b) \geq 1,\quad i = 1, \ldots, N.
+\]
+\end{definition}
+
+这是一个凸二次规划问题（目标函数为凸二次型，约束为仿射不等式）。
+
+\subsection{拉格朗日对偶与支持向量}
+
+将约束写成 $1 - y_i(w^T x_i + b) \leq 0$，引入拉格朗日乘子 $\alpha_i \geq 0$：
+\[
+L(w, b, \alpha) = \frac{1}{2}\|w\|_2^2 + \sum_{i=1}^{N} \alpha_i [1 - y_i(w^T x_i + b)].
+\]
+
+对 $w, b$ 求驻点：
+\[
+\frac{\partial L}{\partial w} = 0 \ \Rightarrow\ w = \sum_{i=1}^{N} \alpha_i y_i x_i,\qquad
+\frac{\partial L}{\partial b} = 0 \ \Rightarrow\ \sum_{i=1}^{N} \alpha_i y_i = 0.
+\]
+
+代回消去 $w, b$，得到对偶问题：
+
+\begin{definition}[硬间隔SVM对偶]
+\[
+\max_{\alpha}\ \sum_{i=1}^{N} \alpha_i - \frac{1}{2}\sum_{i=1}^{N}\sum_{j=1}^{N} \alpha_i \alpha_j y_i y_j x_i^T x_j,\qquad
+\text{s.t.}\ \alpha_i \geq 0,\ \sum_{i=1}^{N} \alpha_i y_i = 0.
+\]
+\end{definition}
+
+KKT互补松弛条件为 $\alpha_i[1 - y_i(w^T x_i + b)] = 0$。因此只有满足 $y_i(w^T x_i + b) = 1$ 且 $\alpha_i > 0$ 的样本会决定超平面，这些点称为\textbf{支持向量}。分类函数可写成
+\[
+f(x) = \operatorname{sign}\!\left(\sum_{i=1}^{N} \alpha_i y_i x_i^T x + b\right).
+\]
+
+\subsection{软间隔SVM}
+
+若数据不可完全线性分离，引入松弛变量 $\xi_i \geq 0$：
+
+\begin{definition}[软间隔SVM]
+\[
+\min_{w, b, \xi}\ \frac{1}{2}\|w\|_2^2 + C\sum_{i=1}^{N} \xi_i,\qquad
+\text{s.t.}\ y_i(w^T x_i + b) \geq 1 - \xi_i,\ \xi_i \geq 0,
+\]
+其中 $C > 0$ 是惩罚参数，控制间隔最大化与误分类惩罚之间的权衡。
+\end{definition}
+
+其对偶问题在硬间隔基础上多出上界约束：
+\[
+\max_{\alpha}\ \sum_{i=1}^{N} \alpha_i - \frac{1}{2}\sum_{i,j} \alpha_i \alpha_j y_i y_j x_i^T x_j,\qquad
+\text{s.t.}\ 0 \leq \alpha_i \leq C,\ \sum_{i=1}^{N} \alpha_i y_i = 0.
+\]
+
+\subsection{核方法}
+
+当线性超平面不足以分离数据时，可通过核技巧将数据映射到高维特征空间。设映射为 $\phi: \mathbb{R}^p \to \mathcal{H}$，定义核函数
+\[
+K(x_i, x_j) = \phi(x_i)^T \phi(x_j).
+\]
+只需把对偶问题中的内积 $x_i^T x_j$ 替换为 $K(x_i, x_j)$，即可在特征空间中构造非线性最大间隔分类器，而无需显式计算高维映射 $\phi$。
+
+常见核函数包括：
+\begin{itemize}
+    \item 线性核：$K(x_i, x_j) = x_i^T x_j$
+    \item 多项式核：$K(x_i, x_j) = (x_i^T x_j + c)^d$
+    \item 高斯径向基（RBF）核：$K(x_i, x_j) = \exp\!\left(-\frac{\|x_i - x_j\|^2}{2\sigma^2}\right)$
+\end{itemize}
+
+\begin{conceptbox}[SVM与凸优化的联系]
+SVM的整个求解框架紧密依赖凸优化理论：
+\begin{enumerate}[label=(\arabic*)]
+    \item 原问题是凸二次规划（目标凸、约束仿射），保证全局最优
+    \item 通过对偶转化，将高维 $w$ 的优化转化为关于 $\alpha$ 的问题，且对偶也是凸的
+    \item KKT条件刻画了最优解的结构：只有支持向量起作用，体现了稀疏性
+    \item 核技巧利用了仿射映射复合保持凸性的性质
+\end{enumerate}
+\end{conceptbox}
+
+\section{本章小结}\label{sec:ch8-summary}
+
+\subsection{本章知识框架}
+
+\begin{conceptbox}[复合优化与智能优化——核心内容]
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \textbf{复合优化问题}：$\min\ f(x) + g(x)$（$f$ 可微，$g$ 不可微）
+    \begin{itemize}
+        \item 梯度方法：Adagrad, Adam, 动量法等
+        \item 邻近点方法（PPA）
+        \item ADMM
+    \end{itemize}
+    \item \textbf{变分不等式（VI）}
+    \begin{itemize}
+        \item 单调变分不等式
+        \item 线性约束凸优化等价于VI
+        \item 可分离结构与ADMM收敛性
+    \end{itemize}
+    \item \textbf{启发式算法概述}
+    \begin{itemize}
+        \item 组合优化与NP-hard问题
+        \item 独立系统与拟阵
+        \item 启发式 vs 近似算法
+    \end{itemize}
+    \item \textbf{模拟退火算法（SA）}
+    \begin{itemize}
+        \item Metropolis准则、Boltzmann分布
+        \item 温度参数控制探索与开发
+        \item 玻尔兹曼机
+    \end{itemize}
+    \item \textbf{遗传算法（GA）}
+    \begin{itemize}
+        \item 编码、选择、交叉、变异
+        \item 轮盘赌、二进制编码
+    \end{itemize}
+    \item \textbf{粒子群优化（PSO）与差分进化（DE）}
+    \begin{itemize}
+        \item PSO：速度-位置更新，个体/全局最优
+        \item DE：差分向量变异，贪心选择
+    \end{itemize}
+    \item \textbf{其他群智能算法}
+    \begin{itemize}
+        \item ABC：雇佣蜂、观察蜂、侦察蜂
+        \item ACO：信息素机制
+        \item GWO：灰狼等级制
+        \item WOA：泡泡网捕食
+        \item FWA：烟花爆炸
+    \end{itemize}
+\end{enumerate}
+\end{conceptbox}
+
+\subsection{智能优化算法特性对比}
+
+\begin{table}[htbp]
+\centering
+\caption{智能优化算法综合对比}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{算法} & \textbf{来源} & \textbf{跟随最优} & \textbf{关键参数} & \textbf{适合问题} \\
+\midrule
+GA & 进化论 & 否 & $p_c, p_m$ & 组合/连续 \\
+PSO & 鸟群觅食 & 是 & $w, c_1, c_2$ & 连续优化 \\
+DE & 进化论 & 否 & $F, CR$ & 连续优化 \\
+ABC & 蜜蜂觅食 & 是 & limit & 连续优化 \\
+ACO & 蚂蚁觅食 & 是 & $\alpha, \beta, \rho$ & 组合优化 \\
+SA & 物理退火 & -- & $T_0, \alpha$ & 通用 \\
+GWO & 狼群 & 是 & $a$ & 连续优化 \\
+WOA & 鲸鱼 & 是 & $a, b$ & 连续优化 \\
+FWA & 烟花 & 是 & 振幅 & 连续优化 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{选择算法的建议}
+
+\begin{notebox}[算法选择指南]
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{连续单峰}：梯度法、Newton法（最快）
+    \item \textbf{连续多峰}：DE、PSO、SA（全局搜索）
+    \item \textbf{组合优化}：GA、ACO、SA
+    \item \textbf{高维问题}：DE、PSO（可扩展性好）
+    \item \textbf{快速求解}：GWO、PSO（参数少，收敛快）
+    \item \textbf{鲁棒性要求}：SA、DE（稳定，不易陷入局部最优）
+\end{itemize}
+\end{notebox}
+
+\subsection{关键公式汇总}
+
+\begin{table}[htbp]
+\centering
+\caption{核心公式速查}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{概念/算法} & \textbf{核心公式} \\
+\midrule
+PPA & $x_{k+1} = \argmin_x\{\theta(x) + \frac{r}{2}\|x-x_k\|^2\}$ \\
+变分不等式 & $(u-u^*)^T F(u^*) \geq 0,\ \forall u \in \Omega$ \\
+Metropolis准则 & $P = \exp(-\Delta E / T)$ \\
+Boltzmann分布 & $P_A/P_B = \exp(-(E_A-E_B)/T)$ \\
+GA选择概率 & $p_i = f(x_i) / \sum_j f(x_j)$ \\
+PSO速度 & $v = wv + c_1 r_1(pbest-x) + c_2 r_2(gbest-x)$ \\
+DE变异 & $v = x_{r1} + F(x_{r2} - x_{r3})$ \\
+GWO位置 & $x = (x_\alpha + x_\beta + x_\delta)/3$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{关键术语中英对照}
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{中文} & \textbf{英文} \\
+\midrule
+复合优化 & Composite Optimization \\
+变分不等式 & Variational Inequality \\
+邻近点算法 & Proximal Point Algorithm \\
+启发式算法 & Heuristic Algorithm \\
+近似算法 & Approximation Algorithm \\
+模拟退火 & Simulated Annealing \\
+遗传算法 & Genetic Algorithm \\
+粒子群优化 & Particle Swarm Optimization \\
+差分进化 & Differential Evolution \\
+人工蜂群 & Artificial Bee Colony \\
+蚁群优化 & Ant Colony Optimization \\
+灰狼算法 & Grey Wolf Optimizer \\
+鲸鱼算法 & Whale Optimization Algorithm \\
+烟花算法 & Fireworks Algorithm \\
+玻尔兹曼机 & Boltzmann Machine \\
+拟阵 & Matroid \\
+独立系统 & Independent System \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{lstlisting}[language=Python, caption=统一智能优化接口]
+import numpy as np
+
+def unified_metaheuristic(f, dim, method='de', bounds=None,
+                          max_iter=100, **kwargs):
+    """
+    统一元启发式优化接口
+    """
+    if bounds is None:
+        bounds = [(-5, 5)] * dim
+    
+    if method == 'de':
+        from scipy.optimize import differential_evolution
+        result = differential_evolution(f, bounds, maxiter=max_iter,
+                                         tol=1e-6, seed=42)
+        return result.x, result.fun
+    
+    elif method == 'sa':
+        from scipy.optimize import dual_annealing
+        result = dual_annealing(f, bounds, maxiter=max_iter,
+                                 seed=42)
+        return result.x, result.fun
+    
+    elif method == 'pso':
+        # 简化PSO
+        n = kwargs.get('n_particles', 30)
+        lb, ub = np.array([b[0] for b in bounds]), np.array([b[1] for b in bounds])
+        x = np.random.uniform(lb, ub, (n, dim))
+        pbest, pbest_f = x.copy(), np.array([f(xi) for xi in x])
+        gbest_idx = np.argmin(pbest_f)
+        gbest = pbest[gbest_idx].copy()
+        v = np.zeros((n, dim))
+        
+        for _ in range(max_iter):
+            for i in range(n):
+                r1, r2 = np.random.rand(2)
+                v[i] = (0.8 * v[i] + 1.5 * r1 * (pbest[i] - x[i]) 
+                        + 1.5 * r2 * (gbest - x[i]))
+                x[i] = np.clip(x[i] + v[i], lb, ub)
+                fi = f(x[i])
+                if fi < pbest_f[i]:
+                    pbest_f[i], pbest[i] = fi, x[i].copy()
+                    if fi < f(gbest):
+                        gbest = x[i].copy()
+        return gbest, f(gbest)
+    
+    else:
+        raise ValueError(f"Unknown method: {method}")
+
+
+# === 测试 ===
+print("=" * 60)
+print("统一接口测试 (Rastrigin函数)")
+print("=" * 60)
+
+rastrigin = lambda x: 10 * len(x) + np.sum(x**2 - 10*np.cos(2*np.pi*x))
+
+for method in ['de', 'sa', 'pso']:
+    x_opt, f_opt = unified_metaheuristic(rastrigin, dim=5, 
+                                          method=method, max_iter=200)
+    print(f"{method.upper():4s}: f* = {f_opt:.6f}")
+\end{lstlisting}
+
+\newpage
+
+% ==================== 第九章 课程总结 ====================
