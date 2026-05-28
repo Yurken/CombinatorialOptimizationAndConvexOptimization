@@ -743,6 +743,8 @@ print(f"迭代次数: {iters2}")
 \begin{example}[增广拉格朗日法——迭代两次]\label{ex:alm}
 \textbf{问题}：$\min\ f(x) = x^2$，s.t. $x = 1$。
 
+\textbf{解：}
+
 增广拉格朗日函数：$\mathcal{L}_A = x^2 + \lambda(x-1) + \frac{\sigma}{2}(x-1)^2$
 
 \textbf{参数}：$\lambda_0 = 0$，$\sigma = 2$
@@ -791,6 +793,8 @@ x_{AC} = \argmin_{x \in \text{int}(S)} \psi(x)
 
 \begin{example}[单位立方体的解析中心]
 $S = \{x \in \R^n \mid x_i \geq 0,\ 1 - x_i \geq 0,\ i = 1, \ldots, n\}$
+
+\textbf{解：}
 
 势函数：$\psi(x) = -\sum_{i=1}^{n}[\ln(x_i) + \ln(1-x_i)]$
 
@@ -969,6 +973,8 @@ y_{k+1} &= y_k + \rho(Ax_{k+1} + Bz_{k+1} - c)
 \begin{example}[LASSO的ADMM求解]
 \textbf{问题}：$\min\ \frac{1}{2}\|Ax - b\|^2 + \lambda\|z\|_1$ s.t. $x - z = 0$
 
+\textbf{解：}
+
 \textbf{ADMM迭代}：
 \begin{align*}
 x_{k+1} &= (A^T A + \rho I)^{-1}(A^T b + \rho(z_k - u_k)) \\
@@ -996,6 +1002,8 @@ u_{k+1} &= u_k + x_{k+1} - z_{k+1}
 \end{property}
 
 \begin{example}[常见邻近算子]
+\textbf{解：}
+
 \begin{itemize}[itemsep=0.3em]
     \item $f(x) = I_C(x)$（指示函数）：$\text{prox}_f = \Pi_C$（投影到 $C$）
     \item $f(x) = \lambda\|x\|_1$：$\text{prox}_f(x) = S_\lambda(x)$（软阈值）

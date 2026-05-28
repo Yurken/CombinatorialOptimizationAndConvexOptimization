@@ -51,6 +51,8 @@ x_1 + 2x_2 &\leq 8 \\
 x_1, x_2 &\geq 0
 \end{align*}
 
+\textbf{解：}
+
 引入松弛变量 $x_3, x_4 \geq 0$：
 \begin{align*}
 \max \, z &= 3x_1 + 5x_2 + 0x_3 + 0x_4 \\
@@ -80,6 +82,8 @@ x_1 + 2x_2 &\leq 8 \\
 3x_1 + 2x_2 &\leq 12 \\
 x_1, x_2 &\geq 0
 \end{align*}
+
+\textbf{解：}
 
 \textbf{步骤}：
 \begin{enumerate}
@@ -160,6 +164,9 @@ $\max \, z = x_1 + x_2$
 x_1 - x_2 &\leq 1 \\
 x_1, x_2 &\geq 0
 \end{align*}
+
+\textbf{解：}
+
 取 $x_2 = 0$，$x_1 \to \infty$，$z \to \infty$，无界。
 \end{example}
 
@@ -170,6 +177,9 @@ x_1 + 2x_2 &\leq 8 \\
 x_1 + x_2 &\leq 6 \\
 x_1, x_2 &\geq 0
 \end{align*}
+
+\textbf{解：}
+
 目标函数等值线与约束 $x_1 + 2x_2 \leq 8$ 平行，线段 $B(4,2)$ 到 $C(0,4)$ 上所有点都是最优解，$z^* = 8$。
 \end{example}
 
@@ -230,6 +240,8 @@ x_1, x_2 &\geq 0
 
 \begin{example}[基本可行解的充要条件]\label{ex:bfs-condition}
 \textbf{命题}：可行解 $x$ 为 BFS 的充要条件是：$x$ 的正分量对应的系数列向量线性无关。
+
+\textbf{解：}
 
 \textbf{必要性}：若 $x$ 是 BFS，存在基 $B$ 使非基变量为零，基变量 $x_B = B^{-1}b$。正分量只能出现在基变量中，基列线性无关，故正分量对应的列向量线性无关。
 
@@ -370,6 +382,8 @@ x_1 + 2x_2 + x_3 &= 8 \\
 3x_1 + 2x_2 + x_4 &= 12 \\
 x_1, x_2, x_3, x_4 &\geq 0
 \end{align*}
+
+\textbf{解：}
 
 \textbf{初始单纯形表}：
 
@@ -616,6 +630,8 @@ z = \sum_{j=1}^n c_j x_j - \sum_{i} M a_i
 x_1 + 2x_2 &\geq 3 \\
 x_1, x_2 &\geq 0
 \end{align*}
+
+\textbf{解：}
 
 \textbf{Step 1: 引入变量}
 
@@ -873,6 +889,8 @@ x_1 + 3x_2 &\geq 3 \\
 x_1, x_2 &\geq 0
 \end{align*}
 
+\textbf{解：}
+
 \textbf{第一阶段：构造辅助问题}
 
 引入剩余变量 $s_1, s_2 \geq 0$ 和人工变量 $a_1, a_2 \geq 0$：
@@ -955,6 +973,8 @@ $a_2$ & $5/3$ & $0$ & $1/3$ & $-1$ & $-1/3$ & $1$ & $1$ \\
 
 \begin{example}[第二阶段]
 以第一阶段得到的BFS为初始解，去掉人工变量列，恢复原始目标函数。
+
+\textbf{解：}
 
 假设第一阶段结束后的表为：
 
@@ -1186,6 +1206,8 @@ x_1 + 2x_2 &\leq 8 \\
 x_1, x_2 &\geq 0
 \end{align*}
 
+\textbf{解：}
+
 对偶问题：$\min \, w = 8y_1 + 12y_2$
 \begin{align*}
 y_1 + 3y_2 &\geq 3 \\
@@ -1237,6 +1259,8 @@ x_j^* \cdot (a_j^T y^* - c_j) &= 0, \quad j = 1, \ldots, n
 \begin{example}[用互补松弛求对偶最优解]
 原问题最优解 $x^* = (2, 3)$，$z^* = 21$。
 
+\textbf{解：}
+
 约束1：$2 + 2 \cdot 3 = 8 = b_1$（积极），约束2：$3 \cdot 2 + 2 \cdot 3 = 12 = b_2$（积极）
 
 由互补松弛：$y_1^* > 0, y_2^* > 0$，且 $x_1^* = 2 > 0, x_2^* = 3 > 0$
@@ -1258,6 +1282,9 @@ x_j^* \cdot (a_j^T y^* - c_j) &= 0, \quad j = 1, \ldots, n
 
 \begin{example}[影子价格]
 在 $x^* = (2, 3)$，$z^* = 21$ 的例子中：
+
+\textbf{解：}
+
 \begin{itemize}
     \item $y_1^* = 2.25$：第1种资源（约束1 RHS）的影子价格为2.25
     \item $y_2^* = 0.25$：第2种资源的影子价格为0.25
@@ -1267,6 +1294,9 @@ x_j^* \cdot (a_j^T y^* - c_j) &= 0, \quad j = 1, \ldots, n
 \end{example}
 
 \begin{example}[对偶的对偶是原问题]\label{ex:dual-of-dual}
+
+\textbf{解：}
+
 以标准最小化问题为例：
 \[
 (P)\ \min\ c^T x, \quad Ax = b, \quad x \geq 0
@@ -1285,6 +1315,9 @@ x_j^* \cdot (a_j^T y^* - c_j) &= 0, \quad j = 1, \ldots, n
 \end{example}
 
 \begin{example}[原问题与对偶问题的联系与区别]\label{ex:primal-dual-comparison}
+
+\textbf{解：}
+
 \textbf{联系}：
 \begin{itemize}[itemsep=0.2em]
     \item 弱对偶：任一原可行解 $x$ 和对偶可行解 $y$ 满足 $b^T y \leq c^T x$（对最小化原问题）
@@ -1309,6 +1342,8 @@ x_j^* \cdot (a_j^T y^* - c_j) &= 0, \quad j = 1, \ldots, n
 
 \begin{example}[线性规划基本概念判断]\label{ex:lp-true-false}
 判断下列说法是否正确。
+
+\textbf{解：}
 
 \textbf{(a)} "有界可行集的 LP 中，每个最优解必定是最优 BFS。"
 
@@ -1396,6 +1431,8 @@ x_1 + 2x_2 + x_3 &\geq 3 \\
 2x_1 - x_2 + 3x_3 &\geq 4 \\
 x_1, x_2, x_3 &\geq 0
 \end{align*}
+
+\textbf{解：}
 
 转化为标准型（乘以 $-1$ 使约束为 $\leq$）：
 \begin{align*}
@@ -1613,6 +1650,8 @@ $x_1$ & $1$ & $0$ & $-0.5$ & $0.5$ & $2$ \\
 \end{tabular}
 \end{table}
 
+\textbf{解：}
+
 \textbf{非基变量 $s_1$ 的系数变化}：$c_{s_1} = 0$ 变为 $\Delta c_{s_1}$
 
 检验数 $\sigma_{s_1} = 2.25$，变化后：$\hat{\sigma}_{s_1} = 2.25 - \Delta c_{s_1} \geq 0$
@@ -1650,6 +1689,8 @@ $c_B$ 变为 $(5, 3+\Delta c_1)$，需要所有 $\sigma_j \geq 0$。
 \begin{example}[$b_i$ 灵敏度分析]
 $b_1 = 8$ 变为 $8 + \Delta b_1$，$b_2 = 12$ 不变。
 
+\textbf{解：}
+
 $B^{-1} = \begin{bmatrix} 0.75 & -0.25 \\ -0.5 & 0.5 \end{bmatrix}$
 
 新的基解：
@@ -1685,6 +1726,8 @@ $2 - 0.5\Delta b_1 \geq 0 \Rightarrow \Delta b_1 \leq 4$
 
 新产品 $x_3$：利润 $c_3 = 4$，消耗资源 $A_3 = (1, 2)^T$。
 
+\textbf{解：}
+
 检验数：$\sigma_3 = c_B^T B^{-1} A_3 - 4 = (2.25, 0.25) \cdot (1, 2) - 4 = 2.25 + 0.5 - 4 = -1.25 < 0$
 
 应该生产新产品！$x_3$ 入基。
@@ -1707,6 +1750,8 @@ $2 - 0.5\Delta b_1 \geq 0 \Rightarrow \Delta b_1 \leq 4$
 原问题最优解 $x^* = (2, 3)$，$z^* = 21$。
 
 增加约束：$x_1 + x_2 \leq 4$
+
+\textbf{解：}
 
 检验：$2 + 3 = 5 > 4$，不满足！
 

@@ -307,6 +307,8 @@ print(f"  h/r = {h_opt/r_opt:.4f} (理论: 2)")
 \end{conceptbox}
 
 \begin{example}[神经网络的梯度下降]
+\textbf{解：}
+
 \textbf{经典梯度下降}：
 \[
 \theta^{(t+1)} = \theta^{(t)} - \eta \nabla J(\theta^{(t)})
@@ -376,6 +378,8 @@ print(f"  h/r = {h_opt/r_opt:.4f} (理论: 2)")
 \begin{example}[噪声模型与极大似然估计]\label{ex:mle-noise}
 给定测量模型 $y = Ax + \epsilon$，其中 $\epsilon$ 为噪声。不同噪声分布对应不同的优化目标。
 
+\textbf{解：}
+
 \textbf{(a) 拉普拉斯噪声}：若 $\epsilon_i \sim \text{Laplace}(0, b)$，联合对数似然为
 \[
 \log L(x) = -m \log(2b) - \frac{1}{b}\sum_{i=1}^m |y_i - a_i^T x|
@@ -396,6 +400,8 @@ print(f"  h/r = {h_opt/r_opt:.4f} (理论: 2)")
 \[
 \min_x \|y - Ax\|_2^2 + \lambda \|x\|_2^2, \quad \lambda > 0
 \]
+
+\textbf{解：}
 
 \textbf{(a) 最优解}：目标函数 $F(x) = (y - Ax)^T(y - Ax) + \lambda x^T x$，求梯度令其为零：
 \[
@@ -558,6 +564,8 @@ f(\theta x + (1-\theta) y) \geq \theta f(x) + (1-\theta) f(y)
 \]
 证明 $\|w\|_{[L]}$ 是凸函数。
 
+\textbf{解：}
+
 \textbf{证明}："取绝对值最大的 $L$ 个分量求和"等价于在所有大小为 $L$ 的指标集合中取最大值：
 \[
 \|w\|_{[L]} = \max_{\substack{S \subset \{1,\ldots,m\} \\ |S|=L}} \sum_{i \in S} |w_i|.
@@ -603,6 +611,8 @@ KKT条件的详细推导与证明见第~\ref{chap:constrained-theory}~章第~\re
 \begin{example}[凸集的运算性质]\label{ex:convex-set-ops}
 设 $S_1, S_2$ 是凸集，讨论下列集合是否是凸集。
 
+\textbf{解：}
+
 \textbf{(1) $S_1 \cup S_2$}：一般\textbf{不是凸集}。
 
 反例：取 $S_1 = \{0\}$，$S_2 = \{2\} \subset \mathbb{R}$，二者都是单点凸集，但 $S_1 \cup S_2 = \{0, 2\}$。中点 $\frac{1}{2} \cdot 0 + \frac{1}{2} \cdot 2 = 1 \notin S_1 \cup S_2$，违反凸集定义。只有在 $S_1 \subseteq S_2$ 或 $S_2 \subseteq S_1$ 时，并集才一定凸。
@@ -621,6 +631,8 @@ $-S_2 = \{-y : y \in S_2\}$ 仍是凸集，而 $S_1 - S_2 = S_1 + (-S_2)$，由 
 
 \begin{example}[判断集合是否为凸集]\label{ex:convex-set-judge}
 判断下列集合是否为凸集。
+
+\textbf{解：}
 
 \textbf{(a)} $S = \{x : x_1^2 + x_2^2 \geq 4,\ 2x_1 + x_2 \leq 10,\ -x_1 - x_2 \leq -10x_2\}$：\textbf{不是凸集}。
 
@@ -645,6 +657,8 @@ $S = (-\infty, -1] \cup [1, \infty)$，$-1, 1 \in S$ 但中点 $0 \notin S$。
 
 \begin{example}[函数凸性判断]\label{ex:convex-func-judge}
 设 $f_1, \ldots, f_m$ 均为凸函数，讨论下列函数是否是凸函数。
+
+\textbf{解：}
 
 \textbf{(a)} $g(x) = \max\{f_1(x), \ldots, f_m(x)\}$：\textbf{是凸函数}。
 
@@ -674,6 +688,8 @@ $S = (-\infty, -1] \cup [1, \infty)$，$-1, 1 \in S$ 但中点 $0 \notin S$。
 \end{example}
 
 \begin{example}[非凸集合与非凸函数的凸化]\label{ex:convexification}
+\textbf{解：}
+
 \textbf{非凸集合转化为凸集合}的常见方法：
 \begin{itemize}[itemsep=0.2em]
     \item \textbf{凸包}：用 $\text{conv}(S)$ 替代 $S$

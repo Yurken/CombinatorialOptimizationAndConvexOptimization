@@ -313,6 +313,8 @@ l(\theta) = \sum_{i=1}^N \left[-\log(1 + \exp(-\theta^T u^{(i)})) - (1 - v^{(i)}
 \]
 其中 $u^{(i)}$ 为特征向量，$v^{(i)} \in \{0, 1\}$ 为标签。
 
+\textbf{解：}
+
 记 $z_i = \theta^T u^{(i)}$，$\sigma_i = 1/(1 + e^{-z_i})$。梯度为
 \[
 \nabla l(\theta) = \sum_{i=1}^N (v^{(i)} - \sigma_i) u^{(i)}
@@ -368,6 +370,8 @@ eigenvals = check_convex_quadratic(H)
 & x_1, x_2 \geq 0
 \end{aligned}
 \]
+
+\textbf{解：}
 
 \textbf{分析}：
 \begin{itemize}
@@ -588,7 +592,7 @@ plt.show()
 验证正定性：特征值为 $5 \pm \sqrt{17} > 0$，故正定，函数严格凸。
 \end{example}
 
-\subsection{Taylor展开}
+\subsection{Taylor展开}\label{sec:taylor}
 
 \begin{property}[多元函数的Taylor展开]
 \[
@@ -818,6 +822,8 @@ f(y) \geq f(x) + g^T(y - x)
 \end{example}
 
 \begin{example}[更多次微分计算]\label{ex:subdiff-more}
+\textbf{解：}
+
 \textbf{(a)} $f(x_1, x_2, x_3) = \max\{|x_1|, |x_2|, |x_3|\} = \|x\|_\infty$ 在 $x = 0$ 处。
 
 范数在原点的次微分等于其对偶范数单位球：
@@ -856,26 +862,28 @@ f(y) \geq f(x) + \nabla f(x)^T(y - x),\quad \forall x, y \in C
     % 坐标轴
     \draw[->,thick] (-0.3,0) -- (5.5,0) node[right] {$x$};
     \draw[->,thick] (0,-0.3) -- (0,4.2) node[above] {$f(x)$};
-    % 凸函数曲线
+    % 凸函数曲线（下凸，先降后升）
     \draw[very thick,blue]
-        (0.3,3.5) .. controls (1,1.5) and (2,0.5) .. (3,1) .. controls (3.5,1.5) and (4,2.5) .. (4.8,3.8);
+        (0.3,3.8) .. controls (0.9,1.8) and (1.5,0.7) .. (2,0.6)
+        .. controls (2.5,0.5) and (3.5,2.0) .. (4.8,3.8);
     \node[blue,scale=0.8] at (5,3.9) {$f$};
-    % 切点
-    \fill[red] (2,0.5) circle (2.5pt) node[below left,scale=0.75] {\small $x$};
-    % 切线
-    \draw[red,thick,dashed] (0,1.5) -- (5,-1);
-    \node[red,scale=0.75] at (4.5,-0.7) {\small 切线 $f(x)\!+\!\nabla f(x)^T(y\!-\!x)$};
-    % 其他点 y
-    \fill[black] (3.5,1.75) circle (2.5pt) node[above,scale=0.75] {\small $y$};
-    \draw[dotted] (3.5,0) -- (3.5,1.75);
-    \draw[dotted] (0,1.75) -- (3.5,1.75);
-    % 切线上的对应点
-    \fill[red!50] (3.5,-0.25) circle (2pt);
-    \draw[<->,thick,green!50!black] (3.5,-0.25) -- (3.5,1.75);
-    \node[green!50!black,scale=0.7,right] at (3.5,0.75) {\small $f(y)\!\geq$ 切线};
-    % 凸组合标注
-    \draw[<->,gray] (2,-0.6) -- (3.5,-0.6);
-    \node[gray,scale=0.65,below] at (2.75,-0.6) {\small $y - x$};
+    % 切点 x（在最小值附近，切线斜率 ≈ 0.8）
+    \fill[red] (2,0.6) circle (2.5pt) node[below left,scale=0.75] {\small $x$};
+    % 切线：斜率 0.8，过 (2, 0.6)，方程 y = 0.8x - 1.0
+    \draw[red,thick,dashed] (0.2,-0.84) -- (5,3.0);
+    \node[red,scale=0.75] at (4.2,3.5) {\small 切线 $f(x)\!+\!\nabla f(x)^T(y\!-\!x)$};
+    % 点 y（在曲线上，x ≈ 4）
+    \fill[black] (4,3.0) circle (2.5pt) node[above right,scale=0.75] {\small $y$};
+    \draw[dotted] (4,0) -- (4,3.0);
+    % 切线上对应点（在 x = 4 处，切线值 = 0.8×4-1 = 2.2）
+    \fill[red!50] (4,2.2) circle (2pt);
+    \draw[dotted] (4,2.2) -- (4,3.0);
+    % f(y) 与切线值的差距
+    \draw[<->,thick,green!50!black] (4.3,2.2) -- (4.3,3.0);
+    \node[green!50!black,scale=0.7,right] at (4.3,2.6) {\small $f(y)\!\geq\!$切线};
+    % y - x 标注
+    \draw[<->,gray] (2,-0.4) -- (4,-0.4);
+    \node[gray,scale=0.65,below] at (3,-0.4) {\small $y - x$};
 \end{tikzpicture}
 \caption{凸函数一阶充要条件：切线始终在函数图像下方}
 \label{fig:convex-tangent}
