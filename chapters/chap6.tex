@@ -242,36 +242,109 @@ g_i(x^*) \leq 0 \, (i=1,\ldots,m), \quad h_j(x^*) = 0 \, (j=1,\ldots,l)
 \label{fig:kkt-intuitive}
 \end{figure}
 
-\begin{example}[KKT条件求解]
-求解：
+\begin{example}[KKT条件求解]\label{ex:kkt-solve}
+\textbf{题目：}求解下列约束优化问题
 \[
 \min \, (x_1 - 2)^2 + (x_2 - 1)^2, \quad \text{s.t. } x_1 + x_2 \leq 2, \; x_1, x_2 \geq 0
 \]
 
-改写约束：$g_1 = x_1 + x_2 - 2 \leq 0$，$g_2 = -x_1 \leq 0$，$g_3 = -x_2 \leq 0$
+\medskip\noindent\rule{\textwidth}{0.4pt}\medskip
 
-$\nabla f = (2(x_1-2), 2(x_2-1))$，$\nabla g_1 = (1,1)$，$\nabla g_2 = (-1,0)$，$\nabla g_3 = (0,-1)$
+\textbf{答案：}
 
-KKT条件：
-\begin{align*}
-2(x_1-2) + \lambda_1 - \lambda_2 &= 0 \\
-2(x_2-1) + \lambda_1 - \lambda_3 &= 0 \\
-\lambda_1(x_1 + x_2 - 2) &= 0, \; \lambda_1 \geq 0, \; x_1 + x_2 \leq 2 \\
-\lambda_2(-x_1) &= 0, \; \lambda_2 \geq 0, \; x_1 \geq 0 \\
-\lambda_3(-x_2) &= 0, \; \lambda_3 \geq 0, \; x_2 \geq 0
-\end{align*}
+\noindent 将约束写为标准形式：$g_1(x) = x_1 + x_2 - 2 \leq 0$，$g_2(x) = -x_1 \leq 0$，$g_3(x) = -x_2 \leq 0$。
 
-\textbf{Case 1}：假设 $g_1$ 积极，$g_2, g_3$ 不积极 $\Rightarrow \lambda_2 = \lambda_3 = 0$，$x_1 + x_2 = 2$
+梯度：$\nabla f(x) = \begin{bmatrix} 2(x_1-2) \\ 2(x_2-1) \end{bmatrix}$，$\nabla g_1 = \begin{bmatrix} 1 \\ 1 \end{bmatrix}$，$\nabla g_2 = \begin{bmatrix} -1 \\ 0 \end{bmatrix}$，$\nabla g_3 = \begin{bmatrix} 0 \\ -1 \end{bmatrix}$。
 
-由前两式：$2(x_1-2) + \lambda_1 = 0$，$2(x_2-1) + \lambda_1 = 0$
+列写 KKT 条件的四个性质：
+\begin{description}
+\item[\textbf{\textcircled{1} 平稳性}（Stationarity）]
+$2(x_1-2) + \lambda_1 - \lambda_2 = 0$，\quad $2(x_2-1) + \lambda_1 - \lambda_3 = 0$
+\item[\textbf{\textcircled{2} 原始可行性}（Primal Feasibility）]
+$x_1 + x_2 \leq 2$，$x_1 \geq 0$，$x_2 \geq 0$
+\item[\textbf{\textcircled{3} 对偶可行性}（Dual Feasibility）]
+$\lambda_1 \geq 0$，$\lambda_2 \geq 0$，$\lambda_3 \geq 0$
+\item[\textbf{\textcircled{4} 互补松弛性}（Complementary Slackness）]
+$\lambda_1(x_1 + x_2 - 2) = 0$，\quad
+$\lambda_2(-x_1) = 0$，\quad
+$\lambda_3(-x_2) = 0$
+\end{description}
 
-相减：$2(x_1 - x_2 - 1) = 0 \Rightarrow x_1 - x_2 = 1$
+由互补松弛性（\textcircled{4}），按积极约束的组合分情形讨论（共 $2^3 = 8$ 种）：
 
-结合 $x_1 + x_2 = 2$：$x_1 = 1.5$，$x_2 = 0.5$，$\lambda_1 = 1 > 0$ (验证通过)
+\medskip\noindent\textbf{Case 1：}$g_1$ 积极，$g_2,g_3$ 不积极
 
-验证：$x_1, x_2 > 0$（$g_2, g_3$ 不积极），满足所有条件。
+$\lambda_2 \stackrel{\textcircled{4}}{=} 0$，$\lambda_3 \stackrel{\textcircled{4}}{=} 0$，$x_1 + x_2 \stackrel{\textcircled{4}}{=} 2$。
 
-最优解：$x^* = (1.5, 0.5)$，最优值 $f^* = 0.5$。
+平稳性（\textcircled{1}） 化为：
+\[
+2(x_1-2) + \lambda_1 = 0,\quad 2(x_2-1) + \lambda_1 = 0
+\]
+两式相减得 $2(x_1 - x_2 - 1) = 0 \Rightarrow x_1 - x_2 = 1$。
+
+联立 $x_1 + x_2 = 2$，解得 $x_1 = \frac{3}{2}$，$x_2 = \frac{1}{2}$，$\lambda_1 = 1$。
+
+检验：$\lambda_1 = 1 > 0$ 满足对偶可行性 （\textcircled{3}）；$x_1,x_2 > 0$ 满足原始可行性 （\textcircled{2}）。
+
+$\Rightarrow$ \textbf{KKT点}：$x^* = \left(\frac{3}{2},\, \frac{1}{2}\right)$，$\lambda^* = (1, 0, 0)$。
+
+\bigskip\noindent\textbf{Case 2：}$g_2$ 积极，$g_1,g_3$ 不积极
+
+$\lambda_1 \stackrel{\textcircled{4}}{=} 0$，$\lambda_3 \stackrel{\textcircled{4}}{=} 0$，$x_1 \stackrel{\textcircled{4}}{=} 0$。
+
+平稳性（\textcircled{1}）：$2(0-2) - \lambda_2 = 0 \Rightarrow \lambda_2 = -4$。
+
+$\lambda_2 = -4 < 0$，违反对偶可行性 （\textcircled{3}）。$\Rightarrow$ \textbf{不是 KKT 点}。
+
+\bigskip\noindent\textbf{Case 3：}$g_3$ 积极，$g_1,g_2$ 不积极
+
+$\lambda_1 \stackrel{\textcircled{4}}{=} 0$，$\lambda_2 \stackrel{\textcircled{4}}{=} 0$，$x_2 \stackrel{\textcircled{4}}{=} 0$。
+
+平稳性（\textcircled{1}）：$2(x_1-2) = 0 \Rightarrow x_1 = 2$；$2(0-1) - \lambda_3 = 0 \Rightarrow \lambda_3 = -2$。
+
+$\lambda_3 = -2 < 0$，违反对偶可行性 （\textcircled{3}）。$\Rightarrow$ \textbf{不是 KKT 点}。
+
+\bigskip\noindent\textbf{Case 4：}$g_1,g_2$ 积极，$g_3$ 不积极
+
+$\lambda_3 \stackrel{\textcircled{4}}{=} 0$，$x_1 + x_2 = 2$，$x_1 = 0 \Rightarrow x_2 = 2$。
+
+平稳性（\textcircled{1}）：$2(0-2) + \lambda_1 - \lambda_2 = 0 \Rightarrow \lambda_1 - \lambda_2 = 4$；$2(2-1) + \lambda_1 = 0 \Rightarrow \lambda_1 = -2$。
+
+$\lambda_1 = -2 < 0$，违反对偶可行性 （\textcircled{3}）。$\Rightarrow$ \textbf{不是 KKT 点}。
+
+\bigskip\noindent\textbf{Case 5：}$g_1,g_3$ 积极，$g_2$ 不积极
+
+$\lambda_2 \stackrel{\textcircled{4}}{=} 0$，$x_1 + x_2 = 2$，$x_2 = 0 \Rightarrow x_1 = 2$。
+
+平稳性（\textcircled{1}）：$2(2-2) + \lambda_1 = 0 \Rightarrow \lambda_1 = 0$；$2(0-1) + 0 - \lambda_3 = 0 \Rightarrow \lambda_3 = -2$。
+
+$\lambda_3 = -2 < 0$，违反对偶可行性 （\textcircled{3}）。$\Rightarrow$ \textbf{不是 KKT 点}。
+
+\bigskip\noindent\textbf{Case 6：}$g_2,g_3$ 积极，$g_1$ 不积极
+
+$\lambda_1 \stackrel{\textcircled{4}}{=} 0$，$x_1 = 0$，$x_2 = 0$。
+
+平稳性（\textcircled{1}）：$2(0-2) - \lambda_2 = 0 \Rightarrow \lambda_2 = -4$。
+
+$\lambda_2 = -4 < 0$，违反对偶可行性 （\textcircled{3}）。$\Rightarrow$ \textbf{不是 KKT 点}。
+
+\bigskip\noindent\textbf{Case 7：}$g_1,g_2,g_3$ 均积极
+
+$x_1 + x_2 = 2$，$x_1 = 0$，$x_2 = 0$ $\Rightarrow$ $0 = 2$，矛盾。
+
+$\Rightarrow$ \textbf{不可行}，无解。
+
+\bigskip\noindent\textbf{Case 8：}$g_1,g_2,g_3$ 均不积极
+
+$\lambda_1 \stackrel{\textcircled{4}}{=} 0$，$\lambda_2 \stackrel{\textcircled{4}}{=} 0$，$\lambda_3 \stackrel{\textcircled{4}}{=} 0$。
+
+平稳性（\textcircled{1}）：$2(x_1-2) = 0 \Rightarrow x_1 = 2$；$2(x_2-1) = 0 \Rightarrow x_2 = 1$。
+
+但 $x_1 + x_2 = 3 > 2$，违反原始可行性 （\textcircled{2}）。$\Rightarrow$ \textbf{不是可行点}。
+
+\medskip\noindent\rule{\textwidth}{0.4pt}
+
+综上，仅 Case 1 满足全部 KKT 条件。问题为凸优化（目标函数凸，约束凸），由 KKT 充分性定理，$x^* = \left(\frac{3}{2},\,\frac{1}{2}\right)$ 是全局最优解，最优值 $f^* = \frac{1}{2}$。
 \end{example}
 
 \subsection{约束规范（Constraint Qualifications）}\label{sec:cq}
