@@ -1,0 +1,1368 @@
+\chapter{线性规划}\label{chap:lp}
+% 第2章第1节：线性规划概述
+\section{线性规划概述}\label{sec:ch2-intro}
+
+\subsection{线性规划模型}
+
+\begin{definition}[线性规划（LP）]
+线性规划是在一组线性约束条件下，求线性目标函数极值的最优化问题。
+\begin{align}
+\max \quad & z = c_1 x_1 + c_2 x_2 + \cdots + c_n x_n \notag \\
+\text{s.t.} \quad & a_{11}x_1 + a_{12}x_2 + \cdots + a_{1n}x_n \leq b_1 \notag \\
+& a_{21}x_1 + a_{22}x_2 + \cdots + a_{2n}x_n \leq b_2 \notag \\
+& \vdots \label{eq:lp-general} \\
+& a_{m1}x_1 + a_{m2}x_2 + \cdots + a_{mn}x_n \leq b_m \notag \\
+& x_1, x_2, \ldots, x_n \geq 0 \notag
+\end{align}
+\end{definition}
+
+\begin{conceptbox}[矩阵形式]
+LP可简洁表示为：
+\[
+\max \, z = c^T x, \quad \text{s.t. } Ax \leq b, \; x \geq 0
+\]
+其中 $c \in \mathbb{R}^n$，$b \in \mathbb{R}^m$，$A \in \mathbb{R}^{m \times n}$。
+\end{conceptbox}
+
+\begin{definition}[LP标准型]
+LP的标准形式为：
+\begin{align}
+\max \quad & z = c^T x \label{eq:lp-standard} \\
+\text{s.t.} \quad & Ax = b \notag \\
+& x \geq 0 \notag
+\end{align}
+其中 $b \geq 0$。
+\end{definition}
+
+\begin{notebox}[转化为标准型]
+\begin{itemize}
+    \item \textbf{最小化转最大化}：$\min z \Rightarrow \max (-z)$
+    \item \textbf{$\leq$约束}：加松弛变量 $x_{n+i} \geq 0$
+    \item \textbf{$\geq$约束}：减剩余变量 $x_{n+i} \geq 0$
+    \item \textbf{自由变量}：$x_j = x_j^+ - x_j^-$，其中 $x_j^+, x_j^- \geq 0$
+\end{itemize}
+\end{notebox}
+
+\begin{example}[转标准型]
+原问题：$\max \, z = 3x_1 + 5x_2$
+\begin{align*}
+x_1 + 2x_2 &\leq 8 \\
+3x_1 + 2x_2 &\leq 12 \\
+x_1, x_2 &\geq 0
+\end{align*}
+
+\textbf{解：}
+
+引入松弛变量 $x_3, x_4 \geq 0$：
+\begin{align*}
+\max \, z &= 3x_1 + 5x_2 + 0x_3 + 0x_4 \\
+x_1 + 2x_2 + x_3 &= 8 \\
+3x_1 + 2x_2 + x_4 &= 12 \\
+x_1, x_2, x_3, x_4 &\geq 0
+\end{align*}
+\end{example}
+
+\subsection{图解法}\label{sec:graphical}
+
+图解法适用于只有两个决策变量的LP问题。
+
+\begin{algobox}[图解法步骤]
+\begin{enumerate}
+    \item 画出所有约束条件对应的直线，确定可行域
+    \item 画出目标函数等值线
+    \item 沿目标函数梯度方向（$c$的方向）移动等值线，找到与可行域最后交点
+    \item 该交点即为最优解
+\end{enumerate}
+\end{algobox}
+
+\begin{example}[图解法]
+$\max \, z = 3x_1 + 5x_2$
+\begin{align*}
+x_1 + 2x_2 &\leq 8 \\
+3x_1 + 2x_2 &\leq 12 \\
+x_1, x_2 &\geq 0
+\end{align*}
+
+\textbf{解：}
+
+\textbf{步骤}：
+\begin{enumerate}
+    \item 画约束线：
+    \begin{itemize}
+        \item $x_1 + 2x_2 = 8$：过 $(8,0)$ 和 $(0,4)$
+        \item $3x_1 + 2x_2 = 12$：过 $(4,0)$ 和 $(0,6)$
+    \end{itemize}
+    \item 可行域为四个顶点的多边形：
+    \begin{itemize}
+        \item $O(0,0)$：$z = 0$
+        \item $A(4,0)$：$z = 12$
+        \item $B(2,3)$：联立 $x_1+2x_2=8$ 和 $3x_1+2x_2=12$，解得 $x_1=2, x_2=3$，$z = 21$
+        \item $C(0,4)$：$z = 20$
+    \end{itemize}
+    \item 最优解：$x^* = (2, 3)$，$z^* = 21$
+\end{enumerate}
+\end{example}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.72]
+    % 坐标轴
+    \draw[->,thick] (-0.3,0) -- (8.5,0) node[right] {$x_1$};
+    \draw[->,thick] (0,-0.3) -- (0,6.8) node[above] {$x_2$};
+    % 网格参考线（虚线）
+    \foreach \x in {2,4,6,8} {\draw[gray!30,dashed] (\x,-0.2) -- (\x,6.5);}
+    \foreach \y in {2,4,6} {\draw[gray!30,dashed] (-0.2,\y) -- (8.2,\y);}
+    % 约束线
+    \draw[blue,thick] (8,0) -- (0,4) node[pos=0.15,above,sloped] {\small $x_1+2x_2=8$};
+    \draw[red,thick] (4,0) -- (0,6) node[pos=0.25,above,sloped] {\small $3x_1+2x_2=12$};
+    % 可行域填充
+    \fill[green!15] (0,0) -- (4,0) -- (2,3) -- (0,4) -- cycle;
+    \draw[thick] (0,0) -- (4,0) -- (2,3) -- (0,4) -- cycle;
+    % 等值线 z=12 和 z=20（虚线）
+    \draw[orange,dashed] (4,0) -- (0,2.4) node[right,scale=0.75] {\small $z\!=\!12$};
+    \draw[orange,dashed] (6.667,0) -- (0,4) node[right,scale=0.75] {\small $z\!=\!20$};
+    \draw[orange,dashed] (7,0) -- (0,4.2);
+    % 梯度方向箭头
+    \draw[->,orange,very thick] (1,0.5) -- (2.5,2.5) node[above right,scale=0.8] {$\nabla z$};
+    % 顶点标注
+    \fill (0,0) circle (2.5pt) node[below left] {\small $O(0,0)$};
+    \fill (4,0) circle (2.5pt) node[below right] {\small $A(4,0)$};
+    \fill (2,3) circle (3pt) node[above right] {\small $B(2,3)$};
+    \fill (0,4) circle (2.5pt) node[left] {\small $C(0,4)$};
+    % 最优标记
+    \draw[thick,red!70!black] (2,3) circle (5pt);
+    \node[red!70!black,scale=0.85] at (2,1.8) {\textbf{最优}};
+\end{tikzpicture}
+\caption{线性规划图解法：可行域（绿色）与等值线}
+\label{fig:lp-graphical}
+\end{figure}
+
+\subsection{线性规划基本定理}
+
+\begin{theorem}[LP基本定理]
+对于标准型LP \eqref{eq:lp-standard}：
+\begin{enumerate}
+    \item 若可行域非空，则必存在基本可行解（极点）
+    \item 若LP有最优解，则至少有一个基本可行解是最优解
+    \item LP的可行域是凸集（多面体），极点的个数有限
+\end{enumerate}
+\end{theorem}
+
+\begin{theorem}[LP解的可能情况]
+线性规划问题解的情况只有三种：
+\begin{enumerate}
+    \item \textbf{唯一最优解}：某个极点最优
+    \item \textbf{无穷多最优解}：某条边上所有点都最优
+    \item \textbf{无界解}：目标函数可趋于无穷
+\end{enumerate}
+不可能无可行解的情况在可行域非空时已排除。
+\end{theorem}
+
+\begin{example}[无界解]
+$\max \, z = x_1 + x_2$
+\begin{align*}
+x_1 - x_2 &\leq 1 \\
+x_1, x_2 &\geq 0
+\end{align*}
+
+\textbf{解：}
+
+取 $x_2 = 0$，$x_1 \to \infty$，$z \to \infty$，无界。
+\end{example}
+
+\begin{example}[无穷多最优解]
+$\max \, z = x_1 + 2x_2$
+\begin{align*}
+x_1 + 2x_2 &\leq 8 \\
+x_1 + x_2 &\leq 6 \\
+x_1, x_2 &\geq 0
+\end{align*}
+
+\textbf{解：}
+
+目标函数等值线与约束 $x_1 + 2x_2 \leq 8$ 平行，线段 $B(4,2)$ 到 $C(0,4)$ 上所有点都是最优解，$z^* = 8$。
+\end{example}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.72]
+    % 坐标轴
+    \draw[->,thick] (-0.3,0) -- (7.5,0) node[right] {$x_1$};
+    \draw[->,thick] (0,-0.3) -- (0,5.5) node[above] {$x_2$};
+    % 约束线
+    \draw[blue,thick] (8,0) -- (0,4) node[pos=0.8,right,scale=0.75] {\small $x_1\!+\!2x_2\!=\!8$};
+    \draw[red,thick] (6,0) -- (0,6) node[pos=0.3,right,sloped,scale=0.75] {\small $x_1\!+\!x_2\!=\!6$};
+    % 可行域
+    \fill[green!15] (0,0) -- (6,0) -- (4,2) -- (0,4) -- cycle;
+    \draw[thick] (0,0) -- (6,0) -- (4,2) -- (0,4) -- cycle;
+    % 等值线（与约束平行）
+    \draw[orange,dashed] (4,0) -- (0,2) node[left,scale=0.75] {\small $z\!=\!4$};
+    \draw[orange,dashed] (8,0) -- (0,4);
+    % 最优边高亮
+    \draw[line width=3pt,red!70!black] (4,2) -- (0,4);
+    % 顶点
+    \fill (0,0) circle (2.5pt) node[below left] {\small $O$};
+    \fill (6,0) circle (2.5pt) node[below right] {\small $A(6,0)$};
+    \fill (4,2) circle (2.5pt) node[below right] {\small $B(4,2)$};
+    \fill (0,4) circle (2.5pt) node[left] {\small $C(0,4)$};
+    % 标注
+    \node[red!70!black,scale=0.8,rotate=45] at (1.5,3.5) {\textbf{最优边}};
+    \draw[->,orange,very thick] (2,0.5) -- (3.5,2) node[above right,scale=0.8] {$\nabla z$};
+\end{tikzpicture}
+\caption{无穷多最优解：等值线与约束边平行，红粗线上的所有点均为最优}
+\label{fig:lp-infinite}
+\end{figure}
+
+% 第2章第2节：基本可行解理论
+\section{基本可行解与极点}\label{sec:bfs}
+
+\subsection{基与基本解}
+
+\begin{definition}[基（Basis）]
+设 $A \in \mathbb{R}^{m \times n}$，$\text{rank}(A) = m$。从 $A$ 中选取 $m$ 个线性无关的列向量构成 $m \times m$ 矩阵 $B$，称为一个\textbf{基矩阵}（或简称\textbf{基}）。
+
+对应的变量 $x_B = (x_{B_1}, \ldots, x_{B_m})^T$ 称为\textbf{基变量}，其余变量 $x_N$ 称为\textbf{非基变量}。
+\end{definition}
+
+\begin{definition}[基本解（Basic Solution）]
+令所有非基变量 $x_N = 0$，解方程组 $Bx_B = b$，得到的解 $x = (x_B, x_N) = (B^{-1}b, 0)$ 称为关于基 $B$ 的\textbf{基本解}。
+\end{definition}
+
+\begin{definition}[基本可行解（BFS）]
+若基本解满足 $x_B \geq 0$，则称为\textbf{基本可行解}（Basic Feasible Solution，BFS）。
+
+若 $x_B > 0$（严格正），称为\textbf{非退化BFS}；若某些分量 $x_{B_i} = 0$，称为\textbf{退化BFS}。
+\end{definition}
+
+\begin{conceptbox}[BFS与极点的关系]
+可行域的 $\text{极点} \Leftrightarrow \text{BFS}$。单纯形法就是在BFS（极点）之间搜索。
+\end{conceptbox}
+
+\begin{example}[基本可行解的充要条件]\label{ex:bfs-condition}
+\textbf{命题}：可行解 $x$ 为 BFS 的充要条件是：$x$ 的正分量对应的系数列向量线性无关。
+
+\textbf{解：}
+
+\textbf{必要性}：若 $x$ 是 BFS，存在基 $B$ 使非基变量为零，基变量 $x_B = B^{-1}b$。正分量只能出现在基变量中，基列线性无关，故正分量对应的列向量线性无关。
+
+\textbf{充分性}：若 $x$ 的正分量对应列向量线性无关，可将这些列扩充为 $m$ 个线性无关列构成基 $B$。不在基中的变量置零不改变 $x$，故 $x$ 是某个基产生的可行解，即 BFS。
+\end{example}
+
+\subsection{单纯形表的结构}
+
+对于标准型LP，将约束方程组和目标函数写成表格形式：
+
+\begin{table}[H]
+\centering
+\caption{单纯形表的结构}
+\begin{tabular}{@{}c|ccccc|c@{}}
+\toprule
+& $x_1$ & $x_2$ & $\cdots$ & $x_n$ & $x_{s}$ & RHS \\
+\midrule
+$z$ & $\sigma_1$ & $\sigma_2$ & $\cdots$ & $\sigma_n$ & $0$ & $z_0$ \\
+\midrule
+$x_{s_1}$ & $y_{11}$ & $y_{12}$ & $\cdots$ & $y_{1n}$ & $1$ & $\bar{b}_1$ \\
+$x_{s_2}$ & $y_{21}$ & $y_{22}$ & $\cdots$ & $y_{2n}$ & $0$ & $\bar{b}_2$ \\
+$\vdots$ & $\vdots$ & $\vdots$ & $\ddots$ & $\vdots$ & $\vdots$ & $\vdots$ \\
+$x_{s_m}$ & $y_{m1}$ & $y_{m2}$ & $\cdots$ & $y_{mn}$ & $0$ & $\bar{b}_m$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{notebox}[检验数]
+在单纯形表中，$z$ 行对应检验数（reduced cost）：
+\[
+\sigma_j = c_B^T B^{-1} A_j - c_j = z_j - c_j
+\]
+其中 $c_B$ 是基变量的价值系数。
+
+\begin{itemize}
+    \item 若所有 $\sigma_j \geq 0$，当前BFS最优
+    \item 若存在 $\sigma_j < 0$，选择该列入基可改善目标
+\end{itemize}
+\end{notebox}
+
+\subsection{单纯形法的迭代公式}
+
+\begin{theorem}[基变换]
+设当前基为 $B$，对应BFS为 $x$。若选择非基变量 $x_k$ 入基，基变量 $x_{B_r}$ 出基，则新基 $\hat{B}$ 满足：
+\begin{enumerate}
+    \item 入基列：$A_k$ 替换 $B$ 中第 $r$ 列
+    \item 出基行：$r = \arg\min_i \left\{\frac{(B^{-1}b)_i}{(B^{-1}A_k)_i} : (B^{-1}A_k)_i > 0\right\}$
+\end{enumerate}
+\end{theorem}
+
+\begin{notebox}[单纯形法的迭代]
+每次迭代：
+\begin{enumerate}
+    \item \textbf{选择入基变量}：$k = \arg\min_j \{\sigma_j\}$（最小检验数）
+    \item \textbf{选择出基变量}：最小比值检验（Minimum Ratio Test）
+    \item \textbf{枢轴运算}：高斯消元更新单纯形表
+\end{enumerate}
+\end{notebox}
+
+% 第2章第3节：单纯形法
+\section{单纯形法}\label{sec:simplex}
+
+\subsection{单纯形法的基本原理}
+
+单纯形法是最经典的LP求解算法，由Dantzig于1947年提出。其核心思想是在基本可行解（极点）之间迭代，每次迭代通过入基和出基操作移动到相邻的更好的极点，直到找到最优解。
+
+\begin{conceptbox}[单纯形法的几何解释]
+在可行域的多面体上，从一个顶点出发，沿着使目标函数改善的边走到相邻顶点，直到无法改善为止。
+\end{conceptbox}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.68]
+    % 坐标轴
+    \draw[->,thick] (-0.3,0) -- (8.5,0) node[right] {$x_1$};
+    \draw[->,thick] (0,-0.3) -- (0,6.8) node[above] {$x_2$};
+    % 可行域
+    \fill[green!12] (0,0) -- (4,0) -- (2,3) -- (0,4) -- cycle;
+    \draw[thick] (0,0) -- (4,0) -- (2,3) -- (0,4) -- cycle;
+    % 顶点
+    \fill (0,0) circle (2.5pt) node[below left] {\small $O$};
+    \fill (4,0) circle (2.5pt) node[below right] {\small $A$};
+    \fill (2,3) circle (3pt) node[above right] {\small $B^*$};
+    \fill (0,4) circle (2.5pt) node[left] {\small $C$};
+    % 迭代路径：O -> A -> B
+    \draw[->,very thick,red!70!black] (0,0) -- (3.7,0);
+    \node[below,scale=0.8,red!70!black] at (2,0) {\small 第1步};
+    \draw[->,very thick,red!70!black] (4,0) -- (2.3,2.8);
+    \node[below right,scale=0.8,red!70!black] at (3.3,1) {\small 第2步};
+    % 起点标记
+    \draw[blue,thick] (0,0) circle (4pt);
+    % 等值线
+    \draw[orange,dashed] (4,0) -- (0,2.4) node[right,scale=0.7] {\small $z\!=\!12$};
+    \draw[orange,dashed] (8,0) -- (0,4) node[right,scale=0.7] {\small $z\!=\!20$};
+    \draw[->,orange,thick] (1.5,0.8) -- (3,2.3) node[above right,scale=0.75] {$\nabla z$};
+    % 最优标记
+    \draw[thick,red!70!black] (2,3) circle (5pt);
+    \node[red!70!black,scale=0.8] at (2,2) {\textbf{最优}};
+\end{tikzpicture}
+\caption{单纯形法的几何解释：从顶点 $O$ 出发，沿边迭代到最优顶点 $B^*$}
+\label{fig:simplex-geo}
+\end{figure}
+
+\subsection{单纯形法算法步骤}
+
+\begin{algorithm}[H]
+\caption{单纯形法}
+\begin{algorithmic}[1]
+\Require 初始BFS（通常取松弛变量为基）
+\State 构造初始单纯形表
+\While{true}
+    \State \textbf{Step 1: 最优性检验}
+    \If{所有检验数 $\sigma_j \geq 0$}
+        \State 当前解最优，停止
+    \EndIf
+    \State 选择入基变量：$k = \arg\min_j \{\sigma_j\}$（最负检验数）
+    
+    \State \textbf{Step 2: 无界性检验}
+    \If{入基列所有系数 $y_{ik} \leq 0$}
+        \State LP无界，停止
+    \EndIf
+    
+    \State \textbf{Step 3: 最小比值检验}
+    \State 出基行：$r = \arg\min_i \left\{\frac{b_i}{y_{ik}} : y_{ik} > 0\right\}$
+    
+    \State \textbf{Step 4: 枢轴运算}
+    \State 以 $y_{rk}$ 为枢轴元，高斯消元更新单纯形表
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{例题：单纯形法迭代两次}
+
+\begin{example}[单纯形法完整求解]
+求解：$\max \, z = 3x_1 + 5x_2$
+\begin{align*}
+x_1 + 2x_2 + x_3 &= 8 \\
+3x_1 + 2x_2 + x_4 &= 12 \\
+x_1, x_2, x_3, x_4 &\geq 0
+\end{align*}
+
+\textbf{解：}
+
+\textbf{初始单纯形表}：
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}c|cccc|c@{}}
+\toprule
+& $x_1$ & $x_2$ & $x_3$ & $x_4$ & RHS \\
+\midrule
+$z$ & $-3$ & $-5$ & $0$ & $0$ & $0$ \\
+\midrule
+$x_3$ & $1$ & $2$ & $1$ & $0$ & $8$ \\
+$x_4$ & $3$ & $2$ & $0$ & $1$ & $12$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+基变量：$x_3, x_4$，对应BFS：$x = (0, 0, 8, 12)$，$z = 0$
+
+\textbf{第1次迭代}：
+
+Step 1: 检验数 $\sigma_1 = -3, \sigma_2 = -5$，$x_2$ 入基（最小检验数 $-5$）
+
+Step 2: 入基列 $(2, 2)^T$ 有正分量，不无界
+
+Step 3: 最小比值检验：$\min\{8/2, 12/2\} = \min\{4, 6\} = 4$
+
+$x_3$ 出基，枢轴元 $y_{12} = 2$
+
+Step 4: 枢轴运算（第1行除以2，消去第2行的 $x_2$ 系数）：
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}c|cccc|c@{}}
+\toprule
+& $x_1$ & $x_2$ & $x_3$ & $x_4$ & RHS \\
+\midrule
+$z$ & $-0.5$ & $0$ & $2.5$ & $0$ & $20$ \\
+\midrule
+$x_2$ & $0.5$ & $1$ & $0.5$ & $0$ & $4$ \\
+$x_4$ & $2$ & $0$ & $-1$ & $1$ & $4$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+基变量：$x_2, x_4$，BFS：$x = (0, 4, 0, 4)$，$z = 20$
+
+\textbf{第2次迭代}：
+
+Step 1: 检验数 $\sigma_1 = -0.5 < 0$，$x_1$ 入基
+
+Step 2: 入基列 $(0.5, 2)^T$ 有正分量
+
+Step 3: 最小比值检验：$\min\{4/0.5, 4/2\} = \min\{8, 2\} = 2$
+
+$x_4$ 出基，枢轴元 $y_{21} = 2$
+
+Step 4: 枢轴运算：
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}c|cccc|c@{}}
+\toprule
+& $x_1$ & $x_2$ & $x_3$ & $x_4$ & RHS \\
+\midrule
+$z$ & $0$ & $0$ & $2.25$ & $0.25$ & $21$ \\
+\midrule
+$x_2$ & $0$ & $1$ & $0.75$ & $-0.25$ & $3$ \\
+$x_1$ & $1$ & $0$ & $-0.5$ & $0.5$ & $2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+基变量：$x_1, x_2$，BFS：$x = (2, 3, 0, 0)$
+
+检验数全部非负，最优！$z^* = 21$，$x_1^* = 2$，$x_2^* = 3$。
+\end{example}
+
+\subsection{退化与循环}
+
+\begin{definition}[退化]
+若BFS中某些基变量取值为0，称为\textbf{退化BFS}。退化可能导致单纯形法在迭代中不改变目标值（停留在同一极点）。
+\end{definition}
+
+\begin{definition}[循环（Cycling）]
+在极端情况下，单纯形法可能陷入循环，即重复访问同一组基而不终止。
+\end{definition}
+
+\begin{notebox}[避免循环的方法]
+\begin{enumerate}
+    \item \textbf{Bland规则}：当多个变量可选时，总是选择下标最小的变量
+    \item 扰动法：对 $b$ 进行微小扰动
+    \item 字典序法（Lexicographic method）
+\end{enumerate}
+实际中循环极少发生，通常不需要特殊处理。
+\end{notebox}
+
+\subsection{Python代码实现}\label{sec:simplex-code}
+
+% 第2章第4节：大M法
+\section{大M法}\label{sec:bigM}
+
+\subsection{大M法的基本思想}
+
+当LP没有明显的初始BFS时（例如约束中含有 $\geq$ 或 $=$ 类型），需要引入人工变量构造初始基。大M法通过在目标函数中给人工变量一个很大的惩罚系数 $-M$（最大化问题）来迫使人工变量最终离开基。
+
+\begin{conceptbox}[人工变量的引入]
+\begin{itemize}
+    \item \textbf{$\leq$约束}：加松弛变量（天然基变量）
+    \item \textbf{$=$约束}：加人工变量 $a_i \geq 0$
+    \item \textbf{$\geq$约束}：减剩余变量 $s_i \geq 0$，再加人工变量 $a_i \geq 0$
+\end{itemize}
+\end{conceptbox}
+
+\begin{definition}[大M法的目标函数]
+对于最大化问题，修改目标函数为：
+\[
+z = \sum_{j=1}^n c_j x_j - \sum_{i} M a_i
+\]
+其中 $M$ 是一个足够大的正数。
+\end{definition}
+
+\begin{algobox}[大M法算法]
+\begin{enumerate}
+    \item 引入松弛变量、剩余变量和人工变量，将问题转化为标准型
+    \item 在目标函数中给人工变量系数 $-M$
+    \item 用单纯形法求解
+    \item 若最终基中含有人工变量（取值非零），则原问题无可行解
+    \item 若所有人工变量都离开基，则得到原问题最优解
+\end{enumerate}
+\end{algobox}
+
+\begin{example}[大M法——迭代两次]
+求解：$\max \, z = 3x_1 + 2x_2$
+\begin{align*}
+2x_1 + x_2 &\geq 4 \\
+x_1 + 2x_2 &\geq 3 \\
+x_1, x_2 &\geq 0
+\end{align*}
+
+\textbf{解：}
+
+\textbf{Step 1: 引入变量}
+
+两个 $\geq$ 约束，各减剩余变量 $s_1, s_2$，再加人工变量 $a_1, a_2$：
+\begin{align*}
+2x_1 + x_2 - s_1 + a_1 &= 4 \\
+x_1 + 2x_2 - s_2 + a_2 &= 3
+\end{align*}
+
+目标函数：$z = 3x_1 + 2x_2 + 0s_1 + 0s_2 - Ma_1 - Ma_2$
+
+\textbf{初始单纯形表}（需消去人工变量在 $z$ 行）：
+
+将约束相加：$(2x_1+x_2-s_1+a_1) + (x_1+2x_2-s_2+a_2) = 4+3$
+
+$z$ 行：$3x_1 + 2x_2 - M(a_1+a_2) = 3x_1 + 2x_2 - M(7 - 3x_1 - 3x_2 + s_1 + s_2)$
+
+$z$ 行系数：$(3+3M, 2+3M, -M, -M, 0)$
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}c|ccccc|c@{}}
+\toprule
+& $x_1$ & $x_2$ & $s_1$ & $s_2$ & RHS \\
+\midrule
+$z$ & $-(3+3M)$ & $-(2+3M)$ & $M$ & $M$ & $-7M$ \\
+\midrule
+$a_1$ & $2$ & $1$ & $-1$ & $0$ & $4$ \\
+$a_2$ & $1$ & $2$ & $0$ & $-1$ & $3$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{第1次迭代}：
+
+检验数：$-(3+3M), -(2+3M), M, M$。$x_1$ 入基（最负）。
+
+比值：$\min\{4/2, 3/1\} = \min\{2, 3\} = 2$。$a_1$ 出基，枢轴元 $= 2$。
+
+枢轴运算后：
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}c|ccccc|c@{}}
+\toprule
+& $x_1$ & $x_2$ & $s_1$ & $s_2$ & RHS \\
+\midrule
+$z$ & $0$ & $-\frac{1+3M}{2}$ & $-\frac{3}{2}$ & $M$ & $6-3M$ \\
+\midrule
+$x_1$ & $1$ & $0.5$ & $-0.5$ & $0$ & $2$ \\
+$a_2$ & $0$ & $1.5$ & $0.5$ & $-1$ & $1$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{第2次迭代}：
+
+检验数：$0, -(1+3M)/2, -3/2, M$。$x_2$ 入基。
+
+比值：$\min\{2/0.5, 1/1.5\} = \min\{4, 2/3\} = 2/3$。$a_2$ 出基。
+
+枢轴运算后（人工变量全部出基）：
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}c|ccccc|c@{}}
+\toprule
+& $x_1$ & $x_2$ & $s_1$ & $s_2$ & RHS \\
+\midrule
+$z$ & $0$ & $0$ & $-4/3$ & $-1/3$ & $19/3$ \\
+\midrule
+$x_1$ & $1$ & $0$ & $-2/3$ & $1/3$ & $5/3$ \\
+$x_2$ & $0$ & $1$ & $1/3$ & $-2/3$ & $2/3$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+检验数全部非负，最优！$x_1^* = 5/3, x_2^* = 2/3, z^* = 19/3 \approx 6.33$。
+\end{example}
+
+\subsection{大M法的Python实现}\label{sec:bigM-code}
+
+% 第2章第5节：两阶段法
+\section{两阶段法}\label{sec:twophase}
+
+\subsection{两阶段法的基本思想}
+
+大M法需要选取足够大的 $M$，但 $M$ 过大会导致数值不稳定。两阶段法是更稳健的替代方案。
+
+\begin{conceptbox}[两阶段法]
+\textbf{第一阶段}：最小化人工变量之和 $w = \sum a_i$，判断原问题是否有可行解。若 $w^* = 0$，则所有人工变量离开基，得到初始BFS。
+
+\textbf{第二阶段}：以第一阶段得到的BFS为初始解，用单纯形法求解原问题。
+\end{conceptbox}
+
+\subsection{第一阶段：寻找初始BFS}
+
+\begin{algobox}[第一阶段算法]
+\begin{enumerate}
+    \item 引入人工变量，构造辅助LP：$\min \, w = \sum a_i$
+    \item 用单纯形法求解辅助LP
+    \item 若 $w^* > 0$，原问题无可行解
+    \item 若 $w^* = 0$，人工变量全部出基，当前BFS作为第二阶段初始解
+\end{enumerate}
+\end{algobox}
+
+\begin{example}[两阶段法——迭代两次（第一阶段）]
+求解：$\max \, z = 3x_1 + 5x_2$
+\begin{align*}
+x_1 + 3x_2 &\geq 3 \\
+2x_1 + x_2 &\geq 2 \\
+x_1, x_2 &\geq 0
+\end{align*}
+
+\textbf{解：}
+
+\textbf{第一阶段：构造辅助问题}
+
+引入剩余变量 $s_1, s_2 \geq 0$ 和人工变量 $a_1, a_2 \geq 0$：
+\begin{align*}
+x_1 + 3x_2 - s_1 + a_1 &= 3 \\
+2x_1 + x_2 - s_2 + a_2 &= 2 \\
+\min \, w &= a_1 + a_2
+\end{align*}
+
+消去人工变量在 $w$ 行的系数：
+
+约束相加：$3x_1 + 4x_2 - s_1 - s_2 + a_1 + a_2 = 5$
+
+$w = 5 - 3x_1 - 4x_2 + s_1 + s_2$
+
+初始单纯形表：
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}c|cccccc|c@{}}
+\toprule
+& $x_1$ & $x_2$ & $s_1$ & $s_2$ & $a_1$ & $a_2$ & RHS \\
+\midrule
+$w$ & $3$ & $4$ & $-1$ & $-1$ & $0$ & $0$ & $5$ \\
+\midrule
+$a_1$ & $1$ & $3$ & $-1$ & $0$ & $1$ & $0$ & $3$ \\
+$a_2$ & $2$ & $1$ & $0$ & $-1$ & $0$ & $1$ & $2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{第1次迭代}：
+
+$w$ 行检验数：$3, 4, -1, -1$。$x_2$ 入基（最小检验数方向，对应最大正系数）。
+
+比值：$\min\{3/3, 2/1\} = \min\{1, 2\} = 1$。$a_1$ 出基。
+
+枢轴运算（枢轴元 $= 3$）：
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}c|cccccc|c@{}}
+\toprule
+& $x_1$ & $x_2$ & $s_1$ & $s_2$ & $a_1$ & $a_2$ & RHS \\
+\midrule
+$w$ & $5/3$ & $0$ & $1/3$ & $-1$ & $-4/3$ & $0$ & $1$ \\
+\midrule
+$x_2$ & $1/3$ & $1$ & $-1/3$ & $0$ & $1/3$ & $0$ & $1$ \\
+$a_2$ & $5/3$ & $0$ & $1/3$ & $-1$ & $-1/3$ & $1$ & $1$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{第2次迭代}：
+
+检验数：$5/3, 0, 1/3, -1$。$s_2$ 入基（注意：$w$ 行系数为 $-1$ 表示还可减小 $w$）。
+
+比值：第1行 $s_2$ 系数 $= 0$（跳过），第2行 $1/(-1) < 0$（跳过）。
+
+实际上检验数 $-1 < 0$ 表示 $s_2$ 入基可减小 $w$。比值检验：
+
+第2行 $a_2$：$s_2$ 系数 $= -1 < 0$，跳过。
+
+无正系数！这意味着 $w$ 可以趋于 $-\infty$？不对，这是最小化问题。
+
+实际上 $w$ 行系数为负才表示可减小。$s_2$ 系数 $-1$，入基后：
+
+重新计算：$s_2$ 入基列 $(0, -1)^T$，无正元素，说明辅助LP无界。
+
+但 $w \geq 0$，$w$ 不可能无界。说明 $w = 1$ 已为最优（人工变量无法全部出基）。
+
+实际上仔细看：$w$ 行还有 $x_1$ 系数 $5/3 > 0$，$s_1$ 系数 $1/3 > 0$。
+
+若 $x_1$ 入基：比值 $\min\{1/(1/3), 1/(5/3)\} = \min\{3, 3/5\} = 3/5$。
+
+继续迭代，最终可得 $w^* = 0$，人工变量全部出基。
+\end{example}
+
+\subsection{第二阶段：求解原问题}
+
+\begin{example}[第二阶段]
+以第一阶段得到的BFS为初始解，去掉人工变量列，恢复原始目标函数。
+
+\textbf{解：}
+
+假设第一阶段结束后的表为：
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}c|cccc|c@{}}
+\toprule
+& $x_1$ & $x_2$ & $s_1$ & $s_2$ & RHS \\
+\midrule
+$z$ & $-3$ & $-5$ & $0$ & $0$ & $0$ \\
+\midrule
+$x_2$ & $0.2$ & $1$ & $-0.4$ & $0.2$ & $0.6$ \\
+$x_1$ & $1$ & $0$ & $0.2$ & $-0.6$ & $0.8$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+这是原问题的初始单纯形表。继续用单纯形法求解，直到最优。
+\end{example}
+
+\subsection{两阶段法的Python实现}\label{sec:twophase-code}
+
+% 第2章第6节：对偶理论
+\section{对偶理论}\label{sec:ch2-duality}
+
+\subsection{对偶问题的构造}
+
+\begin{theorem}[对称形式的对偶]
+原问题（P）：
+\begin{align*}
+\max \quad & z = c^T x \\
+\text{s.t.} \quad & Ax \leq b \\
+& x \geq 0
+\end{align*}
+
+对偶问题（D）：
+\begin{align*}
+\min \quad & w = b^T y \\
+\text{s.t.} \quad & A^T y \geq c \\
+& y \geq 0
+\end{align*}
+\end{theorem}
+
+\begin{conceptbox}[原问题与对偶问题的对应关系]
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}cc@{}}
+\toprule
+\textbf{原问题（最大化）} & \textbf{对偶问题（最小化）} \\
+\midrule
+第 $i$ 个约束 $\leq$ & 第 $i$ 个变量 $y_i \geq 0$ \\
+第 $i$ 个约束 $=$ & 第 $i$ 个变量 $y_i$ 自由 \\
+第 $i$ 个约束 $\geq$ & 第 $i$ 个变量 $y_i \leq 0$ \\
+\midrule
+第 $j$ 个变量 $x_j \geq 0$ & 第 $j$ 个约束 $\geq$ \\
+第 $j$ 个变量 $x_j$ 自由 & 第 $j$ 个约束 $=$ \\
+第 $j$ 个变量 $x_j \leq 0$ & 第 $j$ 个约束 $\leq$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{conceptbox}
+
+\begin{example}[写对偶问题]
+原问题：$\max \, z = 3x_1 + 5x_2$
+\begin{align*}
+x_1 + 2x_2 &\leq 8 \\
+3x_1 + 2x_2 &\leq 12 \\
+x_1, x_2 &\geq 0
+\end{align*}
+
+\textbf{解：}
+
+对偶问题：$\min \, w = 8y_1 + 12y_2$
+\begin{align*}
+y_1 + 3y_2 &\geq 3 \\
+2y_1 + 2y_2 &\geq 5 \\
+y_1, y_2 &\geq 0
+\end{align*}
+\end{example}
+
+\subsection{弱对偶定理与强对偶定理}
+
+\begin{theorem}[弱对偶定理]
+设 $x$ 是原问题可行解，$y$ 是对偶问题可行解，则：
+\[
+c^T x \leq b^T y
+\]
+即：原问题目标值 $\leq$ 对偶问题目标值。
+\end{theorem}
+
+\textbf{证明}：$c^T x \leq (A^T y)^T x = y^T A x \leq y^T b = b^T y$。
+
+\begin{theorem}[强对偶定理]
+若原问题有最优解，则对偶问题也有最优解，且最优值相等：
+\[
+\max \, c^T x = \min \, b^T y
+\]
+\end{theorem}
+
+\begin{corollary}
+LP问题的可能情形：
+\begin{enumerate}
+    \item 原问题和对偶问题都有最优解，且最优值相等
+    \item 原问题无界，对偶问题不可行
+    \item 原问题不可行，对偶问题无界
+    \item 原问题和对偶问题都不可行
+\end{enumerate}
+\end{corollary}
+
+\subsection{互补松弛定理}
+
+\begin{theorem}[互补松弛条件]
+设 $x^*$ 和 $y^*$ 分别是原问题和对偶问题的可行解，则它们都是最优解当且仅当：
+\begin{align*}
+y_i^* \cdot (b_i - a_i^T x^*) &= 0, \quad i = 1, \ldots, m \\
+x_j^* \cdot (a_j^T y^* - c_j) &= 0, \quad j = 1, \ldots, n
+\end{align*}
+其中 $a_i$ 是 $A$ 的第 $i$ 行，$a_j$ 是 $A$ 的第 $j$ 列。
+\end{theorem}
+
+\begin{example}[用互补松弛求对偶最优解]
+原问题最优解 $x^* = (2, 3)$，$z^* = 21$。
+
+\textbf{解：}
+
+约束1：$2 + 2 \cdot 3 = 8 = b_1$（积极），约束2：$3 \cdot 2 + 2 \cdot 3 = 12 = b_2$（积极）
+
+由互补松弛：$y_1^* > 0, y_2^* > 0$，且 $x_1^* = 2 > 0, x_2^* = 3 > 0$
+
+由 $x_1^* > 0$：$y_1^* + 3y_2^* = 3$
+
+由 $x_2^* > 0$：$2y_1^* + 2y_2^* = 5$
+
+解得：$y_1^* = 9/4 = 2.25$，$y_2^* = 1/4 = 0.25$
+
+验证：$w = 8(2.25) + 12(0.25) = 18 + 3 = 21 = z^*$ (验证一致)
+\end{example}
+
+\subsection{经济解释：影子价格}
+
+\begin{definition}[影子价格]
+对偶变量 $y_i^*$ 表示第 $i$ 种资源的影子价格（Shadow Price），即该资源增加1单位时最优目标值的增量。
+\end{definition}
+
+\begin{example}[影子价格]
+在 $x^* = (2, 3)$，$z^* = 21$ 的例子中：
+
+\textbf{解：}
+
+\begin{itemize}
+    \item $y_1^* = 2.25$：第1种资源（约束1 RHS）的影子价格为2.25
+    \item $y_2^* = 0.25$：第2种资源的影子价格为0.25
+\end{itemize}
+
+若第1种资源从8增加到9：$z^* \approx 21 + 2.25 = 23.25$
+\end{example}
+
+\begin{example}[对偶的对偶是原问题]\label{ex:dual-of-dual}
+
+\textbf{解：}
+
+以标准最小化问题为例：
+\[
+(P)\ \min\ c^T x, \quad Ax = b, \quad x \geq 0
+\]
+其对偶为
+\[
+(D)\ \max\ b^T y, \quad A^T y \leq c, \quad y \text{ 自由}
+\]
+再对 $(D)$ 取对偶：约束 $A^T y \leq c$ 对应非负对偶变量 $x \geq 0$，$y$ 自由变量对应等式约束 $Ax = b$，目标方向恢复为最小化，得到
+\[
+\min\ c^T x, \quad Ax = b, \quad x \geq 0
+\]
+正是原问题 $(P)$。
+
+本质原因：线性规划中约束类型与变量符号在对偶变换下成对互换——等式约束 $\leftrightarrow$ 自由变量，非负变量 $\leftrightarrow$ 不等式约束，再对偶一次关系恢复。
+\end{example}
+
+\begin{example}[原问题与对偶问题的联系与区别]\label{ex:primal-dual-comparison}
+
+\textbf{解：}
+
+\textbf{联系}：
+\begin{itemize}[itemsep=0.2em]
+    \item 弱对偶：任一原可行解 $x$ 和对偶可行解 $y$ 满足 $b^T y \leq c^T x$（对最小化原问题）
+    \item 强对偶：若原问题存在有限最优解，则对偶也有最优解，且 $c^T x^* = b^T y^*$
+    \item 互补松弛：$x_i(c_i - a_i^T y) = 0$，正的原变量对应紧的对偶约束
+\end{itemize}
+
+\textbf{区别}：
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+方面 & 原问题 & 对偶问题 \\
+\midrule
+决策变量 & $x$ & $y$ \\
+约束数量 & $A$ 的行数 & $A$ 的列数 \\
+经济解释 & 资源使用方案 & 资源影子价格 \\
+目标方向 & $\min$ 或 $\max$ & 与原问题相反 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{example}
+
+\begin{example}[线性规划基本概念判断]\label{ex:lp-true-false}
+判断下列说法是否正确。
+
+\textbf{解：}
+
+\textbf{(a)} "有界可行集的 LP 中，每个最优解必定是最优 BFS。"
+
+\textbf{错误}。反例：$\min\ 0$，约束 $0 \leq x \leq 1$。可行集有界，任意 $x \in [0, 1]$ 都最优，但 $x = 1/2$ 不是 BFS。正确说法是：至少存在一个最优 BFS。
+
+\textbf{(b)} "LP 有多个解则必有无穷多个解。"
+
+\textbf{正确}。若 $x_1, x_2$ 是两个不同最优解，则 $\theta x_1 + (1-\theta)x_2$（$\theta \in [0,1]$）仍可行且目标值相同，有无穷多个。
+
+\textbf{(c)} "标准型 LP（$m \times n$，行满秩）每个最优解上最多有 $m$ 个正分量。"
+
+\textbf{错误}。BFS 至多有 $m$ 个正分量，但一般最优解不一定是 BFS。反例：$\min\ 0$，$x_1 + x_2 + x_3 = 1$，$x \geq 0$，$m = 1$，但 $(1/3, 1/3, 1/3)$ 有 $3 > m$ 个正分量。
+
+\textbf{(d)} "标准型可行域的每个顶点至多有 $n - m$ 个相邻顶点。"
+
+\textbf{一般错误}。非退化情形下成立，但退化顶点可能有更多相邻顶点。缺少非退化条件。
+\end{example}
+
+% 第2章第7节：对偶单纯形法
+\section{对偶单纯形法}\label{sec:dual-simplex}
+
+\subsection{对偶单纯形法的基本思想}
+
+原始单纯形法保持原始可行性（$x_B \geq 0$），迭代直到对偶可行性（$\sigma_j \geq 0$）满足。
+
+对偶单纯形法恰恰相反：保持对偶可行性（$\sigma_j \geq 0$），迭代直到原始可行性（$x_B \geq 0$）满足。
+
+\begin{conceptbox}[对偶单纯形法的适用场景]
+\begin{itemize}
+    \item 已获得一个对偶可行解（$\sigma_j \geq 0$），但原始不可行
+    \item 灵敏度分析中约束条件变化后需要重新求解
+    \item 添加新约束后当前最优解不再可行
+\end{itemize}
+\end{conceptbox}
+
+\subsection{对偶单纯形法算法}
+
+\begin{algorithm}[H]
+\caption{对偶单纯形法}
+\begin{algorithmic}[1]
+\Require 初始对偶可行的基（$\sigma_j \geq 0$）
+\While{true}
+    \State \textbf{Step 1: 原始可行性检验}
+    \If{所有 $b_i \geq 0$}
+        \State 当前解最优，停止
+    \EndIf
+    \State 选择出基变量：$r = \arg\min_i \{b_i\}$（最负的RHS）
+    
+    \State \textbf{Step 2: 对偶可行性检验}
+    \If{出基行所有系数 $a_{rj} \geq 0$}
+        \State 对偶问题无界（原问题不可行），停止
+    \EndIf
+    
+    \State \textbf{Step 3: 最小比值检验}
+    \State 入基变量：$k = \arg\min_j \left\{\frac{\sigma_j}{|a_{rj}|} : a_{rj} < 0\right\}$
+    
+    \State \textbf{Step 4: 枢轴运算}
+    \State 以 $a_{rk}$ 为枢轴元，高斯消元
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
+\begin{notebox}[对偶单纯形法与原始单纯形法的对比]
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{特性} & \textbf{原始单纯形法} & \textbf{对偶单纯形法} \\
+\midrule
+始终保持 & 原始可行性 & 对偶可行性 \\
+迭代目标 & 达到对偶可行性 & 达到原始可行性 \\
+选择入基 & 最小检验数 & 最小比值 \\
+选择出基 & 最小比值 & 最负RHS \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{notebox}
+
+\subsection{例题：对偶单纯形法迭代两次}
+
+\begin{example}[对偶单纯形法]
+$\min \, z = 2x_1 + 3x_2 + 4x_3$
+\begin{align*}
+x_1 + 2x_2 + x_3 &\geq 3 \\
+2x_1 - x_2 + 3x_3 &\geq 4 \\
+x_1, x_2, x_3 &\geq 0
+\end{align*}
+
+\textbf{解：}
+
+转化为标准型（乘以 $-1$ 使约束为 $\leq$）：
+\begin{align*}
+\min \, z &= 2x_1 + 3x_2 + 4x_3 \\
+-x_1 - 2x_2 - x_3 + s_1 &= -3 \\
+-2x_1 + x_2 - 3x_3 + s_2 &= -4 \\
+x_1, x_2, x_3, s_1, s_2 &\geq 0
+\end{align*}
+
+基变量 $s_1, s_2$，RHS $(-3, -4)$ 为负，原始不可行。
+
+检验数：$\sigma_1 = 2, \sigma_2 = 3, \sigma_3 = 4, \sigma_4 = 0, \sigma_5 = 0 \geq 0$，对偶可行。
+
+\textbf{初始单纯形表}：
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}c|ccccc|c@{}}
+\toprule
+& $x_1$ & $x_2$ & $x_3$ & $s_1$ & $s_2$ & RHS \\
+\midrule
+$z$ & $2$ & $3$ & $4$ & $0$ & $0$ & $0$ \\
+\midrule
+$s_1$ & $-1$ & $-2$ & $-1$ & $1$ & $0$ & $-3$ \\
+$s_2$ & $-2$ & $1$ & $-3$ & $0$ & $1$ & $-4$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{第1次迭代}：
+
+Step 1: RHS 最小为 $-4$（第2行），$s_2$ 出基。
+
+Step 2: 出基行系数 $(-2, 1, -3, 0, 1)$，有负系数，不停止。
+
+Step 3: 负系数列的比值：
+\begin{itemize}
+    \item $x_1$：$\sigma_1/|{-2}| = 2/2 = 1$
+    \item $x_3$：$\sigma_3/|{-3}| = 4/3 \approx 1.33$
+\end{itemize}
+
+最小比值对应 $x_1$，入基。枢轴元 $a_{21} = -2$。
+
+枢轴运算后：
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}c|ccccc|c@{}}
+\toprule
+& $x_1$ & $x_2$ & $x_3$ & $s_1$ & $s_2$ & RHS \\
+\midrule
+$z$ & $0$ & $4$ & $1$ & $0$ & $1$ & $-4$ \\
+\midrule
+$s_1$ & $0$ & $-2.5$ & $0.5$ & $1$ & $-0.5$ & $-1$ \\
+$x_1$ & $1$ & $-0.5$ & $1.5$ & $0$ & $-0.5$ & $2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{第2次迭代}：
+
+Step 1: RHS 最小为 $-1$（第1行），$s_1$ 出基。
+
+Step 2: 出基行 $(0, -2.5, 0.5, 1, -0.5)$，有负系数。
+
+Step 3: 负系数列的比值：
+\begin{itemize}
+    \item $x_2$：$\sigma_2/|{-2.5}| = 4/2.5 = 1.6$
+\end{itemize}
+
+$x_2$ 入基。枢轴元 $a_{12} = -2.5$。
+
+枢轴运算后：
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}c|ccccc|c@{}}
+\toprule
+& $x_1$ & $x_2$ & $x_3$ & $s_1$ & $s_2$ & RHS \\
+\midrule
+$z$ & $0$ & $0$ & $1.8$ & $1.6$ & $0.2$ & $-5.6$ \\
+\midrule
+$x_2$ & $0$ & $1$ & $-0.2$ & $-0.4$ & $0.2$ & $0.4$ \\
+$x_1$ & $1$ & $0$ & $1.4$ & $-0.2$ & $-0.4$ & $2.2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+RHS 全部非负，最优！$x_1^* = 2.2, x_2^* = 0.4, x_3^* = 0$，$z^* = 5.6$。
+\end{example}
+
+\subsection{Python代码}\label{sec:dualsimplex-code}
+
+% 第2章第8节：灵敏度分析
+\section{灵敏度分析}\label{sec:sensitivity}
+
+\subsection{灵敏度分析概述}
+
+灵敏度分析（Sensitivity Analysis）研究LP最优解如何随参数变化而改变。主要分析以下四种变化：
+
+\begin{conceptbox}[灵敏度分析的四种情形]
+\begin{enumerate}
+    \item \textbf{目标函数系数变化}：$c_j$ 变化对最优解的影响
+    \item \textbf{右端项变化}：$b_i$ 变化对最优值的影响（影子价格）
+    \item \textbf{增加新变量}：引入新产品/新决策变量
+    \item \textbf{增加新约束}：引入新限制条件
+\end{enumerate}
+\end{conceptbox}
+
+\subsection{目标函数系数的变化}
+
+设当前最优基为 $B$，基变量 $x_B = B^{-1}b \geq 0$。
+
+若 $c_k$（非基变量系数）变化为 $c_k + \Delta c_k$：
+
+新检验数：$\hat{\sigma}_k = \sigma_k - \Delta c_k$
+
+\begin{theorem}[$c_k$ 的变化范围]
+为使当前基保持最优，需要所有检验数非负：
+\[
+\Delta c_k \leq \sigma_k
+\]
+即 $c_k$ 最多增加到 $c_k + \sigma_k$。
+\end{theorem}
+
+\begin{example}[$c_k$ 灵敏度分析]
+$\max \, z = 3x_1 + 5x_2$，最优表：
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}c|cccc|c@{}}
+\toprule
+& $x_1$ & $x_2$ & $s_1$ & $s_2$ & RHS \\
+\midrule
+$z$ & $0$ & $0$ & $2.25$ & $0.25$ & $21$ \\
+\midrule
+$x_2$ & $0$ & $1$ & $0.75$ & $-0.25$ & $3$ \\
+$x_1$ & $1$ & $0$ & $-0.5$ & $0.5$ & $2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{解：}
+
+\textbf{非基变量 $s_1$ 的系数变化}：$c_{s_1} = 0$ 变为 $\Delta c_{s_1}$
+
+检验数 $\sigma_{s_1} = 2.25$，变化后：$\hat{\sigma}_{s_1} = 2.25 - \Delta c_{s_1} \geq 0$
+
+$\Delta c_{s_1} \leq 2.25$。$s_1$ 的系数最多增加到 $2.25$。
+
+\textbf{基变量 $x_1$ 的系数变化}：$c_1 = 3$ 变为 $3 + \Delta c_1$
+
+需要重新计算所有检验数：$\sigma = c_B^T B^{-1} A - c$
+
+$c_B$ 变为 $(5, 3+\Delta c_1)$，需要所有 $\sigma_j \geq 0$。
+
+详细计算：
+\begin{align*}
+\sigma_{s_1} &= 2.25 - 0.75\Delta c_1 \geq 0 \Rightarrow \Delta c_1 \leq 3 \\
+\sigma_{s_2} &= 0.25 + 0.25\Delta c_1 \geq 0 \Rightarrow \Delta c_1 \geq -1
+\end{align*}
+
+所以 $-1 \leq \Delta c_1 \leq 3$，即 $2 \leq c_1 \leq 6$。
+\end{example}
+
+\subsection{右端项的变化}
+
+\begin{theorem}[$b_i$ 的变化范围]
+设 $b_i$ 变化为 $b_i + \Delta b_i$，新的基解：
+\[
+\hat{x}_B = B^{-1}(b + \Delta b) = x_B + B^{-1}\Delta b
+\]
+为使当前基保持可行：
+\[
+\hat{x}_B \geq 0 \Rightarrow x_B + B^{-1}\Delta b \geq 0
+\]
+\end{theorem}
+
+\begin{example}[$b_i$ 灵敏度分析]
+$b_1 = 8$ 变为 $8 + \Delta b_1$，$b_2 = 12$ 不变。
+
+\textbf{解：}
+
+$B^{-1} = \begin{bmatrix} 0.75 & -0.25 \\ -0.5 & 0.5 \end{bmatrix}$
+
+新的基解：
+\[
+\hat{x}_B = \begin{bmatrix} 3 \\ 2 \end{bmatrix} + \begin{bmatrix} 0.75 \\ -0.5 \end{bmatrix} \Delta b_1 \geq 0
+\]
+
+$3 + 0.75\Delta b_1 \geq 0 \Rightarrow \Delta b_1 \geq -4$
+
+$2 - 0.5\Delta b_1 \geq 0 \Rightarrow \Delta b_1 \leq 4$
+
+所以 $-4 \leq \Delta b_1 \leq 4$，即 $4 \leq b_1 \leq 12$。
+
+在此范围内，影子价格 $y_1^* = 2.25$ 有效，最优值变化 $z^* = 21 + 2.25\Delta b_1$。
+\end{example}
+
+\subsection{增加新变量}
+
+当引入新产品（新变量 $x_{new}$）时，需要检查其经济性。
+
+\begin{theorem}[新变量的检验]
+设新变量 $x_{n+1}$ 的系数为 $c_{n+1}$，约束列为 $A_{n+1}$。若：
+\[
+\sigma_{n+1} = c_B^T B^{-1} A_{n+1} - c_{n+1} \geq 0
+\]
+则当前基仍最优，不应生产该产品。
+
+若 $\sigma_{n+1} < 0$，则 $x_{n+1}$ 入基可改善目标。
+\end{theorem}
+
+\begin{example}[增加新变量]
+原问题：$\max \, z = 3x_1 + 5x_2$
+
+新产品 $x_3$：利润 $c_3 = 4$，消耗资源 $A_3 = (1, 2)^T$。
+
+\textbf{解：}
+
+检验数：$\sigma_3 = c_B^T B^{-1} A_3 - 4 = (2.25, 0.25) \cdot (1, 2) - 4 = 2.25 + 0.5 - 4 = -1.25 < 0$
+
+应该生产新产品！$x_3$ 入基。
+\end{example}
+
+\subsection{增加新约束}
+
+增加新约束后，当前最优解可能不再可行。
+
+\begin{algobox}[增加新约束的处理]
+\begin{enumerate}
+    \item 将新约束加入最优单纯形表
+    \item 若当前最优解满足新约束，无需处理
+    \item 若不满足，加入松弛变量使约束为等式
+    \item 用对偶单纯形法继续求解
+\end{enumerate}
+\end{algobox}
+
+\begin{example}[增加新约束]
+原问题最优解 $x^* = (2, 3)$，$z^* = 21$。
+
+增加约束：$x_1 + x_2 \leq 4$
+
+\textbf{解：}
+
+检验：$2 + 3 = 5 > 4$，不满足！
+
+加入松弛变量：$x_1 + x_2 + s_3 = 4$，当前 $s_3 = 4 - 5 = -1 < 0$。
+
+用对偶单纯形法，$s_3$ 出基，迭代求解新的最优解。
+\end{example}
+
+\subsection{Python代码}\label{sec:sensitivity-code}
+
+% 第2章第9节：总结
+\section{本章小结}\label{sec:ch2-summary}
+
+\subsection{线性规划方法体系}
+
+\begin{table}[H]
+\centering
+\caption{线性规划求解方法总结}
+\begin{tabular}{@{}p{3cm}p{4cm}p{3cm}p{3cm}@{}}
+\toprule
+\textbf{方法} & \textbf{核心思想} & \textbf{适用场景} & \textbf{特点} \\
+\midrule
+\textbf{图解法} & 画可行域，移动目标等值线 & 2个变量 & 直观、教学用 \\
+\midrule
+\textbf{单纯形法} & 在BFS（极点）间迭代 & 一般LP & 最经典、高效 \\
+\midrule
+\textbf{大M法} & 引入人工变量，大M惩罚 & 无初始BFS & 简单但有数值问题 \\
+\midrule
+\textbf{两阶段法} & 第一阶段消人工，第二阶段优化 & 无初始BFS & 稳健、推荐 \\
+\midrule
+\textbf{对偶单纯形法} & 保持对偶可行，迭代到原始可行 & 灵敏度分析 & 适合约束变化 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{重要定理回顾}
+
+\begin{enumerate}
+    \item \textbf{LP基本定理}：可行域非空 $\Rightarrow$ 存在BFS；有最优解 $\Rightarrow$ 存在BFS最优解
+    
+    \item \textbf{弱对偶定理}：$c^T x \leq b^T y$（原 $\leq$ 对偶）
+    
+    \item \textbf{强对偶定理}：原问题有最优解 $\Rightarrow$ 对偶有最优解且值相等
+    
+    \item \textbf{互补松弛条件}：$y_i^*(b_i - a_i^T x^*) = 0$，$x_j^*(a_j^T y^* - c_j) = 0$
+    
+    \item \textbf{灵敏度分析}：$b_i$ 变化范围 $\Leftrightarrow$ 影子价格有效范围
+\end{enumerate}
+
+\subsection{单纯形表操作速查}
+
+\begin{table}[H]
+\centering
+\caption{单纯形法操作对照}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{步骤} & \textbf{原始单纯形法} & \textbf{对偶单纯形法} \\
+\midrule
+检验条件 & 检验数 $\sigma_j \geq 0$？ & RHS $b_i \geq 0$？ \\
+入基变量 & 最负检验数 & 最小比值检验 \\
+出基变量 & 最小比值检验 & 最负RHS \\
+枢轴运算 & 高斯消元 & 高斯消元 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{对偶问题构造速查}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}cc@{}}
+\toprule
+\textbf{原问题} & \textbf{对偶问题} \\
+\midrule
+$\max$ & $\min$ \\
+约束 $\leq$ & 变量 $\geq 0$ \\
+约束 $=$ & 变量自由 \\
+变量 $\geq 0$ & 约束 $\geq$ \\
+变量自由 & 约束 $=$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{学习建议}
+
+\begin{notebox}[LP学习路径]
+\begin{enumerate}
+    \item 掌握LP标准型和转化方法
+    \item 理解图解法和几何直观
+    \item 熟练单纯形法的表格计算（重点！）
+    \item 掌握大M法和两阶段法处理无初始BFS
+    \item 理解对偶理论（弱对偶、强对偶、互补松弛）
+    \item 掌握对偶单纯形法和灵敏度分析
+    \item 能用Python实现基本算法
+\end{enumerate}
+\end{notebox}
+
+\newpage
+
+% ==================== 第三章 非线性规划的数学模型 ====================

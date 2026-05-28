@@ -1,0 +1,1148 @@
+\chapter{凸分析与数学模型}\label{chap:convex-analysis}
+\section{非线性规划的数学模型}\label{sec:modeling}
+
+\begin{notebox}[引言]
+非线性规划（Nonlinear Programming, NLP）比线性规划困难得多，主要原因在于：
+\begin{itemize}[itemsep=0.2em]
+    \item 没有统一的数学模型
+    \item 每种方法有其特定的适用范围，不存在适用于各种NLP问题的一般算法
+\end{itemize}
+本节通过三个经典问题引入NLP的数学建模思想。
+\end{notebox}
+
+\subsection{选址问题}
+
+\begin{conceptbox}[问题描述]
+设有 $n$ 个市场，第 $j$ 个市场的位置为 $(a_j, b_j)$，其对某种货物的需求量为 $q_j\ (j=1,2,\ldots,n)$。现计划建立 $m$ 个仓库，第 $i$ 个仓库的存储容量为 $c_i\ (i=1,2,\ldots,m)$。试确定仓库的位置，使各仓库对各市场的运输量与路程乘积之和为最小。
+\end{conceptbox}
+
+\textbf{决策变量}：
+\begin{itemize}
+    \item 第 $i$ 个仓库的位置：$(x_i, y_i)\ (i=1,2,\ldots,m)$
+    \item 第 $i$ 个仓库到第 $j$ 个市场的货物供应量：$w_{ij}$
+\end{itemize}
+
+\textbf{目标函数}（总运输成本最小）：
+\[
+\min\quad f = \sum_{i=1}^{m} \sum_{j=1}^{n} w_{ij} \sqrt{(x_i - a_j)^2 + (y_i - b_j)^2}
+\]
+
+\textbf{约束条件}：
+\begin{enumerate}[label=(\arabic*)]
+    \item 每个仓库的出货量不超过其容量：
+    \[\sum_{j=1}^{n} w_{ij} \leq c_i,\quad i=1,2,\ldots,m\]
+    \item 每个市场的需求被恰好满足：
+    \[\sum_{i=1}^{m} w_{ij} = q_j,\quad j=1,2,\ldots,n\]
+    \item 非负约束：
+    \[w_{ij} \geq 0,\quad \forall i,j\]
+\end{enumerate}
+
+\begin{example}[选址问题建模]
+设有2个市场和1个仓库。市场1位于 $(0, 0)$，需求量 $q_1 = 5$；市场2位于 $(4, 0)$，需求量 $q_2 = 3$。仓库容量 $c_1 = 10$。求仓库最优位置。
+
+\textbf{解}：设仓库位置为 $(x, y)$，运输量为 $w_1, w_2$。
+
+数学模型为：
+\begin{align*}
+\min\quad & f = w_1 \sqrt{x^2 + y^2} + w_2 \sqrt{(x-4)^2 + y^2} \\
+\text{s.t.}\quad & w_1 + w_2 \leq 10 \\
+& w_1 = 5,\ w_2 = 3 \\
+& w_1, w_2 \geq 0
+\end{align*}
+
+当 $w_1=5, w_2=3$ 固定时，最优点是两点之间的加权费马点。
+\end{example}
+
+\subsection{构件的表面积问题}
+
+\begin{conceptbox}[问题描述]
+一个半球形与圆柱形相接的构件，要求在构件体积一定的条件下，确定构件的尺寸使其表面积最小。
+\end{conceptbox}
+
+设圆柱形底半径为 $r$，高为 $h$。
+
+\textbf{表面积}（目标函数）：
+\[
+S = 2\pi r^2 + 2\pi rh + \pi r^2 = 3\pi r^2 + 2\pi rh
+\]
+其中 $2\pi r^2$ 为半球面积，$2\pi rh$ 为圆柱侧面积，$\pi r^2$ 为圆柱底面积。
+
+\textbf{体积约束}：
+\[
+V = \frac{2}{3}\pi r^3 + \pi r^2 h = V_0 \quad \text{(常数)}
+\]
+
+\textbf{数学模型}：
+\[
+\begin{aligned}
+\min\quad & S = 3\pi r^2 + 2\pi rh \\
+\text{s.t.}\quad & \frac{2}{3}\pi r^3 + \pi r^2 h = V_0 \\
+& r \geq 0,\ h \geq 0
+\end{aligned}
+\]
+
+\begin{example}[构件表面积问题求解]
+设体积 $V_0 = \frac{5\pi}{3}$，求使表面积最小的 $r$ 和 $h$。
+
+\textbf{解}：由约束条件解出 $h$：
+\[
+h = \frac{V_0 - \frac{2}{3}\pi r^3}{\pi r^2} = \frac{5}{3r^2} - \frac{2r}{3}
+\]
+
+代入目标函数得无约束问题（关于 $r > 0$）：
+\[
+\min\quad S(r) = 3\pi r^2 + 2\pi r\left(\frac{5}{3r^2} - \frac{2r}{3}\right) = 3\pi r^2 + \frac{10\pi}{3r} - \frac{4\pi r^2}{3} = \frac{5\pi r^2}{3} + \frac{10\pi}{3r}
+\]
+
+求导：
+\[
+S'(r) = \frac{10\pi r}{3} - \frac{10\pi}{3r^2} = 0 \Rightarrow r^3 = 1 \Rightarrow r = 1
+\]
+
+验证二阶条件：
+\[
+S''(r) = \frac{10\pi}{3} + \frac{20\pi}{3r^3} > 0 \quad (r > 0)
+\]
+
+因此 $r^* = 1$ 是严格局部最小值点，代入得：
+\[
+h^* = \frac{5}{3} - \frac{2}{3} = 1,\quad S^* = \frac{5\pi}{3} + \frac{10\pi}{3} = 5\pi
+\]
+\end{example}
+
+\subsection{木梁设计问题}
+
+\begin{conceptbox}[问题描述]
+把圆形木材加工成矩形横截面的木梁，要求木梁高度不超过 $H$，横截面的惯性矩不小于 $I$，且高度介于宽度与 $\alpha$ 倍宽度之间。如何确定木梁尺寸使成本最小？
+\end{conceptbox}
+
+设矩形横截面的高度为 $x_1$，宽度为 $x_2$，则圆形木材半径：
+\[
+R = \frac{1}{2}\sqrt{x_1^2 + x_2^2}
+\]
+
+\textbf{目标函数}（成本与横截面积成正比）：
+\[
+\min\quad f = \pi R^2 = \frac{\pi}{4}(x_1^2 + x_2^2)
+\]
+
+\textbf{约束条件}：
+\begin{enumerate}[label=(\arabic*)]
+    \item 高度上限：$x_1 \leq H$
+    \item 惯性矩约束：$\frac{x_1^3 x_2}{12} \geq I$
+    \item 高度宽度关系：$x_2 \leq x_1 \leq \alpha x_2$
+    \item 非负约束：$x_1, x_2 \geq 0$
+\end{enumerate}
+
+\textbf{完整数学模型}：
+\[
+\begin{aligned}
+\min\quad & f = \frac{\pi}{4}(x_1^2 + x_2^2) \\
+\text{s.t.}\quad & x_1 \leq H \\
+& \frac{x_1^3 x_2}{12} \geq I \\
+& x_1 - x_2 \geq 0 \\
+& x_1 - \alpha x_2 \leq 0 \\
+& x_1, x_2 \geq 0
+\end{aligned}
+\]
+
+\begin{notebox}[关键观察]
+以上问题中，均含有决策变量的非线性函数，因此都属于\textbf{非线性规划问题}。
+\end{notebox}
+
+\subsection{Python代码：建模与可视化}
+
+\section{非线性规划的一般数学模型}\label{sec:general-model}
+
+\subsection{标准形式}
+
+一般非线性规划的数学模型可表示为：
+\[
+\begin{aligned}
+\min\quad & f(x) \\
+\text{s.t.}\quad & g_i(x) \leq 0,\quad i=1,2,\ldots,m \\
+& h_j(x) = 0,\quad j=1,2,\ldots,l
+\end{aligned}
+\]
+其中 $x = (x_1, x_2, \ldots, x_n)^T \in \mathbb{R}^n$，$f: \mathbb{R}^n \to \mathbb{R}$，$g_i: \mathbb{R}^n \to \mathbb{R}$，$h_j: \mathbb{R}^n \to \mathbb{R}$。
+
+\subsection{可行域与可行解}
+
+\begin{definition}[可行域]
+满足所有约束条件的解称为\textbf{可行解}（Feasible Solution）。所有可行解构成的集合称为\textbf{可行域}（Feasible Region）：
+\[
+\mathcal{X} = \{x \in \mathbb{R}^n \mid g_i(x) \leq 0,\ i=1,\ldots,m;\ h_j(x)=0,\ j=1,\ldots,l\}
+\]
+\end{definition}
+
+\textbf{模型简记}：
+\[
+\min\ f(x),\quad x \in \mathcal{X}
+\]
+
+\subsection{问题分类}
+
+\begin{conceptbox}[分类标准]
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{无约束问题}：$\mathcal{X} = \mathbb{R}^n$，即
+    \[\min\ f(x),\quad x \in \mathbb{R}^n\]
+    \item \textbf{有约束问题}：$\mathcal{X} \neq \mathbb{R}^n$
+    \item \textbf{经典极值问题}：只有等式约束，可用拉格朗日乘子法化为无约束问题
+\end{itemize}
+\end{conceptbox}
+
+\subsection{等价形式}
+
+\textbf{不等式约束的不同写法}：
+\begin{itemize}[itemsep=0.3em]
+    \item $g_i(x) \leq 0$ 可改写为 $-g_i(x) \geq 0$
+    \item 等式约束 $h_j(x) = 0$ 等价于两个不等式约束 $h_j(x) \leq 0$ 和 $-h_j(x) \leq 0$
+\end{itemize}
+
+\subsection{凸规划问题}
+
+\begin{definition}[凸规划]
+若目标函数 $f$ 和所有约束函数 $g_i$ 均为\textbf{凸函数}，等式约束 $h_j$ 为\textbf{仿射函数}，则称该问题为\textbf{凸规划问题}（Convex Programming）。
+\end{definition}
+
+\begin{property}[凸规划的优势]
+凸规划问题的重要性质：
+\begin{enumerate}[label=(\arabic*)]
+    \item 局部最优解就是全局最优解
+    \item 最优解集是凸集
+    \item 若目标函数是严格凸函数且存在极小点，则全局最优解唯一
+\end{enumerate}
+\end{property}
+
+\begin{example}[判断是否为凸规划]
+判断下列问题是否为凸规划：
+\[
+\begin{aligned}
+\min\quad & f(x) = x_1^2 + 2x_2^2 \\
+\text{s.t.}\quad & g_1(x) = x_1 + x_2 - 1 \leq 0 \\
+& g_2(x) = -x_1 \leq 0
+\end{aligned}
+\]
+
+\textbf{解}：
+\begin{enumerate}[label=Step \arabic*:, leftmargin=2em]
+    \item 检查 $f(x) = x_1^2 + 2x_2^2$：
+    \[
+    \nabla^2 f(x) = \begin{pmatrix} 2 & 0 \\ 0 & 4 \end{pmatrix}
+    \]
+    Hessian矩阵正定，故 $f$ 是严格凸函数。
+    
+    \item 检查 $g_1(x) = x_1 + x_2 - 1$：\textbf{仿射函数}（含常数项 $-1$），既是凸的也是凹的。
+    
+    \item 检查 $g_2(x) = -x_1$：线性函数（也是仿射），既是凸的也是凹的。
+    
+    \item 结论：所有约束为仿射（也是凸函数），目标函数严格凸，\textbf{这是凸规划问题}。
+\end{enumerate}
+\end{example}
+
+\begin{example}[Logistic 损失函数的 Hessian 与凹性]\label{ex:logistic-hessian}
+考虑损失函数
+\[
+l(\theta) = \sum_{i=1}^N \left[-\log(1 + \exp(-\theta^T u^{(i)})) - (1 - v^{(i)}) \theta^T u^{(i)}\right]
+\]
+其中 $u^{(i)}$ 为特征向量，$v^{(i)} \in \{0, 1\}$ 为标签。
+
+\textbf{解：}
+
+记 $z_i = \theta^T u^{(i)}$，$\sigma_i = 1/(1 + e^{-z_i})$。梯度为
+\[
+\nabla l(\theta) = \sum_{i=1}^N (v^{(i)} - \sigma_i) u^{(i)}
+\]
+Hessian 矩阵为
+\[
+\nabla^2 l(\theta) = -\sum_{i=1}^N \sigma_i(1 - \sigma_i) u^{(i)} (u^{(i)})^T
+\]
+对任意向量 $a$：
+\[
+a^T \nabla^2 l(\theta) a = -\sum_{i=1}^N \sigma_i(1 - \sigma_i) (a^T u^{(i)})^2 \leq 0
+\]
+因此 $\nabla^2 l(\theta) \preceq 0$，$l(\theta)$ 是\textbf{凹函数}（即 $-l$ 是凸函数，可用于凸优化求解）。
+\end{example}
+
+\section{非线性规划的直观理解}\label{sec:intuitive}
+
+\subsection{等值线与图解法}
+
+对于二元函数 $f(x_1, x_2)$，等值线定义为满足 $f(x_1, x_2) = c$（$c$ 为常数）的点的集合。
+
+\begin{example}[图解法]
+考虑非线性规划问题：
+\[
+\begin{aligned}
+\min\quad & f(x_1, x_2) = (x_1 - 2)^2 + (x_2 - 1)^2 \\
+\text{s.t.}\quad & x_1 + x_2 - 5 \leq 0 \\
+& x_1, x_2 \geq 0
+\end{aligned}
+\]
+
+\textbf{解：}
+
+\textbf{分析}：
+\begin{itemize}
+    \item 目标函数 $f$ 的等值线是以 $(2, 1)$ 为圆心的同心圆
+    \item 无约束最优解为 $(2, 1)$，此时 $f(2,1) = 0$
+    \item 检查 $(2, 1)$ 是否满足约束：$2 + 1 - 5 = -3 \leq 0$，满足！
+    \item 因此无约束最优解就是约束最优解
+\end{itemize}
+
+若约束改为 $x_1 + x_2 - 2 \leq 0$，则 $(2, 1)$ 不可行。此时最优解在约束边界 $x_1 + x_2 = 2$ 与等值线相切处取得。
+\end{example}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.72]
+    % 坐标轴
+    \draw[->,thick] (-0.3,0) -- (5.5,0) node[right] {$x_1$};
+    \draw[->,thick] (0,-0.3) -- (0,4.5) node[above] {$x_2$};
+    % 等值线（同心圆，以(2,1)为圆心）
+    \foreach \r/\c in {0.7/$1$, 1.4/$4$, 2.1/$9$, 2.8/$16$} {
+        \draw[blue!50] (2,1) circle (\r);
+        \node[blue!60,scale=0.7] at ({2+\r*0.707},{1+\r*0.707}) {\c};
+    }
+    % 约束线 x1+x2=5
+    \draw[red,thick] (5,0) -- (0,5) node[pos=0.7,left,sloped,scale=0.75] {\small $x_1\!+\!x_2\!=\!5$};
+    % 可行域
+    \fill[green!12] (0,0) -- (5,0) -- (0,5) -- cycle;
+    \draw[thick] (0,0) -- (5,0) -- (0,5) -- cycle;
+    % 约束线 x1+x2=2
+    \draw[red,dashed,thick] (2,0) -- (0,2) node[pos=0.5,left,sloped,scale=0.75] {\small $x_1\!+\!x_2\!=\!2$};
+    % 最优点（无约束最优 = 约束最优）
+    \fill[red] (2,1) circle (3pt) node[below right,scale=0.85] {\small $(2,1)$ 最优};
+    % 切点（约束 x1+x2=2 时的最优）
+    \fill[orange] (1.25,0.75) circle (2.5pt) node[below,scale=0.75] {\small 切点};
+    % 梯度箭头
+    \draw[->,thick,red!70!black] (2,1) -- (3.2,1.8) node[above right,scale=0.75] {$\nabla f$};
+\end{tikzpicture}
+\caption{非线性规划图解法：等值线（蓝色同心圆）与约束}
+\label{fig:nlp-contour}
+\end{figure}
+
+\subsection{局部最优解与全局最优解}
+
+\begin{definition}[局部最优解]
+$x^*$ 是\textbf{局部最优点}，是指存在可行域中以 $x^*$ 为中心的邻域 $N(x^*, \delta)$，使得
+\[
+\forall x \in N(x^*, \delta) \cap \mathcal{X},\quad f(x^*) \leq f(x)
+\]
+如果不存在等号（对 $x \neq x^*$），则称为\textbf{严格局部最优解}。
+\end{definition}
+
+\begin{definition}[全局最优解]
+若
+\[
+\forall x \in \mathcal{X},\quad f(x^*) \leq f(x)
+\]
+则 $x^*$ 为\textbf{全局最优解}。没有等号则为\textbf{严格全局最优解}。
+\end{definition}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.8]
+    % 坐标轴
+    \draw[->,thick] (-0.3,0) -- (7.5,0) node[right] {$x$};
+    \draw[->,thick] (0,-0.3) -- (0,4.2) node[above] {$f(x)$};
+    % 函数曲线（多峰函数）
+    \draw[very thick,blue]
+        (0.3,3.5) .. controls (0.8,2.5) and (1.2,1.8) .. (1.5,2)
+        .. controls (1.8,2.2) and (2.2,0.5) .. (2.5,0.3)
+        .. controls (3,0.2) and (3.5,1.5) .. (4,2.5)
+        .. controls (4.5,3.2) and (5,2) .. (5.5,1)
+        .. controls (6,0.5) and (6.5,1.5) .. (7,3);
+    \node[blue,scale=0.8] at (7.2,3.2) {$f$};
+    % 局部极小点
+    \fill[orange] (1.5,2) circle (2.5pt) node[above,scale=0.7] {\small 局部极小};
+    % 全局极小点
+    \fill[red] (2.5,0.3) circle (3pt) node[below,scale=0.75] {\small \textbf{全局极小}};
+    % 另一个局部极小
+    \fill[orange] (5.5,1) circle (2.5pt) node[above,scale=0.7] {\small 局部极小};
+    % 鞍点
+    \fill[gray] (4,2.5) circle (2pt) node[above,scale=0.65] {\small 鞍点};
+    % 局部极大
+    \fill[green!50!black] (0.8,2.7) circle (2pt) node[above,scale=0.65] {\small 局部极大};
+    % 邻域标注
+    \draw[red,dashed] (2.5,0.3) circle (0.6);
+    \node[red,scale=0.6,below] at (2.5,-0.3) {\small 邻域};
+\end{tikzpicture}
+\caption{局部最优解与全局最优解的对比（非凸函数可能有多个局部极小点）}
+\label{fig:local-global}
+\end{figure}
+
+\begin{notebox}[LP vs NLP]
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{线性规划}：最优解必在可行域的极点达到，且一定是全局最优解
+    \item \textbf{非线性规划}：最优解可能是可行域上的任一点，有局部和全局之分
+    \item \textbf{一般NLP算法}往往求出的是局部最优解
+    \item \textbf{凸规划}：极值点只有一个，既是局部最优点也是全局最优点
+\end{itemize}
+\end{notebox}
+
+\subsection{一阶与二阶近似}
+
+设目标函数 $f$ 在 $x^*$ 附近可微，考虑小扰动 $\Delta x$：
+
+\textbf{一阶近似}（Taylor展开）：
+\[
+f(x^* + \Delta x) - f(x^*) \approx \nabla f(x^*)^T \Delta x
+\]
+
+\textbf{二阶近似}：
+\[
+f(x^* + \Delta x) - f(x^*) \approx \nabla f(x^*)^T \Delta x + \frac{1}{2} \Delta x^T \nabla^2 f(x^*) \Delta x
+\]
+
+\begin{conceptbox}[关键观察]
+若 $x^*$ 是无约束局部极小点，则任意方向 $\Delta x$ 带来的一阶变化应非负：
+\[
+\nabla f(x^*)^T \Delta x \geq 0,\quad \forall \Delta x
+\]
+这要求 $\nabla f(x^*) = 0$（否则取 $\Delta x = -\nabla f(x^*)$ 可使左边为负）。
+\end{conceptbox}
+
+\section{无约束问题的最优性条件}\label{sec:optimality-unconstrained}
+
+\subsection{梯度与Hessian矩阵}
+
+\begin{definition}[梯度]
+多元函数 $f(x)$ 在 $x$ 处的\textbf{梯度}（Gradient）为：
+\[
+\nabla f(x) = \left(\frac{\partial f}{\partial x_1}, \frac{\partial f}{\partial x_2}, \ldots, \frac{\partial f}{\partial x_n}\right)^T
+\]
+\end{definition}
+
+\textbf{梯度的几何意义}：
+\begin{itemize}
+    \item 梯度方向是函数值增加最快的方向
+    \item 负梯度方向是函数值减小最快的方向（最速下降方向）
+    \item 梯度垂直于等值面/等值线
+\end{itemize}
+
+\begin{definition}[Hessian矩阵]
+多元函数 $f(x)$ 的二阶导数矩阵（Hessian矩阵）为：
+\[
+\nabla^2 f(x) = H(x) = \begin{pmatrix}
+\frac{\partial^2 f}{\partial x_1^2} & \frac{\partial^2 f}{\partial x_1 \partial x_2} & \cdots & \frac{\partial^2 f}{\partial x_1 \partial x_n} \\[6pt]
+\frac{\partial^2 f}{\partial x_2 \partial x_1} & \frac{\partial^2 f}{\partial x_2^2} & \cdots & \frac{\partial^2 f}{\partial x_2 \partial x_n} \\[6pt]
+\vdots & \vdots & \ddots & \vdots \\[6pt]
+\frac{\partial^2 f}{\partial x_n \partial x_1} & \frac{\partial^2 f}{\partial x_n \partial x_2} & \cdots & \frac{\partial^2 f}{\partial x_n^2}
+\end{pmatrix}
+\]
+\end{definition}
+
+\textbf{重要特例}：
+\begin{itemize}
+    \item 若 $f(x) = \frac{1}{2}x^T A x + b^T x + c$，$A$ 对称，则 $\nabla f(x) = Ax + b$，$\nabla^2 f(x) = A$
+    \item 若 $f(x) = b^T x$，则 $\nabla f(x) = b$，$\nabla^2 f(x) = 0$
+\end{itemize}
+
+\begin{example}[计算梯度和Hessian矩阵]
+设 $f(x_1, x_2) = 3x_1^2 - 4x_1x_2 + 2x_2^2 + x_1 - 2x_2$，求梯度和Hessian矩阵。
+
+\textbf{解}：
+\begin{align*}
+\frac{\partial f}{\partial x_1} &= 6x_1 - 4x_2 + 1 \\
+\frac{\partial f}{\partial x_2} &= -4x_1 + 4x_2 - 2
+\end{align*}
+
+\textbf{梯度}：
+\[
+\nabla f(x) = \begin{pmatrix} 6x_1 - 4x_2 + 1 \\ -4x_1 + 4x_2 - 2 \end{pmatrix}
+\]
+
+\textbf{Hessian矩阵}：
+\[
+\nabla^2 f(x) = \begin{pmatrix} 6 & -4 \\ -4 & 4 \end{pmatrix}
+\]
+
+验证正定性：特征值为 $5 \pm \sqrt{17} > 0$，故正定，函数严格凸。
+\end{example}
+
+\subsection{Taylor展开}\label{sec:taylor}
+
+\begin{property}[多元函数的Taylor展开]
+\[
+f(x + \Delta x) = f(x) + \nabla f(x)^T \Delta x + \frac{1}{2} \Delta x^T \nabla^2 f(x) \Delta x + O(\|\Delta x\|^3)
+\]
+
+\textbf{线性逼近}：$f(x + \Delta x) \approx f(x) + \nabla f(x)^T \Delta x$
+
+\textbf{二次逼近}：$f(x + \Delta x) \approx f(x) + \nabla f(x)^T \Delta x + \frac{1}{2} \Delta x^T \nabla^2 f(x) \Delta x$
+\end{property}
+
+\subsection{一阶必要条件}
+
+\begin{theorem}[一阶必要条件]\label{thm:first-order}
+设多元函数 $f(x)$ 在 $x^*$ 点可微，若 $x^*$ 是 $f(x)$ 的局部极值点，则
+\[
+\nabla f(x^*) = 0
+\]
+满足 $\nabla f(x^*) = 0$ 的点称为\textbf{驻点}（Stationary Point）或\textbf{平稳点}。
+\end{theorem}
+
+\textbf{证明}（反证法）：
+\begin{enumerate}[label=Step \arabic*:, leftmargin=2em]
+    \item 假设 $\nabla f(x^*) \neq 0$
+    \item 取方向 $d = -\nabla f(x^*)$，则对于充分小的 $\alpha > 0$：
+    \[
+    f(x^* + \alpha d) - f(x^*) \approx \alpha \nabla f(x^*)^T d = -\alpha \|\nabla f(x^*)\|^2 < 0
+    \]
+    \item 即 $f(x^* + \alpha d) < f(x^*)$，与 $x^*$ 是局部极小点矛盾
+    \item 故 $\nabla f(x^*) = 0$
+\end{enumerate}
+
+\subsection{二阶必要条件}
+
+\begin{theorem}[二阶必要条件]\label{thm:second-order-necessary}
+设多元函数 $f(x)$ 在 $x^*$ 点二次可微，若 $x^*$ 是 $f(x)$ 的局部极小点，则
+\[
+\nabla f(x^*) = 0 \quad \text{且} \quad \nabla^2 f(x^*) \succeq 0 \ \text{（半正定）}
+\]
+\end{theorem}
+
+\textbf{证明}（反证法）：
+\begin{enumerate}[label=Step \arabic*:, leftmargin=2em]
+    \item 由一阶必要条件，$\nabla f(x^*) = 0$ 已满足
+    \item 假设 $\nabla^2 f(x^*)$ 不是半正定的，则存在负特征值
+    \item 设 $d$ 为对应的特征向量，$\nabla^2 f(x^*) d = \lambda d$，$\lambda < 0$
+    \item Taylor展开：
+    \[
+    f(x^* + \alpha d) - f(x^*) = \frac{\alpha^2}{2} d^T \nabla^2 f(x^*) d + o(\alpha^2) = \frac{\alpha^2 \lambda}{2} \|d\|^2 + o(\alpha^2) < 0
+    \]
+    对充分小的 $\alpha$，这与局部最优矛盾。
+\end{enumerate}
+
+\subsection{二阶充分条件}
+
+\begin{theorem}[二阶充分条件 1]\label{thm:second-order-sufficient1}
+设多元函数 $f(x)$ 在 $x^*$ 点二次可微，若
+\[
+\nabla f(x^*) = 0 \quad \text{且} \quad \nabla^2 f(x^*) \succ 0 \ \text{（正定）}
+\]
+则 $x^*$ 是 $f(x)$ 的\textbf{严格局部极小点}。
+\end{theorem}
+
+\textbf{证明}：由 $\nabla^2 f(x^*) \succ 0$，最小特征值 $\lambda_{\min} > 0$。对充分小的 $\|\Delta x\|$：
+\[
+f(x^* + \Delta x) - f(x^*) \approx \frac{1}{2} \Delta x^T \nabla^2 f(x^*) \Delta x \geq \frac{\lambda_{\min}}{2} \|\Delta x\|^2 > 0
+\]
+
+\begin{theorem}[二阶充分条件 2]\label{thm:second-order-sufficient2}
+设多元函数 $f(x)$ 在 $x^*$ 的一个邻域内二次可微，若对该邻域内任意点：
+\begin{itemize}
+    \item $\nabla f(x^*) = 0$
+    \item $\nabla^2 f(x)$ 半正定（不要求在 $x^*$ 处正定）
+\end{itemize}
+则 $x^*$ 是局部极小点。
+\end{theorem}
+
+\begin{notebox}[注意区别]
+\begin{itemize}[itemsep=0.3em]
+    \item 半正定性：特征值最小可为0
+    \item 条件1要求 $x^*$ 处Hessian\textbf{正定}，结论更强（严格局部极小）
+    \item 条件2允许Hessian在 $x^*$ 处为半正定，但在邻域内半正定也可保证局部极小
+\end{itemize}
+\end{notebox}
+
+\subsection{利用最优性条件求解问题}
+
+\begin{algobox}[求解步骤]
+\begin{enumerate}[label=Step \arabic*:, leftmargin=2em]
+    \item \textbf{求驻点}：解 $\nabla f(x) = 0$，得到所有候选点
+    \item \textbf{二阶筛选}：计算各点的Hessian矩阵，滤除非半正定的点
+    \item \textbf{判定严格极小}：若Hessian正定，确认为严格局部极小点
+    \item \textbf{比较函数值}：检查所有满足必要条件的点，目标函数值最小的可能为全局极小点（需全局极小点存在的前提）
+\end{enumerate}
+\end{algobox}
+
+\begin{example}[利用最优性条件求解]\label{ex:optimality1}
+利用最优性条件求解
+\[
+\min\ f(x, y) = x^4 + y^4 - 4xy
+\]
+
+\textbf{解}：
+
+\textbf{Step 1}：求梯度并令其为零
+\[
+\nabla f = \begin{pmatrix} 4x^3 - 4y \\ 4y^3 - 4x \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \end{pmatrix}
+\]
+
+即 $x^3 = y$，$y^3 = x$。代入得 $x^9 = x$，即 $x(x^8 - 1) = 0$。
+
+四个驻点：
+\[
+x_1^* = (0, 0),\quad x_2^* = (1, 1),\quad x_3^* = (-1, -1),\quad x_4^* = (i, -i) \text{（舍去复数解）}
+\]
+实际驻点：$(0,0)$，$(1,1)$，$(-1,-1)$
+
+\textbf{Step 2}：计算Hessian矩阵
+\[
+\nabla^2 f(x, y) = \begin{pmatrix} 12x^2 & -4 \\ -4 & 12y^2 \end{pmatrix}
+\]
+
+\textbf{Step 3}：逐点判断
+\begin{itemize}
+    \item 在 $(0, 0)$：$\nabla^2 f(0,0) = \begin{pmatrix} 0 & -4 \\ -4 & 0 \end{pmatrix}$，特征值为 $\pm 4$，不定，\textbf{不是极值点}（鞍点）
+    \item 在 $(1, 1)$：$\nabla^2 f(1,1) = \begin{pmatrix} 12 & -4 \\ -4 & 12 \end{pmatrix}$，特征值为 $8, 16$，正定，\textbf{严格局部极小点}
+    \item 在 $(-1, -1)$：$\nabla^2 f(-1,-1) = \begin{pmatrix} 12 & -4 \\ -4 & 12 \end{pmatrix}$，特征值为 $8, 16$，正定，\textbf{严格局部极小点}
+\end{itemize}
+
+\textbf{Step 4}：比较函数值
+\[
+f(1,1) = 1 + 1 - 4 = -2,\quad f(-1,-1) = 1 + 1 - 4 = -2
+\]
+两个点函数值相同，都是全局极小点。
+\end{example}
+
+\begin{example}[利用最优性条件求解（含半正定情形）]\label{ex:optimality2}
+利用最优性条件求解
+\[
+\min\ f(x, y) = x^2 - 2xy + y^2 = (x-y)^2
+\]
+
+\textbf{解}：
+
+\textbf{Step 1}：求梯度
+\[
+\nabla f = \begin{pmatrix} 2x - 2y \\ -2x + 2y \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \end{pmatrix}
+\]
+解得 $x = y$，即直线 $x = y$ 上所有点都是驻点。
+
+\textbf{Step 2}：Hessian矩阵
+\[
+\nabla^2 f = \begin{pmatrix} 2 & -2 \\ -2 & 2 \end{pmatrix}
+\]
+特征值为 $4$ 和 $0$，半正定（非严格正定）。
+
+\textbf{Step 3}：结论
+由于 $f(x,y) = (x-y)^2 \geq 0$，且在直线 $x = y$ 上 $f = 0$，因此直线 $x = y$ 上所有点都是\textbf{全局最小点}。
+
+注意：虽然Hessian不是严格正定的，但由于函数本身是非负的二次函数，仍能判定全局最优性。
+\end{example}
+
+\section{凸无约束问题的最优性条件}\label{sec:convex-optimality}
+
+前面介绍的一般最优性条件只能用来研究局部最优解。对于一类特殊的函数——\textbf{凸函数}，可以获得全局最优性的充要条件。
+
+\subsection{次梯度与次微分}
+
+\begin{definition}[次梯度]
+设 $f$ 是定义在非空开凸集 $C \subset \mathbb{R}^n$ 上的凸函数（不一定处处可微）。函数 $f$ 在 $x$ 处的\textbf{次梯度}（Subgradient）是一个向量 $g \in \mathbb{R}^n$，使得对 $C$ 内任意 $y$：
+\[
+f(y) \geq f(x) + g^T(y - x)
+\]
+所有次梯度的集合称为\textbf{次微分}（Subdifferential），记为 $\partial f(x)$。
+\end{definition}
+
+\begin{property}[次微分的性质]
+\begin{itemize}[itemsep=0.3em]
+    \item $\partial f(x)$ 是\textbf{非空}的、\textbf{凸的}、\textbf{紧的}
+    \item $f$ 在 $x$ 可微，当且仅当 $\partial f(x) = \{\nabla f(x)\}$（单元素集合）
+\end{itemize}
+\end{property}
+
+\begin{example}[次梯度计算]
+求 $f(x) = |x|$ 的次微分。
+
+\textbf{解}：
+\[
+\partial f(x) = \begin{cases}
+\{-1\}, & x < 0 \\[4pt]
+[-1, 1], & x = 0 \\[4pt]
+\{1\}, & x > 0
+\end{cases}
+\]
+在 $x = 0$ 处，$f$ 不可微，次微分为区间 $[-1, 1]$。
+\end{example}
+
+\begin{example}[更多次微分计算]\label{ex:subdiff-more}
+\textbf{解：}
+
+\textbf{(a)} $f(x_1, x_2, x_3) = \max\{|x_1|, |x_2|, |x_3|\} = \|x\|_\infty$ 在 $x = 0$ 处。
+
+范数在原点的次微分等于其对偶范数单位球：
+\[
+\partial \|x\|_\infty \big|_{x=0} = \{g \in \mathbb{R}^3 : \|g\|_1 \leq 1\}
+\]
+
+\textbf{(b)} $f(x) = e^{|x|}$ 在 $x = 0$ 处（标量）。
+
+令 $h(t) = e^t$，$h'(0) = 1$，且 $\partial |x|\big|_{x=0} = [-1, 1]$。由单调可微凸函数与凸函数复合的次微分链式法则：
+\[
+\partial f(0) = h'(0) \cdot \partial |x|\big|_{x=0} = [-1, 1]
+\]
+
+\textbf{(c)} $f(x_1, x_2) = \max\{x_1 + x_2 - 1,\ x_1 - x_2 + 1\}$ 在 $(1, 1)$ 处。
+
+在 $(1, 1)$ 处两个仿射函数值均为 $1$，均为活跃函数。最大函数的次微分为活跃函数梯度的凸包：
+\[
+\partial f(1, 1) = \text{conv}\{(1, 1)^T, (1, -1)^T\} = \{(1, t)^T : t \in [-1, 1]\}
+\]
+\end{example}
+
+\subsection{凸函数的一阶充要条件}
+
+\begin{theorem}[凸函数的一阶充要条件]\label{thm:convex-first-order}
+设 $f$ 定义在非空开凸集 $C \subset \mathbb{R}^n$ 上且可微，则 $f$ 为凸函数的充要条件是：
+\[
+f(y) \geq f(x) + \nabla f(x)^T(y - x),\quad \forall x, y \in C
+\]
+如果为严格不等式（$x \neq y$），则为严格凸函数。
+\end{theorem}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.85]
+    % 坐标轴
+    \draw[->,thick] (-0.3,0) -- (5.5,0) node[right] {$x$};
+    \draw[->,thick] (0,-0.3) -- (0,4.2) node[above] {$f(x)$};
+    % 凸函数曲线（下凸，先降后升）
+    \draw[very thick,blue]
+        (0.3,3.8) .. controls (0.9,1.8) and (1.5,0.7) .. (2,0.6)
+        .. controls (2.5,0.5) and (3.5,2.0) .. (4.8,3.8);
+    \node[blue,scale=0.8] at (5,3.9) {$f$};
+    % 切点 x（在最小值附近，切线斜率 ≈ 0.8）
+    \fill[red] (2,0.6) circle (2.5pt) node[below left,scale=0.75] {\small $x$};
+    % 切线：斜率 0.8，过 (2, 0.6)，方程 y = 0.8x - 1.0
+    \draw[red,thick,dashed] (0.2,-0.84) -- (5,3.0);
+    \node[red,scale=0.75] at (4.2,3.5) {\small 切线 $f(x)\!+\!\nabla f(x)^T(y\!-\!x)$};
+    % 点 y（在曲线上，x ≈ 4）
+    \fill[black] (4,3.0) circle (2.5pt) node[above right,scale=0.75] {\small $y$};
+    \draw[dotted] (4,0) -- (4,3.0);
+    % 切线上对应点（在 x = 4 处，切线值 = 0.8×4-1 = 2.2）
+    \fill[red!50] (4,2.2) circle (2pt);
+    \draw[dotted] (4,2.2) -- (4,3.0);
+    % f(y) 与切线值的差距
+    \draw[<->,thick,green!50!black] (4.3,2.2) -- (4.3,3.0);
+    \node[green!50!black,scale=0.7,right] at (4.3,2.6) {\small $f(y)\!\geq\!$切线};
+    % y - x 标注
+    \draw[<->,gray] (2,-0.4) -- (4,-0.4);
+    \node[gray,scale=0.65,below] at (3,-0.4) {\small $y - x$};
+\end{tikzpicture}
+\caption{凸函数一阶充要条件：切线始终在函数图像下方}
+\label{fig:convex-tangent}
+\end{figure}
+
+\textbf{等价表述}：$x^*$ 是凸函数 $f$ 的全局极小点，当且仅当
+\[
+0 \in \partial f(x^*) \quad \text{（即 $x^*$ 是驻点）}
+\]
+
+\begin{example}[复合优化问题的一阶条件]
+设 $f(x) = g(x) + \lambda \|x\|_1$，$g$ 光滑凸，$\lambda > 0$。求最优性条件。
+
+\textbf{解}：
+
+由于 $\|x\|_1$ 在 $x_i = 0$ 处不可微，使用次梯度：
+\[
+(\partial \|x\|_1)_i = \begin{cases}
+\text{sign}(x_i), & x_i \neq 0 \\[-4pt]
+[-1, 1], & x_i = 0
+\end{cases}
+\]
+
+最优性条件：$0 \in \nabla g(x^*) + \lambda \partial \|x^*\|_1$
+
+即对每个分量：
+\[
+(\nabla g(x^*))_i \in \begin{cases}
+\{-\lambda\}, & x_i^* > 0 \\
+\{\lambda\}, & x_i^* < 0 \\
+[-\lambda, \lambda], & x_i^* = 0
+\end{cases}
+\]
+这正说明了LASSO等稀疏优化中解的稀疏性来源：当 $|(\nabla g(0))_i| \leq \lambda$ 时，$x_i^* = 0$。
+\end{example}
+
+\subsection{凸函数的二阶充要条件}
+
+\begin{theorem}[凸函数的二阶充要条件]\label{thm:convex-second-order}
+设 $f$ 定义在非空开凸集 $C \subset \mathbb{R}^n$ 上且二阶可微，则 $f$ 为凸函数的充要条件是：
+\[
+\nabla^2 f(x) \succeq 0 \quad \text{（Hessian矩阵半正定，$\forall x \in C$）}
+\]
+若每点的Hessian矩阵正定，则 $f$ 为严格凸函数。
+\end{theorem}
+
+\begin{notebox}[重要区别]
+\textbf{反之不成立}：严格凸函数只能导致Hessian半正定，不一定在每点都正定。例如 $f(x) = x^4$ 是严格凸的，但 $f''(0) = 0$。
+\end{notebox}
+
+\subsection{正定二次函数的性质}
+
+对于正定二次函数：
+\[
+f(x) = \frac{1}{2}x^T A x + b^T x + c,\quad A \succ 0
+\]
+
+\begin{property}[二次函数的极值]
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{唯一极小点}：$x^* = -A^{-1}b$
+    \item 等值面为以 $x^*$ 为中心的\textbf{同心椭球面族}
+    \item 大多数优化方法从二次函数模型导出
+\end{itemize}
+\end{property}
+
+\begin{definition}[二次终止性]
+一个算法用于解正定二次函数的无约束极小时，有限步迭代可达最优解，则称该算法具有\textbf{二次终止性}。
+\end{definition}
+
+\textbf{二次终止性 = 共轭方向 + 精确一维搜索}
+
+\subsection{凸函数的水平集}
+
+\begin{definition}[水平集]
+对于函数 $f$ 和实数 $\alpha$，水平集定义为：
+\[
+L_\alpha = \{x \in \dom(f) \mid f(x) \leq \alpha\}
+\]
+\end{definition}
+
+\begin{property}[凸函数的水平集]
+若 $f$ 是凸函数，则其任意水平集 $L_\alpha$ 都是凸集。反之不然！
+\end{property}
+
+\subsection{凸规划的全局最优性}
+
+\begin{theorem}[凸规划的局部即全局]
+设 $f$ 是定义在非空凸集 $X$ 上的凸函数，则 $f$ 的任意局部极小点就是其在 $X$ 上的\textbf{全局极小点}，且所有极小点形成一个凸集。
+\end{theorem}
+
+\textbf{证明}：
+\begin{enumerate}[label=Step \arabic*:, leftmargin=2em]
+    \item 假设 $x^*$ 为局部极小点，则存在邻域 $N(x^*, \delta)$ 使得
+    \[f(x) \geq f(x^*),\quad \forall x \in N(x^*, \delta) \cap X\]
+    \item 在 $X$ 中任取 $y$，连接 $x^*$ 和 $y$，存在 $\theta \in (0, 1)$ 使得
+    \[x = \theta y + (1-\theta)x^* \in N(x^*, \delta) \cap X\]
+    \item 由凸性：$f(x) \leq \theta f(y) + (1-\theta)f(x^*)$
+    \item 由于 $f(x) \geq f(x^*)$，代入得：
+    \[f(x^*) \leq \theta f(y) + (1-\theta)f(x^*) \Rightarrow f(x^*) \leq f(y)\]
+    \item 由 $y$ 的任意性，$x^*$ 为全局极小点
+\end{enumerate}
+
+\begin{example}[凸规划的验证与求解]
+验证并求解
+\[
+\min\ f(x, y) = x^2 + xy + y^2 - 3x - 3y
+\]
+
+\textbf{解}：
+
+\textbf{Step 1}：验证凸性
+\[
+\nabla^2 f = \begin{pmatrix} 2 & 1 \\ 1 & 2 \end{pmatrix}
+\]
+特征值为 $3$ 和 $1$，均正，Hessian正定，故 $f$ 严格凸。
+
+\textbf{Step 2}：求驻点
+\[
+\nabla f = \begin{pmatrix} 2x + y - 3 \\ x + 2y - 3 \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \end{pmatrix}
+\]
+解得 $x = y = 1$。
+
+\textbf{Step 3}：由严格凸性，$x^* = (1, 1)$ 是\textbf{唯一全局最小点}。
+\end{example}
+
+\section{解非线性规划问题的基本思路}\label{sec:solution-approach}
+
+实际问题直接应用最优性条件往往很困难：导数不存在、Hessian计算复杂、方程 $\nabla f(x) = 0$ 求解困难等。因此通常采用\textbf{数值迭代方法}。
+
+\subsection{迭代方法的基本框架}
+
+\begin{algobox}[最优化方法的基本结构]
+给定初始点 $x_0 \in \mathbb{R}^n$，$k = 0$，按以下规则迭代：
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \textbf{确定搜索方向} $d_k$：在 $x_k$ 点构造目标函数的下降方向
+    \item \textbf{确定步长因子} $\alpha_k > 0$：使目标函数值有某种意义的下降
+    \item \textbf{更新迭代点}：$x_{k+1} = x_k + \alpha_k d_k$
+    \item 若满足某种\textbf{终止条件}，则停止迭代，得到近似最优解；否则 $k \leftarrow k+1$，返回步骤1
+\end{enumerate}
+\end{algobox}
+
+\textbf{关键}：不同的步长因子 $\alpha_k$ 和不同的搜索方向 $d_k$ 构成了不同的优化方法。
+
+\subsection{下降方向}
+
+\begin{definition}[下降方向]
+方向 $d$ 是函数 $f$ 在 $x$ 处的\textbf{下降方向}，若存在 $\bar{\alpha} > 0$ 使得：
+\[
+f(x + \alpha d) < f(x),\quad \forall \alpha \in (0, \bar{\alpha})
+\]
+\end{definition}
+
+\textbf{判定条件}：若 $\nabla f(x)^T d < 0$，则 $d$ 是下降方向。
+
+\textbf{证明}：由Taylor展开
+\[
+f(x + \alpha d) - f(x) = \alpha \nabla f(x)^T d + o(\alpha)
+\]
+当 $\nabla f(x)^T d < 0$ 且 $\alpha$ 充分小时，$f(x + \alpha d) < f(x)$。
+
+\subsection{步长因子的确定——一维搜索}
+
+\textbf{最优步长}通过求解一维优化问题得到：
+\[
+\alpha_k = \argmin_{\alpha > 0} f(x_k + \alpha d_k)
+\]
+
+\begin{theorem}[最优步长的正交性]
+设 $x_{k+1} = x_k + \alpha_k d_k$ 是由精确线搜索得到的迭代点，则
+\[
+\nabla f(x_{k+1})^T d_k = 0
+\]
+即新点处的梯度与搜索方向正交。
+\end{theorem}
+
+\textbf{证明}：令 $\phi(\alpha) = f(x_k + \alpha d_k)$，则 $\alpha_k$ 满足 $\phi'(\alpha_k) = 0$，即
+\[
+\nabla f(x_k + \alpha_k d_k)^T d_k = \nabla f(x_{k+1})^T d_k = 0
+\]
+
+\subsection{终止条件}
+
+常用的终止准则（Termination Criterion）：
+
+\begin{conceptbox}[TC1：梯度准则]
+\[
+\|\nabla f(x_k)\| < \varepsilon_1
+\]
+表明梯度向量趋近于0，迭代序列收敛到平稳点。
+\end{conceptbox}
+
+\begin{conceptbox}[TC2：相邻迭代点准则]
+\[
+\|x_{k+1} - x_k\| < \varepsilon_2,\quad \text{或}\quad \frac{\|x_{k+1} - x_k\|}{\|x_k\|} < \varepsilon_2
+\]
+\end{conceptbox}
+
+\begin{conceptbox}[TC3：函数值变化准则]
+\[
+|f(x_{k+1}) - f(x_k)| < \varepsilon_3,\quad \text{或}\quad \frac{|f(x_{k+1}) - f(x_k)|}{|f(x_k)|} < \varepsilon_3
+\]
+\end{conceptbox}
+
+\begin{notebox}[Himmeblau终止准则（TC4）]
+当TC2和TC3矛盾时（一个大一个小），采用组合准则：
+\begin{itemize}
+    \item 若 $|f(x_{k+1})| > \varepsilon$ 且 $\frac{|f(x_{k+1}) - f(x_k)|}{|f(x_{k+1})|} \leq \varepsilon_2$ 且 $\frac{\|\nabla f(x_{k+1})\|^2}{\|\nabla f(x_k)\|^2} < \varepsilon_3$
+\end{itemize}
+
+对于有一阶导数信息且收敛不太快的算法（如共轭梯度法），推荐TC1 + TC4结合使用，一般可取 $\varepsilon_1 = 10^{-4}$，$\varepsilon_2 = \varepsilon_3 = 10^{-5}$。
+\end{notebox}
+
+\subsection{收敛速度}
+
+设迭代序列 $\{x_k\}$ 依某范数收敛到 $x^*$：
+
+\begin{definition}[Q-收敛速度]
+若存在实数 $p \geq 1$ 和与 $k$ 无关的正数 $c > 0$，使得
+\[
+\lim_{k \to \infty} \frac{\|x_{k+1} - x^*\|}{\|x_k - x^*\|^p} = c
+\]
+则称算法产生的点列具有 $p$ 阶Q-收敛速度：
+\begin{itemize}[itemsep=0.2em]
+    \item $p = 1$，$c \in (0, 1)$：\textbf{Q-线性收敛}
+    \item $p = 1$，$c = 0$ 或 $p \in (1, 2)$：\textbf{Q-超线性收敛}
+    \item $p = 2$：\textbf{Q-二阶（平方）收敛}
+\end{itemize}
+\end{definition}
+
+\begin{conceptbox}[直观感受]
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{线性收敛}：每步误差约缩小为原来的 $c$ 倍（$c < 1$）
+    \item \textbf{超线性收敛}：比任何线性速率都快
+    \item \textbf{二阶收敛}：每步有效数字约翻倍
+    \item \textbf{次线性收敛}：误差缩减越来越慢，如 $\frac{1}{k}$，$\frac{1}{k^2}$
+\end{itemize}
+\end{conceptbox}
+
+\subsection{共轭方向法}
+
+\begin{definition}[共轭方向]
+设 $A$ 为 $n \times n$ 对称正定矩阵，非零向量 $d^{(1)}, d^{(2)}, \ldots, d^{(m)} \in \mathbb{R}^n$ 满足：
+\[
+(d^{(i)})^T A d^{(j)} = 0,\quad \forall i \neq j
+\]
+则称这 $m$ 个向量为 $A$-\textbf{共轭}的。若 $A = I$（单位矩阵），则共轭等价于正交。
+\end{definition}
+
+\begin{property}[共轭向量的线性无关性]
+关于正定矩阵 $A$ 两两共轭的非零向量组必定线性无关。
+\end{property}
+
+\textbf{证明}：设 $\sum_{i=1}^{m} \beta_i d^{(i)} = 0$，左乘 $(d^{(j)})^T A$ 得 $\beta_j (d^{(j)})^T A d^{(j)} = 0$。由于 $A \succ 0$ 且 $d^{(j)} \neq 0$，故 $\beta_j = 0$。
+
+\begin{theorem}[共轭方向法基本定理]
+对于正定二次函数 $f(x) = \frac{1}{2}x^T A x + b^T x + c$，共轭方向法（GCD）至多经 $n$ 步精确线性搜索终止。
+\end{theorem}
+
+\begin{example}[共轭方向法迭代]
+用共轭方向法求解
+\[
+\min\ f(x, y) = x^2 + 2y^2
+\]
+取初始点 $x_0 = (2, 1)$，搜索方向 $d_0 = (-1, 0)$，$d_1 = (0, -1)$（关于 $A = \begin{pmatrix} 2 & 0 \\ 0 & 4 \end{pmatrix}$ 验证共轭性）。
+
+\textbf{解}：
+
+\textbf{Step 1}：沿 $d_0$ 搜索
+\[
+\min_\alpha\ f(2-\alpha, 1) = (2-\alpha)^2 + 2(1)^2
+\]
+求导：$-2(2-\alpha) = 0 \Rightarrow \alpha_0 = 2$
+\[
+x_1 = x_0 + 2d_0 = (2, 1) + 2(-1, 0) = (0, 1)
+\]
+
+\textbf{Step 2}：沿 $d_1$ 搜索
+\[
+\min_\alpha\ f(0, 1-\alpha) = 0 + 2(1-\alpha)^2
+\]
+求导：$-4(1-\alpha) = 0 \Rightarrow \alpha_1 = 1$
+\[
+x_2 = x_1 + 1d_1 = (0, 1) + (0, -1) = (0, 0) = x^*
+\]
+
+恰好 $n=2$ 步收敛到最优解！
+\end{example}
+
+\subsection{最优化算法分类概述}
+
+\begin{conceptbox}[使用导数的方法]
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{最速下降法}：$d_k = -\nabla f(x_k)$，线性收敛，可能有锯齿现象
+    \item \textbf{Newton法}：$d_k = -\nabla^2 f(x_k)^{-1} \nabla f(x_k)$，二阶收敛，但需Hessian正定
+    \item \textbf{共轭梯度法}：利用梯度构造共轭方向，超线性收敛
+    \item \textbf{拟Newton法（变尺度法）}：用近似矩阵 $G_k$ 代替Hessian的逆
+    \begin{itemize}
+        \item DFP公式、BFGS公式
+    \end{itemize}
+\end{itemize}
+\end{conceptbox}
+
+\begin{conceptbox}[不使用导数的方法（直接法）]
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{变量轮换法}：沿坐标轴方向轮换搜索
+    \item \textbf{单纯形法}（Nelder-Mead）：通过反射、扩张、收缩操作
+    \item 适用性强但收敛较慢
+\end{itemize}
+\end{conceptbox}
+
+\section{有约束问题的最优性条件简介}\label{sec:constrained-kkt}
+
+有约束优化问题的最优性条件（包括Lagrange乘子法和KKT条件）将在第~\ref{chap:constrained-theory}~章第~\ref{sec:ch6-kkt}~节中系统介绍。本节仅给出基本思路，详细内容请参见该章。
+\begin{conceptbox}[有约束问题的最优性条件概览]
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \textbf{等式约束}：Lagrange乘子法（见第~\ref{chap:constrained-theory}~章第~\ref{sec:ch6-kkt}~节）
+    \item \textbf{不等式约束}：KKT条件（见第~\ref{chap:constrained-theory}~章第~\ref{sec:ch6-kkt}~节）
+    \item \textbf{凸规划}：KKT条件 = 充要条件（见第~\ref{chap:constrained-theory}~章定理~\ref{thm:kkt-sufficient}~）\end{enumerate}
+\end{conceptbox}
+
+\begin{notebox}[Fenchel 共轭函数]
+函数 $f$ 的\textbf{Fenchel 共轭函数}定义为
+\[
+f^*(y) = \sup_x \{y^T x - f(x)\}
+\]
+
+\textbf{求解方法}：若 $f$ 可微且严格凸，令 $\nabla_x [y^T x - f(x)] = 0$，即 $y = \nabla f(x)$，解出 $x = x(y)$ 后代回 $f^*(y) = y^T x(y) - f(x(y))$。
+
+\textbf{常见例子}：
+\begin{itemize}[itemsep=0.2em]
+    \item $f(x) = \frac{1}{2}\|x\|_2^2$ $\Rightarrow$ $f^*(y) = \frac{1}{2}\|y\|_2^2$
+    \item $f(x) = \lambda\|x\|_1$ $\Rightarrow$ $f^*(y) = \begin{cases} 0, & \|y\|_\infty \leq \lambda \\ +\infty, & \text{otherwise} \end{cases}$
+\end{itemize}
+
+\textbf{与对偶的联系}：问题 $\min_x f(x) + g(Ax)$ 的 Fenchel 对偶为 $\max_y -f^*(-A^T y) - g^*(y)$。共轭函数是构造拉格朗日对偶、Fenchel 对偶和近端算法的基本工具。
+\end{notebox}
+
+\section{本章小结}\label{sec:ch3-summary}
+
+\subsection{本章知识框架}
+
+\begin{conceptbox}[非线性规划的数学模型——核心内容]
+\begin{enumerate}[label=\arabic*., leftmargin=2em]
+    \item \textbf{建模}：三个经典问题（选址、表面积、木梁设计）
+    \item \textbf{一般模型}：$\min\ f(x)$，s.t. $g_i(x) \leq 0$，$h_j(x) = 0$
+    \item \textbf{直观理解}：等值线、局部与全局最优
+    \item \textbf{无约束最优性条件}：
+    \begin{itemize}
+        \item 一阶必要条件：$\nabla f(x^*) = 0$
+        \item 二阶必要条件：$\nabla f(x^*) = 0$，$\nabla^2 f(x^*) \succeq 0$
+        \item 二阶充分条件：$\nabla f(x^*) = 0$，$\nabla^2 f(x^*) \succ 0$
+    \end{itemize}
+    \item \textbf{凸规划的最优性条件}：
+    \begin{itemize}
+        \item 凸函数的充要条件：$\nabla^2 f(x) \succeq 0$（全局）
+        \item 局部极小 = 全局极小
+    \end{itemize}
+    \item \textbf{迭代方法}：搜索方向 + 步长 + 终止条件 + 收敛速度
+    \item \textbf{KKT条件}：有约束问题的最优性条件
+\end{enumerate}
+\end{conceptbox}
+
+\subsection{关键公式汇总}
+
+\begin{table}[htbp]
+\centering
+\caption{最优性条件汇总}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{条件类型} & \textbf{内容} & \textbf{性质} \\
+\midrule
+一阶必要 & $\nabla f(x^*) = 0$ & 驻点 \\
+二阶必要 & $\nabla f(x^*) = 0$，$\nabla^2 f(x^*) \succeq 0$ & 局部极小 \\
+二阶充分1 & $\nabla f(x^*) = 0$，$\nabla^2 f(x^*) \succ 0$ & 严格局部极小 \\
+凸一阶 & $0 \in \partial f(x^*)$ & 全局极小（充要） \\
+凸二阶 & $\nabla^2 f(x) \succeq 0$，$\forall x$ & 凸函数（充要） \\
+KKT & 平稳性+可行性+对偶性+互补性 & 凸规划充要 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Python综合代码：求解无约束优化}
+
+\subsection{进一步阅读}
+
+\begin{notebox}[后续章节关联]
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{第四章}：线搜索方法（确定步长的具体算法）
+    \item \textbf{第五章}：无约束最优化方法（最速下降、Newton、共轭梯度、BFGS等）
+    \item \textbf{第六章}：有约束最优化方法（罚函数、内点法、SQP等）
+    \item \textbf{凸分析}：深入理解次梯度、共轭函数、强凸性等概念
+\end{itemize}
+\end{notebox}
+
+\subsection{关键概念速查}
+
+\begin{table}[htbp]
+\centering
+\caption{关键术语中英文对照}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{中文} & \textbf{英文} & \textbf{说明} \\
+\midrule
+梯度 & Gradient & 一阶导数向量 \\
+Hessian矩阵 & Hessian Matrix & 二阶导数矩阵 \\
+驻点 & Stationary Point & $\nabla f = 0$ 的点 \\
+次梯度 & Subgradient & 凸函数的推广梯度 \\
+次微分 & Subdifferential & 所有次梯度的集合 \\
+可行域 & Feasible Region & 满足约束的点集 \\
+起作用约束 & Active Constraint & 紧约束 \\
+拉格朗日乘子 & Lagrange Multiplier & KKT条件中的对偶变量 \\
+精确线搜索 & Exact Line Search & 最优步长搜索 \\
+二次终止性 & Quadratic Termination & $n$步收敛二次函数 \\
+共轭方向 & Conjugate Direction & $d_i^T A d_j = 0$ \\
+Q-线性收敛 & Q-linear Convergence & $\|e_{k+1}\| \leq c\|e_k\|$ \\
+Q-超线性收敛 & Q-superlinear & $\|e_{k+1}\|/\|e_k\| \to 0$ \\
+Q-二阶收敛 & Q-quadratic & $\|e_{k+1}\| \leq c\|e_k\|^2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\newpage
+
+% ==================== 第四章 一维搜索 ====================
