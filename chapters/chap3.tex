@@ -38,7 +38,7 @@
 \end{enumerate}
 
 \begin{example}[选址问题建模]
-\textbf{问题}：设有2个市场和1个仓库。市场1位于 $(0, 0)$，需求量 $q_1 = 5$；市场2位于 $(4, 0)$，需求量 $q_2 = 3$。仓库容量 $c_1 = 10$。求仓库最优位置。
+设有2个市场和1个仓库。市场1位于 $(0, 0)$，需求量 $q_1 = 5$；市场2位于 $(4, 0)$，需求量 $q_2 = 3$。仓库容量 $c_1 = 10$。求仓库最优位置。
 
 \textbf{解}：设仓库位置为 $(x, y)$，运输量为 $w_1, w_2$。
 
@@ -82,7 +82,7 @@ V = \frac{2}{3}\pi r^3 + \pi r^2 h = V_0 \quad \text{(常数)}
 \]
 
 \begin{example}[构件表面积问题求解]
-\textbf{问题}：设体积 $V_0 = \frac{5\pi}{3}$，求使表面积最小的 $r$ 和 $h$。
+设体积 $V_0 = \frac{5\pi}{3}$，求使表面积最小的 $r$ 和 $h$。
 
 \textbf{解}：由约束条件解出 $h$：
 \[
@@ -281,7 +281,7 @@ print(f"Analytical: r*=1, h*=1, S*={5*np.pi:.6f}")
 \end{property}
 
 \begin{example}[判断是否为凸规划]
-\textbf{问题}：判断下列问题是否为凸规划：
+判断下列问题是否为凸规划：
 \[
 \begin{aligned}
 \min\quad & f(x) = x_1^2 + 2x_2^2 \\
@@ -571,7 +571,7 @@ plt.show()
 \end{itemize}
 
 \begin{example}[计算梯度和Hessian矩阵]
-\textbf{问题}：设 $f(x_1, x_2) = 3x_1^2 - 4x_1x_2 + 2x_2^2 + x_1 - 2x_2$，求梯度和Hessian矩阵。
+设 $f(x_1, x_2) = 3x_1^2 - 4x_1x_2 + 2x_2^2 + x_1 - 2x_2$，求梯度和Hessian矩阵。
 
 \textbf{解}：
 \begin{align*}
@@ -690,7 +690,7 @@ f(x^* + \Delta x) - f(x^*) \approx \frac{1}{2} \Delta x^T \nabla^2 f(x^*) \Delta
 \end{algobox}
 
 \begin{example}[利用最优性条件求解]\label{ex:optimality1}
-\textbf{问题}：利用最优性条件求解
+利用最优性条件求解
 \[
 \min\ f(x, y) = x^4 + y^4 - 4xy
 \]
@@ -730,7 +730,7 @@ f(1,1) = 1 + 1 - 4 = -2,\quad f(-1,-1) = 1 + 1 - 4 = -2
 \end{example}
 
 \begin{example}[利用最优性条件求解（含半正定情形）]\label{ex:optimality2}
-\textbf{问题}：利用最优性条件求解
+利用最优性条件求解
 \[
 \min\ f(x, y) = x^2 - 2xy + y^2 = (x-y)^2
 \]
@@ -808,7 +808,7 @@ f(y) \geq f(x) + g^T(y - x)
 \end{property}
 
 \begin{example}[次梯度计算]
-\textbf{问题}：求 $f(x) = |x|$ 的次微分。
+求 $f(x) = |x|$ 的次微分。
 
 \textbf{解}：
 \[
@@ -895,7 +895,7 @@ f(y) \geq f(x) + \nabla f(x)^T(y - x),\quad \forall x, y \in C
 \]
 
 \begin{example}[复合优化问题的一阶条件]
-\textbf{问题}：设 $f(x) = g(x) + \lambda \|x\|_1$，$g$ 光滑凸，$\lambda > 0$。求最优性条件。
+设 $f(x) = g(x) + \lambda \|x\|_1$，$g$ 光滑凸，$\lambda > 0$。求最优性条件。
 
 \textbf{解}：
 
@@ -987,7 +987,7 @@ L_\alpha = \{x \in \dom(f) \mid f(x) \leq \alpha\}
 \end{enumerate}
 
 \begin{example}[凸规划的验证与求解]
-\textbf{问题}：验证并求解
+验证并求解
 \[
 \min\ f(x, y) = x^2 + xy + y^2 - 3x - 3y
 \]
@@ -1175,7 +1175,7 @@ f(x + \alpha d) - f(x) = \alpha \nabla f(x)^T d + o(\alpha)
 \end{theorem}
 
 \begin{example}[共轭方向法迭代]
-\textbf{问题}：用共轭方向法求解
+用共轭方向法求解
 \[
 \min\ f(x, y) = x^2 + 2y^2
 \]

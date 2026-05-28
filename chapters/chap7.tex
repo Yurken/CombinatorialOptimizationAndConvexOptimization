@@ -91,7 +91,7 @@ J(\theta) = \begin{pmatrix}
 \end{notebox}
 
 \begin{example}[高斯-牛顿法迭代两次]\label{ex:gn}
-\textbf{问题}：用高斯-牛顿法拟合 $f(x, \theta) = \theta_1 e^{\theta_2 x}$，数据点 $(0, 2), (1, 3)$。初始 $\theta_0 = (1, 0)^T$。
+用高斯-牛顿法拟合 $f(x, \theta) = \theta_1 e^{\theta_2 x}$，数据点 $(0, 2), (1, 3)$。初始 $\theta_0 = (1, 0)^T$。
 
 \textbf{解}：残量 $r_1 = \theta_1 - 2$，$r_2 = \theta_1 e^{\theta_2} - 3$
 
@@ -232,7 +232,7 @@ x + \alpha d \in \mathcal{X},\quad \forall \alpha \in [0, \bar{\alpha}]
 \end{theorem}
 
 \begin{example}[验证最优性条件]
-\textbf{问题}：$\min\ f(x) = x_1 + x_2$，s.t. $x_1^2 + x_2^2 = 2$。验证 $x^* = (-1, -1)$ 是否满足一阶必要条件。
+$\min\ f(x) = x_1 + x_2$，s.t. $x_1^2 + x_2^2 = 2$。验证 $x^* = (-1, -1)$ 是否满足一阶必要条件。
 
 \textbf{解}：
 \[
@@ -342,7 +342,7 @@ KKT条件的详细推导与证明见第~\ref{chap:constrained-theory}~章第~\re
 \end{algobox}
 
 \begin{example}[可行方向法——迭代两次]\label{ex:fd}
-\textbf{问题}：$\min\ f(x) = 2x_1^2 + 2x_2^2 - 2x_1 x_2 - 4x_1 - 6x_2$
+$\min\ f(x) = 2x_1^2 + 2x_2^2 - 2x_1 x_2 - 4x_1 - 6x_2$
 s.t. $x_1 + x_2 \leq 2$，$x_1 + 5x_2 \leq 5$，$x_1 \geq 0$，$x_2 \geq 0$。
 取 $x_0 = (0, 0)^T$，$\varepsilon = 0.001$。
 
@@ -557,7 +557,7 @@ b(x) = -\sum_{i=1}^{m} \ln(-g_i(x))
 \end{theorem}
 
 \begin{example}[内点法——迭代两次]\label{ex:interior}
-\textbf{问题}：$\min\ f(x) = x^2$，s.t. $x \geq 2$。用对数障碍函数，$x_0 = 3$，$\mu_0 = 1$。
+$\min\ f(x) = x^2$，s.t. $x \geq 2$。用对数障碍函数，$x_0 = 3$，$\mu_0 = 1$。
 
 \textbf{解}：约束改写为 $g(x) = 2 - x \leq 0$。
 
@@ -741,7 +741,7 @@ print(f"迭代次数: {iters2}")
 \]
 
 \begin{example}[增广拉格朗日法——迭代两次]\label{ex:alm}
-\textbf{问题}：$\min\ f(x) = x^2$，s.t. $x = 1$。
+$\min\ f(x) = x^2$，s.t. $x = 1$。
 
 \textbf{解：}
 
@@ -971,7 +971,7 @@ y_{k+1} &= y_k + \rho(Ax_{k+1} + Bz_{k+1} - c)
 \end{notebox}
 
 \begin{example}[LASSO的ADMM求解]
-\textbf{问题}：$\min\ \frac{1}{2}\|Ax - b\|^2 + \lambda\|z\|_1$ s.t. $x - z = 0$
+$\min\ \frac{1}{2}\|Ax - b\|^2 + \lambda\|z\|_1$ s.t. $x - z = 0$
 
 \textbf{解：}
 

@@ -172,7 +172,7 @@ x_{k+1} = \argmin_{x \in \Omega}\ \left\{\theta(x) + \frac{r}{2}\|x - x_k\|^2\ri
 \end{property}
 
 \begin{example}[PPA的迭代]
-\textbf{问题}：$\min\ f(x) = x^2$ s.t. $x \in [1, 3]$，$x_0 = 3$，$r = 1$。
+$\min\ f(x) = x^2$ s.t. $x \in [1, 3]$，$x_0 = 3$，$r = 1$。
 
 \textbf{解}：PPA子问题：
 \[
@@ -400,7 +400,7 @@ $T_{\min}$ & 终止温度 & 接近0的正值 \\
 \end{table}
 
 \begin{example}[模拟退火求解函数极小值]\label{ex:sa}
-\textbf{问题}：用SA求解 $\min\ f(x) = x^2 - 4x + 4 = (x-2)^2$，$x \in [0, 5]$。
+用SA求解 $\min\ f(x) = x^2 - 4x + 4 = (x-2)^2$，$x \in [0, 5]$。
 初始 $x_0 = 0$，$T_0 = 10$，$\alpha = 0.9$，每个温度迭代2次。
 
 \textbf{解}：
@@ -538,7 +538,7 @@ print(f"10次运行最优值: min={min(results):.4f}, mean={np.mean(results):.4f
 \subsection{编码方式}
 
 \begin{example}[二进制编码]
-\textbf{问题}：$\max\ f(x) = x^2$，$x \in [0, 31]$，$x$ 为整数。
+$\max\ f(x) = x^2$，$x \in [0, 31]$，$x$ 为整数。
 
 \textbf{解：}
 
@@ -592,7 +592,7 @@ p_i = \frac{\text{fitness}(x_i)}{\sum_j \text{fitness}(x_j)}
 \end{conceptbox}
 
 \begin{example}[遗传算法——迭代两次]\label{ex:ga}
-\textbf{问题}：$\max\ f(x) = x^2$，$x \in [0, 31]$ 整数。群体大小 $N=4$，5位二进制编码。
+$\max\ f(x) = x^2$，$x \in [0, 31]$ 整数。群体大小 $N=4$，5位二进制编码。
 
 \textbf{解：}
 
@@ -726,7 +726,7 @@ x_i^{t+1} &= x_i^t + v_i^{t+1}
 \end{algobox}
 
 \begin{example}[PSO迭代两次]\label{ex:pso}
-\textbf{问题}：$\min\ f(x) = (x-3)^2$，1维，2个粒子。
+$\min\ f(x) = (x-3)^2$，1维，2个粒子。
 
 \textbf{解：}
 
@@ -1117,7 +1117,7 @@ print(f"GWO: f* = {f_gwo:.10f}")
 \subsection{旅行商问题（TSP）}
 
 \begin{conceptbox}[TSP的SA求解]
-\textbf{问题}：给定 $n$ 个城市，求访问每个城市恰好一次并返回起点的最短路径。
+给定 $n$ 个城市，求访问每个城市恰好一次并返回起点的最短路径。
 
 \textbf{邻域定义}（2-opt）：任选路径中的两条边，反转它们之间的子路径。
 
