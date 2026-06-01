@@ -1,7 +1,7 @@
 \documentclass[12pt,a4paper]{report}
 
 % ==================== 基础包 ====================
-\usepackage{ctex}
+\usepackage[fontset=fandol]{ctex}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{geometry}
 \geometry{a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
@@ -11,6 +11,27 @@
 \usepackage{enumitem,booktabs,array,multirow,tabularx,makecell}
 \usepackage{algorithm,algpseudocode}
 \usepackage{float}
+
+% 代码高亮
+\usepackage{listings}
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray!70}\itshape,
+    stringstyle=\color{orange},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    frame=single,
+    breaklines=true,
+    showstringspaces=false,
+    tabsize=4,
+    backgroundcolor=\color{gray!5},
+    captionpos=b,
+    abovecaptionskip=0.5em,
+    belowcaptionskip=0.3em
+}
 
 % 增强盒子
 \usepackage{tcolorbox}
@@ -86,6 +107,18 @@
     left=5pt,right=5pt,top=3pt,bottom=3pt
 }
 
+\newtcolorbox{codebox}[1][]{
+    colback=gray!5!white,
+    colframe=gray!50!black,
+    fonttitle=\bfseries\color{white},
+    colbacktitle=gray!50!black,
+    title={#1},
+    breakable,
+    sharp corners,
+    boxrule=0.5pt,
+    left=3pt,right=3pt,top=2pt,bottom=2pt
+}
+
 \newtcolorbox{kktbox}[1][]{
     colback=purple!5!white,
     colframe=purple!50!black,
@@ -111,7 +144,7 @@
 % ==================== 标题信息 ====================
 \title{
     \textbf{\Huge 组合优化与凸优化}\\[0.8em]
-    \Large 课程完整笔记（无代码版）\\[0.3em]
+    \Large 课程完整笔记\\[0.3em]
 
 }
 \author{

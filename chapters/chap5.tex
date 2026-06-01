@@ -1490,22 +1490,22 @@ d_1 = -H_1 g_1 = -I \begin{bmatrix} -4 \\ 2 \end{bmatrix} = \begin{bmatrix} 4 \\
 
 令 $x_1 + \alpha_1 d_1 = (1+4\alpha_1,\ 1-2\alpha_1)^T$，代入 $f$ 求 $\alpha_1$：
 \[
-\phi(\alpha_1) = f(1+4\alpha_1,\ 1-2\alpha_1) = 40\alpha_1^2 - 24\alpha_1 - 1
+\phi(\alpha_1) = f(1+4\alpha_1,\ 1-2\alpha_1) = 40\alpha_1^2 - 20\alpha_1 - 3
 \]
-$\phi'(\alpha_1) = 80\alpha_1 - 24 = 0$，得 $\alpha_1 = \dfrac{3}{10}$。
+$\phi'(\alpha_1) = 80\alpha_1 - 20 = 0$，得 $\alpha_1 = \dfrac{1}{4}$。
 
 \[
-x_2 = \begin{bmatrix} 1 \\ 1 \end{bmatrix} + \frac{3}{10}\begin{bmatrix} 4 \\ -2 \end{bmatrix} = \begin{bmatrix} 11/5 \\ 4/5 \end{bmatrix}
+x_2 = \begin{bmatrix} 1 \\ 1 \end{bmatrix} + \frac{1}{4}\begin{bmatrix} 4 \\ -2 \end{bmatrix} = \begin{bmatrix} 2 \\ 1/2 \end{bmatrix}
 \]
 
 \textbf{Step 3：计算 $s_1, y_1$}
 
 \[
-g_2 = \nabla f\!\left(\frac{11}{5}, \frac{4}{5}\right) = \left(\frac{6}{5},\, -\frac{6}{5}\right)^T
+g_2 = \nabla f\!\left(2, \frac{1}{2}\right) = (-1,\,-2)^T
 \]
 \[
-s_1 = x_2 - x_1 = \left(\frac{6}{5},\, -\frac{6}{5}\right)^T, \quad
-y_1 = g_2 - g_1 = \left(\frac{26}{5},\, -\frac{16}{5}\right)^T
+s_1 = x_2 - x_1 = \left(1,\,-\frac{1}{2}\right)^T, \quad
+y_1 = g_2 - g_1 = (3,\,-4)^T
 \]
 
 \textbf{Step 4：DFP更新}
@@ -1517,33 +1517,42 @@ H_2 = H_1 - \frac{H_1 y_1 y_1^T H_1}{y_1^T H_1 y_1} + \frac{s_1 s_1^T}{y_1^T s_1
 
 逐项计算：
 \[
-y_1^T H_1 y_1 = y_1^T y_1 = \frac{676 + 256}{25} = \frac{932}{25}
+y_1^T H_1 y_1 = y_1^T y_1 = 25
 \]
 \[
-\frac{H_1 y_1 y_1^T H_1}{y_1^T H_1 y_1} = \frac{1}{932}\begin{bmatrix} 676 & -416 \\ -416 & 256 \end{bmatrix}
-= \begin{bmatrix} 169/233 & -104/233 \\ -104/233 & 64/233 \end{bmatrix}
+\frac{H_1 y_1 y_1^T H_1}{y_1^T H_1 y_1}
+= \frac{1}{25}\begin{bmatrix} 9 & -12 \\ -12 & 16 \end{bmatrix}
 \]
 \[
-y_1^T s_1 = \frac{156 + 96}{25} = \frac{252}{25}, \quad
-\frac{s_1 s_1^T}{y_1^T s_1} = \frac{1}{252}\begin{bmatrix} 36 & -36 \\ -36 & 36 \end{bmatrix}
-= \begin{bmatrix} 1/7 & -1/7 \\ -1/7 & 1/7 \end{bmatrix}
+y_1^T s_1 = 5,\quad
+\frac{s_1 s_1^T}{y_1^T s_1}
+= \frac{1}{5}\begin{bmatrix} 1 & -1/2 \\ -1/2 & 1/4 \end{bmatrix}
+= \begin{bmatrix} 1/5 & -1/10 \\ -1/10 & 1/20 \end{bmatrix}
 \]
 
 合并得：
 \[
-H_2 = \begin{bmatrix} 1 - \dfrac{169}{233} + \dfrac{1}{7} & \dfrac{104}{233} - \dfrac{1}{7} \\[8pt]
-\dfrac{104}{233} - \dfrac{1}{7} & 1 - \dfrac{64}{233} + \dfrac{1}{7} \end{bmatrix}
-= \begin{bmatrix} \dfrac{681}{1631} & \dfrac{495}{1631} \\[6pt] \dfrac{495}{1631} & \dfrac{1416}{1631} \end{bmatrix}
-\approx \begin{bmatrix} 0.418 & 0.304 \\ 0.304 & 0.868 \end{bmatrix}
+H_2 = \begin{bmatrix}
+1-\dfrac{9}{25}+\dfrac{1}{5} & \dfrac{12}{25}-\dfrac{1}{10} \\[8pt]
+\dfrac{12}{25}-\dfrac{1}{10} & 1-\dfrac{16}{25}+\dfrac{1}{20}
+\end{bmatrix}
+= \begin{bmatrix} \dfrac{21}{25} & \dfrac{19}{50} \\[6pt] \dfrac{19}{50} & \dfrac{41}{100} \end{bmatrix}
+\approx \begin{bmatrix} 0.84 & 0.38 \\ 0.38 & 0.41 \end{bmatrix}
 \]
 
 \textbf{Step 5：新的搜索方向}
 \[
-d_2 = -H_2 g_2 = -\begin{bmatrix} 681/1631 & 495/1631 \\ 495/1631 & 1416/1631 \end{bmatrix}
-\begin{bmatrix} 6/5 \\ -6/5 \end{bmatrix}
-= \begin{bmatrix} -\dfrac{1116}{8155} \\[6pt] \dfrac{5526}{8155} \end{bmatrix}
-\approx \begin{bmatrix} -0.137 \\ 0.678 \end{bmatrix}
+d_2 = -H_2 g_2 = -\begin{bmatrix} 21/25 & 19/50 \\ 19/50 & 41/100 \end{bmatrix}
+\begin{bmatrix} -1 \\ -2 \end{bmatrix}
+= \begin{bmatrix} 8/5 \\ 6/5 \end{bmatrix}
 \]
+
+继续做精确线搜索可得 $\alpha_2 = 5/4$，从而
+\[
+x_3 = x_2 + \alpha_2 d_2 = \begin{bmatrix} 4 \\ 2 \end{bmatrix},\quad
+\nabla f(x_3)=0
+\]
+即达到全局最优点 $x^*=(4,2)^T$，$f^*=-8$。
 \end{example}
 
 \begin{algorithm}[H]

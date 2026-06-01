@@ -155,6 +155,298 @@
 \end{enumerate}
 \end{conceptbox}
 
+\section{优化建模}\label{sec:optimization-modeling}
+
+优化建模的任务，是把一个真实问题转化为可以分析、可以计算、可以验证的数学优化问题。一个好的模型不一定最复杂，但必须准确表达决策目标、可行限制和数据假设。
+
+\subsection{建模技术}
+
+\begin{conceptbox}[优化建模的基本结构]
+一个优化模型通常由以下部分组成：
+\[
+\min_{x \in \mathcal{X}} f(x)
+\]
+其中 $x$ 是决策变量，$f(x)$ 是目标函数，$\mathcal{X}$ 是由约束条件定义的可行域。建模时需要依次回答：
+\begin{enumerate}[label=(\arabic*), itemsep=0.3em]
+    \item \textbf{决策变量是什么}：哪些量由我们决定？
+    \item \textbf{目标函数是什么}：什么叫"好"？是成本小、收益大、误差小，还是风险低？
+    \item \textbf{约束条件是什么}：哪些物理、资源、逻辑、预算或业务规则必须满足？
+    \item \textbf{数据和参数是什么}：哪些量来自观测、统计估计或先验假设？
+    \item \textbf{模型类别是什么}：线性、凸、非凸、整数、随机，还是动态优化？
+\end{enumerate}
+\end{conceptbox}
+
+\subsubsection{目标函数的设计}
+
+目标函数是优化模型的"价值判断"。不同目标函数反映不同的误差度量、风险偏好和业务优先级。
+
+\begin{notebox}[常见目标函数设计方式]
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{误差最小化}：如最小二乘 $\sum_i (y_i-\hat y_i)^2$，适合高斯噪声假设。
+    \item \textbf{成本最小化}：如生产、运输、调度中的总成本 $\sum_i c_i x_i$。
+    \item \textbf{收益最大化}：可等价写成最小化负收益 $-\sum_i r_i x_i$。
+    \item \textbf{风险控制}：如加入方差、最大损失、条件风险价值等惩罚项。
+    \item \textbf{正则化}：在经验损失外加入 $R(x)$，例如
+    \[
+    \min_x\ \ell(x) + \lambda R(x)
+    \]
+    其中 $\lambda$ 控制拟合数据与模型复杂度之间的权衡。
+    \item \textbf{多目标标量化}：多个目标可组合为
+    \[
+    \min_x\ \sum_{j=1}^{m} \alpha_j f_j(x),\quad \alpha_j \geq 0
+    \]
+    权重 $\alpha_j$ 表示不同目标的重要程度。
+\end{itemize}
+\end{notebox}
+
+\subsubsection{约束的设计}
+
+约束定义了"允许做什么"。很多优化模型的难点不在目标函数，而在如何把现实限制准确写成数学形式。
+
+\begin{conceptbox}[常见约束类型]
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{资源约束}：预算、容量、时间、人力等限制，例如 $a^T x \leq b$。
+    \item \textbf{守恒约束}：流量平衡、质量守恒、概率归一化，例如 $\sum_i p_i = 1$。
+    \item \textbf{边界约束}：变量上下界，例如 $l_i \leq x_i \leq u_i$。
+    \item \textbf{逻辑约束}：是否选择、是否启用，常用二进制变量 $z_i \in \{0,1\}$ 表示。
+    \item \textbf{结构约束}：稀疏性、低秩性、正定性、单调性等，例如 $X \succeq 0$。
+    \item \textbf{概率约束}：约束以一定概率成立，例如 $\mathbb{P}(g(x,\xi)\leq0)\geq 1-\epsilon$。
+\end{itemize}
+\end{conceptbox}
+
+\begin{notebox}[建模检查清单]
+得到一个模型后，应检查：量纲是否一致；可行域是否为空；目标是否有下界或上界；参数是否可获得；模型规模是否可计算；解是否能转化为真实决策。
+\end{notebox}
+
+\subsection{回归分析}
+
+\subsubsection{概述}
+
+回归分析研究输入变量 $a_i \in \R^n$ 与响应变量 $y_i \in \R$ 之间的数量关系。其基本思想是选择一个模型 $h(a_i;x)$，使预测值尽可能接近观测值。
+
+\begin{definition}[经验风险最小化]
+给定样本 $\{(a_i,y_i)\}_{i=1}^m$，回归问题常写为
+\[
+\min_x\ \frac{1}{m}\sum_{i=1}^{m} \ell(h(a_i;x),y_i) + \lambda R(x)
+\]
+其中 $\ell$ 是损失函数，$R$ 是正则化项。损失函数刻画拟合误差，正则化项刻画模型复杂度或先验结构。
+\end{definition}
+
+\subsubsection{线性回归模型}
+
+线性回归假设响应变量可以由特征的线性组合近似：
+\[
+y_i \approx a_i^T x
+\]
+采用平方损失时，得到最小二乘模型：
+\[
+\min_x\ \frac{1}{2}\|Ax-y\|_2^2
+\]
+其中 $A$ 的第 $i$ 行为 $a_i^T$，$y=(y_1,\ldots,y_m)^T$。若 $A^T A$ 可逆，则最优解满足正规方程
+\[
+A^T A x = A^T y,\quad x^*=(A^T A)^{-1}A^T y
+\]
+
+\subsubsection{正则化线性回归模型}
+
+当特征相关、样本不足或数据有噪声时，普通最小二乘可能不稳定。正则化通过限制模型复杂度改善泛化能力。
+
+\begin{conceptbox}[常见正则化回归]
+\begin{itemize}[itemsep=0.3em]
+    \item \textbf{岭回归}：
+    \[
+    \min_x\ \frac{1}{2}\|Ax-y\|_2^2 + \frac{\lambda}{2}\|x\|_2^2
+    \]
+    $\ell_2$ 正则化使问题强凸，缓解病态性。
+    \item \textbf{LASSO}：
+    \[
+    \min_x\ \frac{1}{2}\|Ax-y\|_2^2 + \lambda\|x\|_1
+    \]
+    $\ell_1$ 正则化倾向于产生稀疏解，可用于特征选择。
+    \item \textbf{Elastic Net}：
+    \[
+    \min_x\ \frac{1}{2}\|Ax-y\|_2^2 + \lambda_1\|x\|_1+\frac{\lambda_2}{2}\|x\|_2^2
+    \]
+    同时兼顾稀疏性和数值稳定性。
+\end{itemize}
+\end{conceptbox}
+
+\subsection{逻辑回归}
+
+逻辑回归用于二分类问题。设 $y_i\in\{-1,1\}$，线性分类器为 $a_i^T x$，则逻辑损失为
+\[
+\ell_i(x)=\log\left(1+\exp(-y_i a_i^T x)\right)
+\]
+带正则化的逻辑回归模型为
+\[
+\min_x\ \frac{1}{m}\sum_{i=1}^{m}\log\left(1+\exp(-y_i a_i^T x)\right)
++\frac{\lambda}{2}\|x\|_2^2
+\]
+该问题是凸优化问题，常用梯度下降、Newton法、拟Newton法或随机梯度方法求解。逻辑回归输出的不只是分类结果，还可以解释为类别概率估计。
+
+\subsection{支持向量机}
+
+支持向量机（Support Vector Machine, SVM）的核心思想是寻找最大间隔分类超平面。对于 $y_i\in\{-1,1\}$，软间隔SVM可写为
+\[
+\min_{w,b,\xi}\ \frac{1}{2}\|w\|_2^2 + C\sum_{i=1}^{m}\xi_i
+\]
+\[
+\text{s.t.}\quad y_i(w^T a_i+b)\geq 1-\xi_i,\quad \xi_i\geq0,\quad i=1,\ldots,m
+\]
+其中 $\xi_i$ 是松弛变量，$C$ 控制间隔大小与分类错误之间的权衡。等价地，SVM也可用 hinge loss 表示：
+\[
+\min_{w,b}\ \frac{1}{2}\|w\|_2^2+C\sum_{i=1}^{m}\max\{0,1-y_i(w^Ta_i+b)\}
+\]
+
+\subsection{概率图模型}
+
+概率图模型用图结构表示随机变量之间的依赖关系。在许多推断任务中，最可能解释可以写成优化问题。
+
+\begin{conceptbox}[MAP推断的优化形式]
+设随机变量为 $x=(x_1,\ldots,x_n)$，观测数据为 $y$，最大后验估计为
+\[
+\max_x\ p(x\mid y)
+\]
+等价于最小化负对数后验：
+\[
+\min_x\ -\log p(y\mid x)-\log p(x)
+\]
+若先验由图结构分解，则常得到能量最小化模型：
+\[
+\min_x\ E(x)=\sum_i \phi_i(x_i)+\sum_{(i,j)\in \mathcal{E}}\phi_{ij}(x_i,x_j)
+\]
+\end{conceptbox}
+
+概率图模型中的优化可能是连续的，也可能是离散组合优化。图割、置信传播、动态规划、凸松弛等方法都可以用于不同结构的推断问题。
+
+\subsection{相位恢复}
+
+相位恢复问题来自光学成像、晶体学和信号处理。其观测只有线性测量的幅值平方：
+\[
+b_i = |a_i^T x|^2,\quad i=1,\ldots,m
+\]
+目标是从 $\{b_i\}$ 中恢复未知信号 $x$。直接建模得到非凸优化问题：
+\[
+\min_x\ \sum_{i=1}^{m}\left(|a_i^T x|^2-b_i\right)^2
+\]
+一种常见凸化思想是提升变量 $X=xx^T$，将二次测量写成线性形式：
+\[
+a_i^T X a_i = b_i,\quad X\succeq0,\quad \operatorname{rank}(X)=1
+\]
+去掉秩约束并最小化迹，可以得到半正定规划松弛：
+\[
+\min_X\ \operatorname{tr}(X)\quad
+\text{s.t.}\quad a_i^T X a_i=b_i,\ X\succeq0
+\]
+
+\subsection{主成分分析}
+
+主成分分析（Principal Component Analysis, PCA）用于寻找数据中方差最大的低维方向。设样本协方差矩阵为 $S$，第一主成分可写为
+\[
+\max_{\|u\|_2=1}\ u^T S u
+\]
+其解为 $S$ 的最大特征值对应的特征向量。若要寻找 $k$ 维子空间，可写成重构误差最小化：
+\[
+\min_{W^TW=I_k}\ \|X-XWW^T\|_F^2
+\]
+其中 $W$ 的列向量构成低维子空间的一组正交基。
+
+\subsection{矩阵分离问题}
+
+矩阵分离问题希望把观测矩阵分解为若干具有不同结构的部分。典型例子是鲁棒PCA：
+\[
+M=L+S
+\]
+其中 $L$ 是低秩背景，$S$ 是稀疏异常。原始建模为
+\[
+\min_{L,S}\ \operatorname{rank}(L)+\lambda\|S\|_0
+\quad \text{s.t.}\quad M=L+S
+\]
+由于秩函数和 $\ell_0$ 函数难以直接优化，常用凸松弛：
+\[
+\min_{L,S}\ \|L\|_*+\lambda\|S\|_1
+\quad \text{s.t.}\quad M=L+S
+\]
+其中 $\|L\|_*$ 是核范数，鼓励低秩；$\|S\|_1$ 鼓励稀疏。
+
+\subsection{字典学习}
+
+字典学习希望用少量基向量线性组合表示数据。设数据矩阵为 $X$，字典为 $D$，稀疏编码为 $A$，常见模型为
+\[
+\min_{D,A}\ \frac{1}{2}\|X-DA\|_F^2+\lambda\|A\|_1
+\]
+\[
+\text{s.t.}\quad \|d_j\|_2\leq1,\quad j=1,\ldots,k
+\]
+其中 $d_j$ 是字典 $D$ 的第 $j$ 个原子。该问题关于 $(D,A)$ 联合非凸，但固定 $D$ 优化 $A$、固定 $A$ 优化 $D$ 时常有较好的子问题结构，因此常用交替最小化方法求解。
+
+\subsection{K-均值聚类}
+
+K-均值聚类将样本划分为 $K$ 类，使类内平方距离之和最小：
+\[
+\min_{\{\mu_k\},\{c_i\}}\ \sum_{i=1}^{m}\|x_i-\mu_{c_i}\|_2^2,\quad c_i\in\{1,\ldots,K\}
+\]
+其中 $\mu_k$ 是第 $k$ 个聚类中心，$c_i$ 是样本 $x_i$ 的类别编号。该模型是非凸的，标准算法在"分配样本到最近中心"和"更新中心为类内均值"之间交替进行。
+
+\subsection{图像处理中的全变差模型}
+
+图像去噪和重建常希望在保留边缘的同时去除噪声。全变差（Total Variation, TV）刻画图像梯度的整体大小：
+\[
+\mathrm{TV}(u)=\sum_p \sqrt{(D_xu)_p^2+(D_yu)_p^2}
+\]
+给定观测图像 $f$，经典ROF去噪模型为
+\[
+\min_u\ \frac{1}{2}\|u-f\|_2^2+\lambda \mathrm{TV}(u)
+\]
+更一般地，若 $A$ 表示成像系统，可写成
+\[
+\min_u\ \frac{1}{2}\|Au-f\|_2^2+\lambda \mathrm{TV}(u)
+\]
+TV正则化鼓励分片光滑，因此特别适合边缘明显的图像。
+
+\subsection{小波模型}
+
+小波模型利用信号在小波基下的稀疏性。设 $W$ 为小波变换，若 $x=W\alpha$，则稀疏重建可写为
+\[
+\min_{\alpha}\ \frac{1}{2}\|AW\alpha-y\|_2^2+\lambda\|\alpha\|_1
+\]
+求得稀疏系数 $\alpha^*$ 后，重建信号为 $x^*=W\alpha^*$。该模型广泛用于压缩感知、图像压缩、去噪和反问题。
+
+\subsection{强化学习}
+
+强化学习研究智能体如何通过与环境交互学习策略。设策略为 $\pi_\theta$，折扣因子为 $\gamma\in(0,1)$，目标通常是最大化期望累计回报：
+\[
+\max_\theta\ J(\theta)=
+\mathbb{E}_{\pi_\theta}\left[\sum_{t=0}^{\infty}\gamma^t r_t\right]
+\]
+价值函数满足Bellman方程：
+\[
+V^\pi(s)=\mathbb{E}_{\pi}\left[r(s,a)+\gamma V^\pi(s')\mid s\right]
+\]
+因此强化学习中的优化既包括策略参数的直接优化，也包括价值函数逼近、动态规划和随机近似。常见算法如策略梯度、Actor-Critic、Q-learning，都可以理解为不同形式的优化过程。
+
+\subsection{总结}
+
+\begin{conceptbox}[优化建模视角下的典型问题]
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{问题} & \textbf{核心优化结构} \\
+\midrule
+线性/正则化回归 & 经验损失 + 正则化 \\
+逻辑回归、SVM & 分类损失 + 间隔或复杂度控制 \\
+概率图模型 & 负对数概率或能量函数最小化 \\
+相位恢复 & 非凸二次测量拟合，或半正定松弛 \\
+PCA、矩阵分离 & 低维结构、低秩结构建模 \\
+字典学习、小波模型 & 稀疏表示与稀疏正则化 \\
+K-均值聚类 & 离散分配与连续中心的交替优化 \\
+TV图像模型 & 数据保真项 + 边缘保持正则化 \\
+强化学习 & 期望累计回报最大化 \\
+\bottomrule
+\end{tabularx}
+\end{conceptbox}
+
+这些例子说明，优化建模不是单一技巧，而是一种统一语言：用变量描述决策，用目标函数表达偏好，用约束刻画现实限制，用算法求出可解释、可执行的解。
+
 \section{经典极值问题}\label{sec:classical}
 
 \subsection{无约束极值问题}
@@ -250,6 +542,47 @@ KKT条件：
 
 \textbf{结论}：$r^* = \sqrt[3]{\frac{2}{3}}$，$h^* = 2r^* = 2\sqrt[3]{\frac{2}{3}}$，最小表面积 $S^* = 6\pi\left(\frac{2}{3}\right)^{2/3}$。
 \end{example}
+
+\begin{lstlisting}[language=Python, caption=经典极值问题求解]
+import numpy as np
+from scipy.optimize import minimize
+
+# === 正方形剪角问题 ===
+def box_volume(x, a=1.0):
+    """水槽容积"""
+    if x <= 0 or x >= a/2:
+        return 0
+    return x * (a - 2*x)**2
+
+def box_volume_neg(x, a=1.0):
+    """负容积（用于最小化）"""
+    return -box_volume(x, a)
+
+result1 = minimize(box_volume_neg, x0=0.2, args=(1.0,),
+                   bounds=[(0.01, 0.49)])
+print("正方形剪角问题:")
+print(f"  最优剪去边长: x* = {result1.x[0]:.6f} (理论: a/6 = {1/6:.6f})")
+print(f"  最大容积: V* = {-result1.fun:.6f} (理论: 2a^3/27 = {2/27:.6f})")
+
+# === 球变圆柱问题 ===
+def cylinder_surface(vars):
+    """圆柱表面积"""
+    r, h = vars
+    return 2*np.pi*r**2 + 2*np.pi*r*h
+
+def volume_constraint(vars):
+    """体积约束 = 0"""
+    r, h = vars
+    return np.pi*r**2*h - 4*np.pi/3
+
+result2 = minimize(cylinder_surface, x0=[0.5, 2.0],
+                   constraints={'type': 'eq', 'fun': volume_constraint})
+r_opt, h_opt = result2.x
+print(f"\n球变圆柱问题:")
+print(f"  最优半径: r* = {r_opt:.6f} (理论: {(2/3)**(1/3):.6f})")
+print(f"  最优高度: h* = {h_opt:.6f} (理论: {2*(2/3)**(1/3):.6f})")
+print(f"  h/r = {h_opt/r_opt:.4f} (理论: 2)")
+\end{lstlisting}
 
 \section{计算机学科中的典型最优化问题}\label{sec:cs-applications}
 
@@ -567,6 +900,76 @@ f(\theta x + (1-\theta) y) \leq \theta f(x) + (1-\theta) f(y) - \frac{m}{2}\thet
 KKT条件的详细推导与证明见第~\ref{chap:constrained-theory}~章第~\ref{sec:kkt-general}~节。
 \end{conceptbox}
 
+\subsection{Lipschitz连续与Lipschitz常数}\label{sec:lipschitz}
+
+在优化算法的收敛性分析中，梯度（或函数值）的变化速度需要有上界控制。Lipschitz 连续性是刻画这种光滑性的核心工具。
+
+\begin{definition}[Lipschitz连续]
+函数 $f: \mathbb{R}^n \to \mathbb{R}$ 称为\textbf{Lipschitz连续}，若存在常数 $L_f > 0$，使得对任意 $x, y \in \mathbb{R}^n$，有
+\[
+|f(x) - f(y)| \leq L_f \|x - y\|
+\]
+其中 $L_f$ 称为 $f$ 的\textbf{Lipschitz常数}。
+\end{definition}
+
+在优化中，更常用的是\textbf{梯度Lipschitz连续}（亦称 $L$-光滑）：
+
+\begin{definition}[$L$-光滑（梯度Lipschitz连续）]\label{def:L-smooth}
+函数 $f: \mathbb{R}^n \to \mathbb{R}$ 称为\textbf{$L$-光滑}（或梯度 $L$-Lipschitz连续），若存在常数 $L > 0$，使得对任意 $x, y \in \mathbb{R}^n$，有
+\[
+\|\nabla f(x) - \nabla f(y)\| \leq L \|x - y\|
+\]
+其中 $L$ 称为\textbf{梯度Lipschitz常数}，$\|\cdot\|$ 为 $\ell_2$ 范数。
+\end{definition}
+
+\begin{notebox}[$L$-光滑的等价刻画]
+若 $f$ 二阶连续可微，$L$-光滑等价于 Hessian 有界：
+\[
+\|\nabla^2 f(x)\| \preceq L I \quad \text{（即 } \nabla^2 f(x) \preceq L I\text{）}
+\]
+另一个常用等价形式是二次上界不等式：
+\[
+f(y) \leq f(x) + \nabla f(x)^T (y-x) + \frac{L}{2}\|y - x\|^2, \quad \forall x, y
+\]
+这意味着在任意点 $x$ 处，$f$ 被一个以 $L$ 为曲率的二次函数从上控制。
+\end{notebox}
+
+\begin{example}[计算Lipschitz常数]
+\textbf{(1) 二次函数} $f(x) = \frac{1}{2}x^T A x + b^T x$（$A \succeq 0$ 对称）：
+\[
+\|\nabla f(x) - \nabla f(y)\| = \|A(x-y)\| \leq \|A\| \cdot \|x-y\|
+\]
+故 $L = \|A\| = \lambda_{\max}(A)$，即 $A$ 的最大特征值。
+
+\textbf{(2) 最小二乘} $f(x) = \frac{1}{2}\|Ax - b\|^2$：
+\[
+\nabla^2 f(x) = A^T A, \quad L = \lambda_{\max}(A^T A) = \sigma_{\max}^2(A)
+\]
+
+\textbf{(3) Logistic回归} $f(w) = \frac{1}{n}\sum_{i=1}^n \log(1 + e^{-y_i w^T x_i})$：
+\[
+\nabla^2 f(w) = \frac{1}{n}\sum_{i=1}^n \sigma(w^T x_i)(1-\sigma(w^T x_i)) x_i x_i^T \preceq \frac{1}{4n} X^T X
+\]
+故可取 $L = \frac{1}{4n}\|X^T X\|$。
+
+\textbf{(4) 岭回归} $f(x) = \frac{1}{2}\|Ax - b\|^2 + \frac{\lambda}{2}\|x\|^2$（见例~\ref{ex:ridge}）：
+\[
+\nabla^2 f(x) = A^T A + \lambda I, \quad L = \lambda_{\max}(A^T A) + \lambda = \sigma_{\max}^2(A) + \lambda
+\]
+且 $\nabla^2 f(x) \succeq \lambda I$，因此 $f$ 同时是 $\mu$-强凸的，$\mu = \lambda$。条件数 $\kappa = L/\mu = 1 + \sigma_{\max}^2(A)/\lambda$。
+\end{example}
+
+\begin{conceptbox}[Lipschitz常数在优化算法中的作用]
+许多一阶方法的步长和收敛率直接依赖于 $L$：
+\begin{itemize}
+    \item \textbf{梯度下降}：取步长 $\alpha \leq \frac{1}{L}$ 可保证收敛，收敛速率 $O(1/k)$
+    \item \textbf{加速梯度法}（Nesterov）：仍只需 $L$，但收敛速率提升至 $O(1/k^2)$
+    \item \textbf{$L$ 越大}：梯度变化越剧烈，算法需更保守的步长，收敛越慢
+    \item \textbf{反向估计}：若 $\|\nabla^2 f(x)\| \geq \mu I$（$\mu > 0$），则 $f$ 还满足 $\mu$-强凸性，可获线性收敛
+\end{itemize}
+$L$ 和 $\mu$ 的比值 $\kappa = L/\mu$ 称为\textbf{条件数}，直接决定一阶方法的最坏情况收敛速度。
+\end{conceptbox}
+
 \begin{example}[凸集的运算性质]\label{ex:convex-set-ops}
 设 $S_1, S_2$ 是凸集，讨论下列集合是否是凸集。
 
@@ -693,6 +1096,13 @@ $S = (-\infty, -1] \cup [1, \infty)$，$-1, 1 \in S$ 但中点 $0 \notin S$。
         \item 优化问题的分类（7个维度：连续/离散、约束/无约束、确定性/随机性、线性/非线性、单目标/多目标、静态/动态、单层/多层）
         \item 运筹学方法论
     \end{itemize}
+    \item \textbf{优化建模}
+    \begin{itemize}
+        \item 建模技术：决策变量、目标函数、约束条件、数据参数和模型类别
+        \item 回归分析：线性回归、岭回归、LASSO、Elastic Net
+        \item 典型模型：逻辑回归、支持向量机、概率图模型、相位恢复、PCA、矩阵分离、字典学习、K-均值、TV模型、小波模型、强化学习
+        \item 统一思想：经验损失、正则化、结构约束和可计算松弛
+    \end{itemize}
     \item \textbf{经典极值问题}
     \begin{itemize}
         \item 无约束极值：正方形剪角求最大容积
@@ -725,6 +1135,10 @@ $S = (-\infty, -1] \cup [1, \infty)$，$-1, 1 \in S$ 但中点 $0 \notin S$。
 \textbf{概念} & \textbf{公式} \\
 \midrule
 最优化一般形式 & $\min f(x)$ s.t. $c_i(x) \geq 0, c_i(x) = 0$ \\
+优化建模一般形式 & $\min_{x\in\mathcal{X}} f(x)$ \\
+经验风险最小化 & $\frac{1}{m}\sum_{i=1}^{m}\ell(h(a_i;x),y_i)+\lambda R(x)$ \\
+最小二乘回归 & $\frac{1}{2}\|Ax-y\|_2^2$ \\
+LASSO & $\frac{1}{2}\|Ax-y\|_2^2+\lambda\|x\|_1$ \\
 无约束问题 & $\min_{x \in \R^n} f(x)$ \\
 Lagrange函数 & $\mathcal{L}(x, \lambda) = f(x) - \lambda h(x)$ \\
 梯度下降 & $x^{(t+1)} = x^{(t)} - \eta \nabla f(x^{(t)})$ \\
@@ -744,42 +1158,32 @@ F1值 & $2PR/(P+R)$ \\
 
 \begin{table}[htbp]
 \centering
-\begin{tabular}{@{}ll@{}}
+\footnotesize
+\begin{tabular}{@{}p{2.3cm}p{4.6cm}p{2.3cm}p{4.6cm}@{}}
 \toprule
-\textbf{中文} & \textbf{英文} \\
+\textbf{中文} & \textbf{英文} & \textbf{中文} & \textbf{英文} \\
 \midrule
-运筹学 & Operations Research \\
-最优化 & Optimization \\
-无约束优化 & Unconstrained Optimization \\
-约束优化 & Constrained Optimization \\
-连续优化 & Continuous Optimization \\
-离散优化 & Discrete Optimization \\
-确定性优化 & Deterministic Optimization \\
-随机性优化 & Stochastic Optimization \\
-线性规划 & Linear Programming \\
-非线性规划 & Nonlinear Programming \\
-单目标优化 & Single-Objective Optimization \\
-多目标优化 & Multi-Objective Optimization \\
-动态优化 & Dynamic Optimization \\
-多层优化 & Multi-Level Optimization \\
-Lagrange乘子法 & Lagrange Multiplier Method \\
-梯度下降 & Gradient Descent \\
-随机梯度下降 & Stochastic Gradient Descent \\
-经验风险最小化 & Empirical Risk Minimization \\
-均方误差 & Mean Squared Error (MSE) \\
-准确率 & Accuracy \\
-召回率 & Recall \\
-精确率 & Precision \\
-凸集 & Convex Set \\
-凸函数 & Convex Function \\
-凹函数 & Concave Function \\
-仿射函数 & Affine Function \\
-仿射集 & Affine Set \\
-凸组合 & Convex Combination \\
-凸锥 & Convex Cone \\
-凸规划 & Convex Programming \\
-强凸函数 & Strongly Convex Function \\
-半正定 & Positive Semidefinite \\
+运筹学 & Operations Research & 最优化 & Optimization \\
+优化建模 & Optimization Modeling & 目标函数 & Objective Function \\
+约束条件 & Constraints & 无约束优化 & Unconstrained Optimization \\
+约束优化 & Constrained Optimization & 连续优化 & Continuous Optimization \\
+离散优化 & Discrete Optimization & 确定性优化 & Deterministic Optimization \\
+随机性优化 & Stochastic Optimization & 线性规划 & Linear Programming \\
+非线性规划 & Nonlinear Programming & 单目标优化 & Single-Objective Optimization \\
+多目标优化 & Multi-Objective Optimization & 动态优化 & Dynamic Optimization \\
+多层优化 & Multi-Level Optimization & Lagrange乘子法 & Lagrange Multiplier Method \\
+梯度下降 & Gradient Descent & 随机梯度下降 & Stochastic Gradient Descent \\
+经验风险最小化 & Empirical Risk Minimization & 回归分析 & Regression Analysis \\
+逻辑回归 & Logistic Regression & 支持向量机 & Support Vector Machine (SVM) \\
+主成分分析 & Principal Component Analysis (PCA) & 字典学习 & Dictionary Learning \\
+全变差 & Total Variation (TV) & 强化学习 & Reinforcement Learning \\
+均方误差 & Mean Squared Error (MSE) & 准确率 & Accuracy \\
+召回率 & Recall & 精确率 & Precision \\
+凸集 & Convex Set & 凸函数 & Convex Function \\
+凹函数 & Concave Function & 仿射函数 & Affine Function \\
+仿射集 & Affine Set & 凸组合 & Convex Combination \\
+凸锥 & Convex Cone & 凸规划 & Convex Programming \\
+强凸函数 & Strongly Convex Function & 半正定 & Positive Semidefinite \\
 \bottomrule
 \end{tabular}
 \end{table}

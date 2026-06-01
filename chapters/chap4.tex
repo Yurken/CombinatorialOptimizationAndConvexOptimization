@@ -215,11 +215,15 @@ b_n - a_n = \frac{b - a}{2^{n-1}} + 2\delta
 
 \textbf{解：} 区间长度为8。需要迭代次数 $n$ 满足 $\frac{8}{2^{n-1}} < 0.1$，即 $n \geq 8$。
 
-第1次迭代：$\lambda_1 = -0.01$，$\mu_1 = 0.01$
+取 $\delta = 0.01$。初始区间中点为 $\frac{-3+5}{2}=1$，故
 \[
-f(\lambda_1) = -0.9999 < f(\mu_1) \approx -0.9999
+\lambda_1 = 1-\delta = 0.99,\quad \mu_1 = 1+\delta = 1.01
 \]
-取新区间 $[-3, 0.01]$，依此类推直至区间长度小于0.1。
+\[
+f(\lambda_1) = 0.99^2 + 2(0.99) = 2.9601,\quad
+f(\mu_1) = 1.01^2 + 2(1.01) = 3.0401
+\]
+因为 $f(\lambda_1) < f(\mu_1)$，取新区间 $[-3, 1.01]$，依此类推直至区间长度小于0.1。该函数的精确极小点为 $\lambda^*=-1$，$f^*=-1$。
 \end{example}
 
 \section{黄金分割法与Fibonacci法}\label{sec:golden-fibonacci}
@@ -339,7 +343,7 @@ F_0 = F_1 = 1,\quad F_n = F_{n-1} + F_{n-2}\ (n \geq 2)
 \]
 试探点：
 \[
-\lambda_k = a_k + \frac{F_{n-k-1}}{F_{n-k+1}}(b_k - a_k),\quad
+\lambda_k = b_k - \frac{F_{n-k}}{F_{n-k+1}}(b_k - a_k),\quad
 \mu_k = a_k + \frac{F_{n-k}}{F_{n-k+1}}(b_k - a_k)
 \]
 
@@ -383,7 +387,7 @@ $F_1=F_2=1, F_3=2, F_4=3, F_5=5, F_6=8$
 
 \textbf{第0轮}：$[a_0, b_0] = [0, 5]$，$k=0$，$F_{5}=5, F_{6}=8$
 \begin{align*}
-\lambda_0 &= 0 + \frac{F_4}{F_6}(5-0) = \frac{3}{8} \times 5 = 1.875 \\
+\lambda_0 &= 5 - \frac{F_5}{F_6}(5-0) = 5 - \frac{5}{8} \times 5 = 5 - 3.125 = 1.875 \\
 \mu_0 &= 0 + \frac{F_5}{F_6}(5-0) = \frac{5}{8} \times 5 = 3.125
 \end{align*}
 \begin{align*}
@@ -398,7 +402,7 @@ $\phi(\lambda_0) \leq \phi(\mu_0)$，保留左区间：
 
 \textbf{第1轮}：$[a_1, b_1] = [0, 3.125]$，$k=1$，$F_{4}=3, F_{5}=5$
 \begin{align*}
-\lambda_1 &= 0 + \frac{F_3}{F_5}(3.125-0) = \frac{2}{5} \times 3.125 = 1.25 \\
+\lambda_1 &= 3.125 - \frac{F_4}{F_5}(3.125-0) = 3.125 - \frac{3}{5} \times 3.125 = 3.125 - 1.875 = 1.25 \\
 \mu_1 &= \lambda_0 = 1.875 \quad (\text{复用})
 \end{align*}
 \begin{align*}
@@ -479,7 +483,7 @@ def fibonacci_search(phi, a, b, eps=None, n=None, max_iter=100):
         for i in range(2, n + 2):
             F.append(F[-1] + F[-2])
     
-    lam = a + F[n-1]/F[n+1] * (b - a)
+    lam = b - F[n]/F[n+1] * (b - a)
     mu = a + F[n]/F[n+1] * (b - a)
     phi_lam = phi(lam)
     phi_mu = phi(mu)
@@ -496,7 +500,7 @@ def fibonacci_search(phi, a, b, eps=None, n=None, max_iter=100):
             b = mu
             mu = lam
             phi_mu = phi_lam
-            lam = a + F[n-k-1]/F[n-k+1] * (b - a)
+            lam = b - F[n-k]/F[n-k+1] * (b - a)
             phi_lam = phi(lam)
         else:
             a = lam

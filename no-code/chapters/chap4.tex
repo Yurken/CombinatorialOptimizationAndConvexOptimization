@@ -137,6 +137,48 @@ x_{k+1} = x_k + \alpha_k d_k
 黄金分割法和Fibonacci法只适用于\textbf{单峰函数}。对于多峰函数，可能收敛到局部极小点而非全局极小点。Shubert-Piyavskii方法可以处理多峰函数的全局优化。
 \end{notebox}
 
+\begin{lstlisting}[language=Python, caption=测试函数定义]
+import numpy as np
+
+# === 常用一维搜索测试函数 ===
+
+def phi_quad(alpha):
+    """二次函数: (alpha - 2)^2, 最小值点在 alpha* = 2"""
+    return (alpha - 2)**2
+
+def phi_quad_grad(alpha):
+    """二次函数的导数"""
+    return 2 * (alpha - 2)
+
+def phi_cubic(alpha):
+    """三次函数（多峰）: alpha^4 - 3*alpha^2 + alpha + 1"""
+    return alpha**4 - 3*alpha**2 + alpha + 1
+
+def phi_cubic_grad(alpha):
+    """三次函数的导数"""
+    return 4*alpha**3 - 6*alpha + 1
+
+def phi_rosenbrock_1d(alpha):
+    """Rosenbrock型一维函数"""
+    return (alpha**2 - 1)**2 + (alpha - 2)**2
+
+def phi_sin(alpha):
+    """带正弦的函数: alpha * sin(alpha)"""
+    return alpha * np.sin(alpha)
+
+# 测试
+test_funcs = {
+    'Quadratic': (phi_quad, 2.0),
+    'Cubic-like': (phi_cubic, None),
+    'Rosenbrock-1D': (phi_rosenbrock_1d, None),
+}
+
+for name, (f, true_min) in test_funcs.items():
+    from scipy.optimize import minimize_scalar
+    res = minimize_scalar(f, bounds=(-3, 3), method='bounded')
+    print(f"{name}: alpha* = {res.x:.6f}, f* = {res.fun:.6f}")
+\end{lstlisting}
+
 \section{不利用导数的精确一维搜索}
 
 除了第~\ref{sec:golden-fibonacci}~节介绍的黄金分割法和Fibonacci法，还有另一种常用的区间缩减方法——Dichotomous搜索。
@@ -173,11 +215,15 @@ b_n - a_n = \frac{b - a}{2^{n-1}} + 2\delta
 
 \textbf{解：} 区间长度为8。需要迭代次数 $n$ 满足 $\frac{8}{2^{n-1}} < 0.1$，即 $n \geq 8$。
 
-第1次迭代：$\lambda_1 = -0.01$，$\mu_1 = 0.01$
+取 $\delta = 0.01$。初始区间中点为 $\frac{-3+5}{2}=1$，故
 \[
-f(\lambda_1) = -0.9999 < f(\mu_1) \approx -0.9999
+\lambda_1 = 1-\delta = 0.99,\quad \mu_1 = 1+\delta = 1.01
 \]
-取新区间 $[-3, 0.01]$，依此类推直至区间长度小于0.1。
+\[
+f(\lambda_1) = 0.99^2 + 2(0.99) = 2.9601,\quad
+f(\mu_1) = 1.01^2 + 2(1.01) = 3.0401
+\]
+因为 $f(\lambda_1) < f(\mu_1)$，取新区间 $[-3, 1.01]$，依此类推直至区间长度小于0.1。该函数的精确极小点为 $\lambda^*=-1$，$f^*=-1$。
 \end{example}
 
 \section{黄金分割法与Fibonacci法}\label{sec:golden-fibonacci}
@@ -297,7 +343,7 @@ F_0 = F_1 = 1,\quad F_n = F_{n-1} + F_{n-2}\ (n \geq 2)
 \]
 试探点：
 \[
-\lambda_k = a_k + \frac{F_{n-k-1}}{F_{n-k+1}}(b_k - a_k),\quad
+\lambda_k = b_k - \frac{F_{n-k}}{F_{n-k+1}}(b_k - a_k),\quad
 \mu_k = a_k + \frac{F_{n-k}}{F_{n-k+1}}(b_k - a_k)
 \]
 
@@ -341,7 +387,7 @@ $F_1=F_2=1, F_3=2, F_4=3, F_5=5, F_6=8$
 
 \textbf{第0轮}：$[a_0, b_0] = [0, 5]$，$k=0$，$F_{5}=5, F_{6}=8$
 \begin{align*}
-\lambda_0 &= 0 + \frac{F_4}{F_6}(5-0) = \frac{3}{8} \times 5 = 1.875 \\
+\lambda_0 &= 5 - \frac{F_5}{F_6}(5-0) = 5 - \frac{5}{8} \times 5 = 5 - 3.125 = 1.875 \\
 \mu_0 &= 0 + \frac{F_5}{F_6}(5-0) = \frac{5}{8} \times 5 = 3.125
 \end{align*}
 \begin{align*}
@@ -356,7 +402,7 @@ $\phi(\lambda_0) \leq \phi(\mu_0)$，保留左区间：
 
 \textbf{第1轮}：$[a_1, b_1] = [0, 3.125]$，$k=1$，$F_{4}=3, F_{5}=5$
 \begin{align*}
-\lambda_1 &= 0 + \frac{F_3}{F_5}(3.125-0) = \frac{2}{5} \times 3.125 = 1.25 \\
+\lambda_1 &= 3.125 - \frac{F_4}{F_5}(3.125-0) = 3.125 - \frac{3}{5} \times 3.125 = 3.125 - 1.875 = 1.25 \\
 \mu_1 &= \lambda_0 = 1.875 \quad (\text{复用})
 \end{align*}
 \begin{align*}
@@ -375,6 +421,136 @@ $\phi(\lambda_1) \geq \phi(\mu_1)$，保留右区间：
     \item 近似最优解：$\alpha^* \approx \frac{1.25 + 3.125}{2} = 2.1875$
 \end{itemize}
 \end{example}
+
+\begin{lstlisting}[language=Python, caption=黄金分割法与Fibonacci法实现]
+import numpy as np
+
+def golden_section_search(phi, a, b, eps=1e-6, max_iter=100):
+    """黄金分割法求单峰函数在[a,b]上的最小值"""
+    rho = (np.sqrt(5) - 1) / 2  # 0.6180339...
+    one_minus_rho = 1 - rho       # 0.381966...
+    
+    # 初始试探点
+    lam = a + one_minus_rho * (b - a)
+    mu = a + rho * (b - a)
+    phi_lam = phi(lam)
+    phi_mu = phi(mu)
+    
+    history = [(a, b, lam, mu, phi_lam, phi_mu)]
+    
+    for k in range(max_iter):
+        if phi_lam <= phi_mu:
+            b = mu
+            mu = lam
+            phi_mu = phi_lam
+            lam = a + one_minus_rho * (b - a)
+            phi_lam = phi(lam)
+        else:
+            a = lam
+            lam = mu
+            phi_lam = phi_mu
+            mu = a + rho * (b - a)
+            phi_mu = phi(mu)
+        
+        history.append((a, b, lam, mu, phi_lam, phi_mu))
+        
+        if b - a < eps:
+            break
+    
+    alpha_opt = (a + b) / 2
+    return alpha_opt, phi(alpha_opt), k+1, history
+
+
+def fibonacci_search(phi, a, b, eps=None, n=None, max_iter=100):
+    """Fibonacci法
+    参数:
+        phi: 目标函数
+        a, b: 初始区间
+        eps: 容许误差（与n二选一，优先使用n）
+        n: 试探次数
+    """
+    assert eps is not None or n is not None, "必须提供eps或n之一"
+    
+    # 生成Fibonacci数列
+    F = [1, 1]
+    if n is None:
+        # 根据eps计算n
+        ratio = (b - a) / eps
+        while F[-1] < ratio:
+            F.append(F[-1] + F[-2])
+        n = len(F) - 1
+    else:
+        for i in range(2, n + 2):
+            F.append(F[-1] + F[-2])
+    
+    lam = b - F[n]/F[n+1] * (b - a)
+    mu = a + F[n]/F[n+1] * (b - a)
+    phi_lam = phi(lam)
+    phi_mu = phi(mu)
+    
+    history = [(a, b, lam, mu, phi_lam, phi_mu)]
+    
+    for k in range(1, n):
+        if k == n - 1:  # 最后一步特殊处理
+            # 当eps未提供时，使用固定的小偏移量
+            delta = eps * 0.5 if eps is not None else 1e-6
+            mu = lam + delta
+        
+        if phi_lam <= phi_mu:
+            b = mu
+            mu = lam
+            phi_mu = phi_lam
+            lam = b - F[n-k]/F[n-k+1] * (b - a)
+            phi_lam = phi(lam)
+        else:
+            a = lam
+            lam = mu
+            phi_lam = phi_mu
+            mu = a + F[n-k]/F[n-k+1] * (b - a)
+            phi_mu = phi(mu)
+        
+        history.append((a, b, lam, mu, phi_lam, phi_mu))
+    
+    alpha_opt = (a + b) / 2
+    return alpha_opt, phi(alpha_opt), n, history
+
+
+# === 测试 ===
+def phi_test(alpha):
+    return (alpha - 2)**2
+
+print("=" * 50)
+print("黄金分割法")
+print("=" * 50)
+alpha_opt, phi_opt, iters, hist = golden_section_search(
+    phi_test, 0, 5, eps=0.01)
+print(f"最优解: alpha* = {alpha_opt:.6f}")
+print(f"最优值: phi* = {phi_opt:.10f}")
+print(f"迭代次数: {iters}")
+print("\\n前两轮迭代:")
+for i, (a, b, lam, mu, pl, pm) in enumerate(hist[:3]):
+    print(f"  第{i}轮: [{a:.4f}, {b:.4f}], "
+          f"lam={lam:.4f}(phi={pl:.4f}), "
+          f"mu={mu:.4f}(phi={pm:.4f})")
+
+print("=" * 50)
+print("Fibonacci法（指定n=5）")
+print("=" * 50)
+alpha_opt, phi_opt, n, hist = fibonacci_search(
+    phi_test, 0, 5, n=5)
+print(f"试探次数: n = {n}")
+print(f"最优解: alpha* = {alpha_opt:.6f}")
+print(f"最优值: phi* = {phi_opt:.10f}")
+
+print("=" * 50)
+print("Fibonacci法（根据eps自动确定n）")
+print("=" * 50)
+alpha_opt, phi_opt, n, hist = fibonacci_search(
+    phi_test, 0, 5, eps=1.0)
+print(f"自动确定试探次数: n = {n}")
+print(f"最优解: alpha* = {alpha_opt:.6f}")
+print(f"最优值: phi* = {phi_opt:.10f}")
+\end{lstlisting}
 
 \section{中点法（二分法）}\label{sec:ch4-bisection}
 
@@ -458,6 +634,53 @@ $\lambda_1$ 在下降段，$\alpha^* > 1.25$，去掉左半区间：
     \item 若函数可微且导数容易计算，二分法效率更高
 \end{itemize}
 \end{notebox}
+
+\begin{lstlisting}[language=Python, caption=二分法实现]
+import numpy as np
+
+def bisection_method(phi_grad, a, b, eps=1e-6, max_iter=100):
+    """
+    二分法求可微函数的极小点
+    phi_grad: 导数函数
+    """
+    history = []
+    
+    for k in range(max_iter):
+        lam = (a + b) / 2
+        grad = phi_grad(lam)
+        
+        history.append((a, b, lam, grad))
+        
+        if abs(grad) < 1e-12:
+            return lam, k+1, history
+        elif grad > 0:
+            b = lam  # 在上升段,去掉右半
+        else:
+            a = lam  # 在下降段,去掉左半
+        
+        if b - a < eps:
+            break
+    
+    alpha_opt = (a + b) / 2
+    return alpha_opt, k+1, history
+
+
+# === 测试 ===
+def phi_test_grad(alpha):
+    return 2 * (alpha - 2)
+
+print("=" * 50)
+print("二分法")
+print("=" * 50)
+alpha_opt, iters, hist = bisection_method(phi_test_grad, 0, 5, eps=0.01)
+print(f"最优解: alpha* = {alpha_opt:.6f}")
+print(f"迭代次数: {iters}")
+print("\\n前两轮迭代:")
+for i, (a, b, lam, grad) in enumerate(hist[:2]):
+    direction = "上升段(去右)" if grad > 0 else "下降段(去左)"
+    print(f"  第{i}轮: [{a:.4f}, {b:.4f}], "
+          f"mid={lam:.4f}, phi'={grad:+.4f} ({direction})")
+\end{lstlisting}
 
 \begin{notebox}[二分法（导数版）与Dichotomous搜索的对比]
 \begin{itemize}
@@ -690,6 +913,96 @@ a\lambda_3^2 + b\lambda_3 + c = \phi_3
 \end{itemize}
 \end{notebox}
 
+\begin{lstlisting}[language=Python, caption=Newton法与插值法实现]
+import numpy as np
+
+def newton_line_search(phi, phi_grad, phi_hess, alpha0, 
+                       eps=1e-6, max_iter=100):
+    """Newton法一维搜索"""
+    alpha = alpha0
+    history = [alpha]
+    
+    for k in range(max_iter):
+        g = phi_grad(alpha)
+        h = phi_hess(alpha)
+        
+        if h <= 0:
+            print(f"Warning: Hessian non-positive at alpha={alpha:.4f}")
+            break
+        
+        alpha_new = alpha - g / h
+        history.append(alpha_new)
+        
+        if abs(alpha_new - alpha) < eps or abs(g) < eps:
+            break
+        
+        alpha = alpha_new
+    
+    return alpha, phi(alpha), len(history)-1, history
+
+
+def quadratic_interpolation(phi, lam1, lam2, lam3, max_iter=100):
+    """二次插值法"""
+    for k in range(max_iter):
+        phi1, phi2, phi3 = phi(lam1), phi(lam2), phi(lam3)
+        
+        # 计算插值多项式的极小点
+        denom = ((lam2 - lam3)*phi1 + (lam3 - lam1)*phi2 
+                 + (lam1 - lam2)*phi3)
+        
+        if abs(denom) < 1e-12:
+            break
+        
+        lam_star = 0.5 * ((lam2**2 - lam3**2)*phi1 
+                        + (lam3**2 - lam1**2)*phi2 
+                        + (lam1**2 - lam2**2)*phi3) / denom
+        
+        # 更新三个点（保留lam_star和相邻两点）
+        phi_star = phi(lam_star)
+        
+        if lam_star < lam2:
+            if phi_star < phi2:
+                lam1, lam2, lam3 = lam1, lam_star, lam2
+            else:
+                lam1, lam2, lam3 = lam_star, lam2, lam3
+        else:
+            if phi_star < phi2:
+                lam1, lam2, lam3 = lam2, lam_star, lam3
+            else:
+                lam1, lam2, lam3 = lam1, lam2, lam_star
+    
+    return lam2, phi(lam2), k+1
+
+
+# === 测试 ===
+def phi(alpha):
+    return alpha**4 - 3*alpha**2 + alpha + 1
+
+def phi_grad(alpha):
+    return 4*alpha**3 - 6*alpha + 1
+
+def phi_hess(alpha):
+    return 12*alpha**2 - 6
+
+print("=" * 50)
+print("Newton法（非二次函数）")
+print("=" * 50)
+alpha_opt, phi_opt, iters, hist = newton_line_search(
+    phi, phi_grad, phi_hess, alpha0=1.0, eps=1e-4)
+print(f"最优解: alpha* = {alpha_opt:.6f}")
+print(f"最优值: phi* = {phi_opt:.6f}")
+print(f"迭代次数: {iters}")
+print(f"迭代历史: {[f'{a:.4f}' for a in hist]}")
+
+print("\\n" + "=" * 50)
+print("二次插值法")
+print("=" * 50)
+alpha_opt2, phi_opt2, iters2 = quadratic_interpolation(phi, 0, 1, 2)
+print(f"最优解: alpha* = {alpha_opt2:.6f}")
+print(f"最优值: phi* = {phi_opt2:.6f}")
+print(f"迭代次数: {iters2}")
+\end{lstlisting}
+
 \section{Shubert-Piyavskii方法}\label{sec:shubert}
 
 前述方法（黄金分割法、Fibonacci法、二分法、Newton法、插值法）一般都收敛到\textbf{局部极小点}，而无法收敛到全局极小点。Shubert-Piyavskii方法是一种可以寻找\textbf{全局最优解}的方法。
@@ -782,6 +1095,80 @@ a\lambda_3^2 + b\lambda_3 + c = \phi_3
 
 右侧交点类似计算。继续迭代直到下界与最好函数值之差足够小。
 \end{example}
+
+\begin{lstlisting}[language=Python, caption=Shubert-Piyavskii方法实现]
+import numpy as np
+
+def shubert_piyavskii(phi, a, b, L, eps=1e-4, max_iter=1000):
+    """
+    Shubert-Piyavskii方法求全局最小值
+    phi: 目标函数
+    [a,b]: 搜索区间
+    L: Lipschitz常数
+    """
+    # 初始采样点
+    points = [(a, phi(a)), (b, phi(b))]  # (alpha, phi(alpha))
+    best_val = min(p[1] for p in points)
+    best_alpha = points[0][0] if points[0][1] < points[1][1] else points[1][0]
+    
+    for k in range(max_iter):
+        # 找到下界最低点（V形交点）
+        min_lower_bound = float('inf')
+        min_alpha = None
+        
+        points_sorted = sorted(points, key=lambda x: x[0])
+        
+        for i in range(len(points_sorted) - 1):
+            ai, fi = points_sorted[i]
+            aj, fj = points_sorted[i + 1]
+            
+            # 两点间的V形交点
+            # fi - L*(alpha - ai) = fj - L*(aj - alpha)
+            alpha_int = (fi + L*ai + fj + L*aj) / (2*L) if L > 0 else (ai+aj)/2
+            lb_val = fi - L * (alpha_int - ai)
+            
+            if ai <= alpha_int <= aj and lb_val < min_lower_bound:
+                min_lower_bound = lb_val
+                min_alpha = alpha_int
+        
+        if min_alpha is None:
+            break
+        
+        # 计算新点的函数值
+        phi_new = phi(min_alpha)
+        points.append((min_alpha, phi_new))
+        
+        # 更新最优
+        if phi_new < best_val:
+            best_val = phi_new
+            best_alpha = min_alpha
+        
+        # 检查收敛
+        if best_val - min_lower_bound < eps:
+            break
+    
+    return best_alpha, best_val, k+1, points
+
+
+# === 测试: alpha * sin(alpha) ===
+def phi_test(alpha):
+    return alpha * np.sin(alpha)
+
+print("=" * 50)
+print("Shubert-Piyavskii方法")
+print("=" * 50)
+alpha_opt, phi_opt, iters, pts = shubert_piyavskii(
+    phi_test, 0, 3, L=3.0, eps=0.01)
+print(f"最优解: alpha* = {alpha_opt:.6f}")
+print(f"最优值: phi* = {phi_opt:.6f}")
+print(f"迭代次数: {iters}")
+print(f"采样点数量: {len(pts)}")
+
+# 与精确解对比
+from scipy.optimize import minimize_scalar
+res = minimize_scalar(phi_test, bounds=(0, 3), method='bounded')
+print(f"\\n精确解对比: alpha* = {res.x:.6f}, phi* = {res.fun:.6f}")
+\end{lstlisting}
 
 \section{不精确一维搜索}\label{sec:ch4-inexact}
 
@@ -1005,6 +1392,115 @@ $-2 \geq -3.6$？是的！条件(2)满足。
 $2 \leq 3.6$？是的！$\alpha = 1$ 也满足强Wolfe条件。
 \end{example}
 
+\begin{lstlisting}[language=Python, caption=不精确搜索条件实现]
+import numpy as np
+
+def armijo_backtracking(phi, phi0, dphi0, alpha_bar=1.0, 
+                        c1=1e-4, beta=0.5, max_iter=50):
+    """
+    Armijo回溯法
+    phi: phi(alpha)函数
+    phi0: phi(0)
+    dphi0: phi'(0) (需 < 0)
+    """
+    alpha = alpha_bar
+    for k in range(max_iter):
+        if phi(alpha) <= phi0 + c1 * alpha * dphi0:
+            return alpha, k+1
+        alpha *= beta
+    return alpha, max_iter
+
+
+def wolfe_line_search(phi, dphi, phi0, dphi0, alpha=1.0,
+                      c1=1e-4, c2=0.9, max_iter=50):
+    """
+    简化的Wolfe条件线搜索
+    phi: phi(alpha)函数
+    dphi: phi'(alpha)函数
+    """
+    alpha_prev = 0
+    phi_prev = phi0
+    
+    for k in range(max_iter):
+        phi_k = phi(alpha)
+        
+        # 条件1: 充分下降
+        if phi_k > phi0 + c1 * alpha * dphi0:
+            # 用二分法在[alpha_prev, alpha]中搜索
+            lo, hi = alpha_prev, alpha
+            for _ in range(20):
+                mid = (lo + hi) / 2
+                phi_mid = phi(mid)
+                if phi_mid > phi0 + c1 * mid * dphi0:
+                    hi = mid
+                else:
+                    dphi_mid = dphi(mid)
+                    if abs(dphi_mid) <= -c2 * dphi0:
+                        return mid, k+1
+                    if dphi_mid < 0:
+                        lo = mid
+                    else:
+                        hi = mid
+            return (lo + hi) / 2, k+1
+        
+        # 条件2: 曲率
+        dphi_k = dphi(alpha)
+        if abs(dphi_k) <= -c2 * dphi0:
+            return alpha, k+1
+        
+        if dphi_k >= 0:
+            # 反向二分
+            lo, hi = alpha_prev, alpha
+            for _ in range(20):
+                mid = (lo + hi) / 2
+                dphi_mid = dphi(mid)
+                phi_mid = phi(mid)
+                if phi_mid > phi0 + c1 * mid * dphi0:
+                    hi = mid
+                elif abs(dphi_mid) <= -c2 * dphi0:
+                    return mid, k+1
+                elif dphi_mid < 0:
+                    lo = mid
+                else:
+                    hi = mid
+            return (lo + hi) / 2, k+1
+        
+        alpha_prev = alpha
+        phi_prev = phi_k
+        alpha *= 2  # 扩大步长
+    
+    return alpha, max_iter
+
+
+# === 测试 ===
+def phi(alpha):
+    return (alpha - 2)**2
+
+def dphi(alpha):
+    return 2 * (alpha - 2)
+
+phi0 = phi(0)  # 4
+dphi0 = dphi(0)  # -4
+
+print("=" * 50)
+print("Armijo回溯法")
+print("=" * 50)
+alpha_a, iters_a = armijo_backtracking(phi, phi0, dphi0, 
+                                        alpha_bar=2.0)
+print(f"步长: alpha = {alpha_a:.6f}")
+print(f"迭代次数: {iters_a}")
+print(f"phi(alpha) = {phi(alpha_a):.6f}")
+
+print("\\n" + "=" * 50)
+print("Wolfe条件搜索")
+print("=" * 50)
+alpha_w, iters_w = wolfe_line_search(phi, dphi, phi0, dphi0)
+print(f"步长: alpha = {alpha_w:.6f}")
+print(f"迭代次数: {iters_w}")
+print(f"phi(alpha) = {phi(alpha_w):.6f}")
+print(f"phi'(alpha) = {dphi(alpha_w):.6f}")
+\end{lstlisting}
+
 \section{一维搜索方法效率比较}\label{sec:efficiency-compare}
 
 设初始区间长度为 $L$，终止精度为 $\varepsilon$：
@@ -1126,6 +1622,136 @@ Goldstein & $\phi(0)+(1-c_1)\alpha\phi'(0) \leq \phi(\alpha) \leq \phi(0)+c_1\al
 
 \subsection{Python综合示例}
 
+\begin{lstlisting}[language=Python, caption=统一一维搜索接口]
+import numpy as np
+from scipy.optimize import minimize_scalar, line_search
+
+def unified_line_search(f, xk, pk, grad_f=None, method='brent', 
+                        bounds=None, **kwargs):
+    """
+    统一的一维搜索接口
+    
+    Parameters:
+    -----------
+    f : callable
+        目标函数 f(x)
+    xk : ndarray
+        当前点
+    pk : ndarray
+        搜索方向
+    grad_f : callable, optional
+        梯度函数
+    method : str
+        'brent', 'golden', 'bounded', 'armijo', 'wolfe'
+    bounds : tuple, optional
+        (lower, upper) for bounded methods
+    
+    Returns:
+    --------
+    alpha : float
+        最优步长
+    info : dict
+        搜索信息
+    """
+    # 定义 phi(alpha) = f(xk + alpha * pk)
+    def phi(alpha):
+        return f(xk + alpha * pk)
+    
+    if method in ['brent', 'golden']:
+        if bounds is None:
+            # 需要找到包含最小值的区间
+            a, b = bracket_minimum(phi, alpha=0.0, s=1e-2)
+            bounds = (a, b)
+        res = minimize_scalar(phi, bounds=bounds, method=method)
+        return res.x, {'fun': res.fun, 'nit': res.nit}
+    
+    elif method == 'armijo':
+        c1 = kwargs.get('c1', 1e-4)
+        alpha0 = kwargs.get('alpha0', 1.0)
+        beta = kwargs.get('beta', 0.5)
+        
+        phi0 = f(xk)
+        # 数值计算方向导数
+        eps = 1e-8
+        dphi0 = (f(xk + eps * pk) - phi0) / eps
+        
+        alpha = alpha0
+        for k in range(50):
+            if f(xk + alpha * pk) <= phi0 + c1 * alpha * dphi0:
+                return alpha, {'iterations': k+1}
+            alpha *= beta
+        return alpha, {'iterations': 50, 'warning': 'max_iter'}
+    
+    elif method == 'wolfe' and grad_f is not None:
+        def grad_phi(alpha):
+            return np.dot(grad_f(xk + alpha * pk), pk)
+        
+        res = line_search(f, grad_f, xk, pk,
+                         c1=kwargs.get('c1', 1e-4),
+                         c2=kwargs.get('c2', 0.9))
+        if res[0] is not None:
+            return res[0], {'iterations': res[1]}
+        else:
+            return 1e-3, {'warning': 'line_search_failed'}
+    
+    else:
+        raise ValueError(f"Unknown method: {method}")
+
+
+def bracket_minimum(phi, alpha=0.0, s=1e-2, k=2.0):
+    """通过外推法找到包含最小值的区间 [a,b]"""
+    a, ya = alpha, phi(alpha)
+    b, yb = a + s, phi(a + s)
+    
+    if yb > ya:
+        a, b = b, a
+        ya, yb = yb, ya
+        s = -s
+    
+    while True:
+        c, yc = b + s, phi(b + s)
+        if yc > yb:
+            return (min(a, c), max(a, c))
+        a, ya = b, yb
+        b, yb = c, yc
+        s *= k
+
+
+# === 综合测试 ===
+def rosenbrock(x):
+    """Rosenbrock函数"""
+    return (1 - x[0])**2 + 100 * (x[1] - x[0]**2)**2
+
+def rosenbrock_grad(x):
+    """Rosenbrock函数的梯度"""
+    d0 = -2*(1 - x[0]) - 400*x[0]*(x[1] - x[0]**2)
+    d1 = 200*(x[1] - x[0]**2)
+    return np.array([d0, d1])
+
+# 测试各种方法
+xk = np.array([-1.0, 2.0])
+# 负梯度方向
+pk = -rosenbrock_grad(xk)
+
+print("=" * 60)
+print("一维搜索方法对比 (Rosenbrock函数)")
+print("=" * 60)
+
+for method in ['brent', 'golden', 'armijo']:
+    alpha, info = unified_line_search(
+        rosenbrock, xk, pk, method=method)
+    x_new = xk + alpha * pk
+    print(f"\\n{method:10s}: alpha={alpha:.6f}, "
+          f"f_new={rosenbrock(x_new):.6f}, info={info}")
+
+# Wolfe条件
+alpha_w, info_w = unified_line_search(
+    rosenbrock, xk, pk, grad_f=rosenbrock_grad, method='wolfe')
+x_new_w = xk + alpha_w * pk
+print(f"\\n{'wolfe':10s}: alpha={alpha_w:.6f}, "
+      f"f_new={rosenbrock(x_new_w):.6f}, info={info_w}")
+\end{lstlisting}
+
 \subsection{进一步阅读}
 
 \begin{notebox}[后续章节关联]
@@ -1166,6 +1792,7 @@ Lipschitz连续 & Lipschitz Continuous \\
 \end{table}
 
 \newpage
+
 
 % ==================== 第五章 无约束最优化方法（重组后） ====================
 % 第5章经重组后，不再包含一维搜索方法（已移至第4章），

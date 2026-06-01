@@ -344,24 +344,58 @@ KKT条件的详细推导与证明见第~\ref{chap:constrained-theory}~章第~\re
 \begin{example}[可行方向法——迭代两次]\label{ex:fd}
 $\min\ f(x) = 2x_1^2 + 2x_2^2 - 2x_1 x_2 - 4x_1 - 6x_2$
 s.t. $x_1 + x_2 \leq 2$，$x_1 + 5x_2 \leq 5$，$x_1 \geq 0$，$x_2 \geq 0$。
-取 $x_0 = (0, 0)^T$，$\varepsilon = 0.001$。
+取 $x^{(0)} = (0, 0)^T$，$\varepsilon = 0.001$。
 
-\textbf{解}：$\nabla f = (4x_1 - 2x_2 - 4,\ 4x_2 - 2x_1 - 6)^T$
+\textbf{解}：$\nabla f = (4x_1 - 2x_2 - 4,\ 4x_2 - 2x_1 - 6)^T$。
 
-\textbf{第0轮}：$x_0 = (0, 0)$
-\begin{itemize}
-    \item 约束值：$g_1 = 0$，$g_2 = 0$（前两个约束都起作用）
-    \item $\nabla f(x_0) = (-4, -6)^T$
-    \item 求解方向LP：$\min\ z$ s.t. $-4d_1 - 6d_2 \leq z$，$d_1 + d_2 \leq 0$，$d_1 + 5d_2 \leq 0$，$-1 \leq d \leq 1$
-    \item 解得 $d_0 = (1, -0.2)^T$，$z = -2.8 < 0$，是下降方向
-    \item 线搜索求 $\alpha_0$：$\min_{0 \leq \alpha \leq \alpha_{\max}} f(x_0 + \alpha d_0)$
-    \item 由约束 $x_1 + 5x_2 \leq 5$：$\alpha + 5(-0.2\alpha) \leq 5$ 恒成立
-    \item 求稳定点得 $\alpha_0 \approx 0.5$，$x_1 = (0.5, -0.1)$
-\end{itemize}
+记约束为 $g_1=x_1+x_2-2\leq0$，$g_2=x_1+5x_2-5\leq0$，$g_3=-x_1\leq0$，$g_4=-x_2\leq0$。
 
-\textbf{第1轮}：从 $x_1$ 继续迭代，确定新的起作用约束集，求解新的方向LP，直到收敛。
+\textbf{第0轮}：$x^{(0)} = (0, 0)$。起作用约束为 $g_3,g_4$，故可行方向需满足 $d_1\geq0,d_2\geq0$。
+\[
+\nabla f(x^{(0)})=(-4,-6)^T
+\]
+方向LP为
+\[
+\min z\quad \text{s.t.}\quad -4d_1-6d_2\leq z,\ d_1\geq0,\ d_2\geq0,\ -1\leq d_j\leq1
+\]
+解得 $d^{(0)}=(1,1)^T$，$z=-10<0$。沿该方向线搜索：
+\[
+x^{(0)}+\alpha d^{(0)}=(\alpha,\alpha)^T,\quad
+0\leq \alpha\leq \frac{5}{6}
+\]
+\[
+f(\alpha,\alpha)=2\alpha^2-10\alpha
+\]
+在可行区间上取 $\alpha_0=5/6$，得
+\[
+x^{(1)}=\left(\frac{5}{6},\frac{5}{6}\right)^T
+\]
 
-最优解：$x^* \approx (0.5, 0.9)$，$f^* \approx -3.57$。
+\textbf{第1轮}：此时起作用约束为 $g_2$，且
+\[
+\nabla f(x^{(1)})=\left(-\frac{7}{3},-\frac{13}{3}\right)^T
+\]
+方向LP为
+\[
+\min z\quad \text{s.t.}\quad -\frac{7}{3}d_1-\frac{13}{3}d_2\leq z,\ d_1+5d_2\leq0,\ -1\leq d_j\leq1
+\]
+解得 $d^{(1)}=(1,-1/5)^T$，$z=-22/15<0$。沿该方向线搜索，得
+\[
+\alpha_1=\frac{55}{186},\quad
+x^{(2)}=x^{(1)}+\alpha_1 d^{(1)}
+=\left(\frac{35}{31},\frac{24}{31}\right)^T
+\]
+
+在 $x^{(2)}$ 处，只有 $g_2$ 起作用，且
+\[
+\nabla f(x^{(2)})=\left(-\frac{32}{31},-\frac{160}{31}\right)^T
+=-\frac{32}{31}(1,5)^T
+\]
+取乘子 $\lambda_2=32/31\geq0$ 满足KKT条件。因此
+\[
+x^*=\left(\frac{35}{31},\frac{24}{31}\right)^T\approx(1.129,\ 0.774),\quad
+f^*=-\frac{6882}{961}\approx -7.161
+\]
 \end{example}
 
 \begin{lstlisting}[language=Python, caption=可行方向法实现]
